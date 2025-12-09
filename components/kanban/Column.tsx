@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { motion } from 'framer-motion';
 import { useKanbanStore } from '@/lib/store';
 import { type Column as ColumnType } from '@/types';
 import Card from './Card';
@@ -15,6 +16,13 @@ interface ColumnProps {
   onColumnDrop: (e: React.DragEvent, columnId: string) => void;
   onColumnDragOver: (e: React.DragEvent) => void;
   draggedCardId: string | null;
+  onColumnDragStart: (e: React.DragEvent, columnId: string) => void;
+  onColumnDragEnd: () => void;
+  onColumnDragEnter: (e: React.DragEvent, columnId: string) => void;
+  onColumnDragLeave: (e: React.DragEvent) => void;
+  onColumnReorder: (e: React.DragEvent, columnId: string) => void;
+  isDraggingColumn: boolean;
+  isDropTarget: boolean;
 }
 
 const Column = ({
@@ -25,6 +33,13 @@ const Column = ({
   onColumnDrop,
   onColumnDragOver,
   draggedCardId,
+  onColumnDragStart: onColumnDragStartProp,
+  onColumnDragEnd: onColumnDragEndProp,
+  onColumnDragEnter,
+  onColumnDragLeave,
+  onColumnReorder,
+  isDraggingColumn,
+  isDropTarget,
 }: ColumnProps) => {
   const { addCard, updateColumn, deleteColumn, boards, reorderCards } = useKanbanStore();
   const currentBoard = boards.find((b) => b.id === boardId);
@@ -111,14 +126,59 @@ const Column = ({
   };
 
   return (
-    <div
-      className="w-72 h-96 flex-shrink-0 bg-gray-100 dark:bg-gray-800 rounded-lg flex flex-col my-4 shadow-sm hover:shadow-md transition-all overflow-visible"
-      onDrop={(e) => onColumnDrop(e, column.id)}
+    <motion.div
+      layout
+      draggable={true}
+      onDragStart={(e) => onColumnDragStartProp(e as any, column.id)}
+      onDragEnd={onColumnDragEndProp}
+      onDragEnter={(e) => onColumnDragEnter(e as any, column.id)}
+      onDragLeave={(e) => onColumnDragLeave(e as any)}
+      onDrop={(e) => {
+        const columnId = (e as any).dataTransfer.getData('columnId');
+        if (columnId) {
+          onColumnReorder(e as any, column.id);
+        } else {
+          onColumnDrop(e as any, column.id);
+        }
+      }}
       onDragOver={onColumnDragOver}
+      className={`
+        w-72 h-96 flex-shrink-0 rounded-lg flex flex-col my-4 transition-all overflow-visible
+        ${isDraggingColumn
+          ? 'opacity-50 cursor-grabbing shadow-2xl scale-105'
+          : 'opacity-100 cursor-grab shadow-sm hover:shadow-md'
+        }
+        ${isDropTarget
+          ? 'ring-2 ring-purple-500 ring-offset-2 bg-purple-50 dark:bg-purple-900/20'
+          : 'bg-gray-100 dark:bg-gray-800'
+        }
+      `}
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, scale: 0.9 }}
+      transition={{
+        layout: { type: 'spring', stiffness: 300, damping: 30 },
+        default: { duration: 0.3 }
+      }}
+      whileHover={{ y: -2 }}
+      style={{
+        cursor: isDraggingColumn ? 'grabbing' : 'grab',
+      }}
     >
       {/* Column Header */}
       <div className="border-b border-gray-300 dark:border-gray-700" style={{ paddingTop: '1.5rem', paddingBottom: '1.5rem', paddingLeft: '1.5rem', paddingRight: '1rem' }}>
         <div className="flex items-center justify-between mb-2">
+          <div className="mr-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 cursor-grab active:cursor-grabbing transition-colors flex-shrink-0">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+              <circle cx="4" cy="4" r="1.5"/>
+              <circle cx="4" cy="8" r="1.5"/>
+              <circle cx="4" cy="12" r="1.5"/>
+              <circle cx="8" cy="4" r="1.5"/>
+              <circle cx="8" cy="8" r="1.5"/>
+              <circle cx="8" cy="12" r="1.5"/>
+            </svg>
+          </div>
+
           {isEditing ? (
             <Input
               value={editTitle}
@@ -132,6 +192,7 @@ const Column = ({
                 }
               }}
               autoFocus
+              onFocus={(e) => e.currentTarget.select()}
               className="h-8 flex-1"
             />
           ) : (
@@ -241,7 +302,7 @@ const Column = ({
           </div>
         )}
       </div>
-    </div>
+    </motion.div>
   );
 };
 

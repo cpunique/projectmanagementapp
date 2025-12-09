@@ -8,9 +8,11 @@ import Input from '@/components/ui/Input';
 import Button from '@/components/ui/Button';
 
 const KanbanBoard = () => {
-  const { boards, activeBoard, moveCard, reorderCards, addColumn } = useKanbanStore();
+  const { boards, activeBoard, moveCard, reorderCards, addColumn, reorderColumns } = useKanbanStore();
   const [draggedCardId, setDraggedCardId] = useState<string | null>(null);
   const [draggedFromColumnId, setDraggedFromColumnId] = useState<string | null>(null);
+  const [draggedColumnId, setDraggedColumnId] = useState<string | null>(null);
+  const [dragOverColumnId, setDragOverColumnId] = useState<string | null>(null);
   const [isAddingColumn, setIsAddingColumn] = useState(false);
   const [newColumnTitle, setNewColumnTitle] = useState('');
 
@@ -41,6 +43,14 @@ const KanbanBoard = () => {
 
   const handleColumnDrop = (e: React.DragEvent, toColumnId: string) => {
     e.preventDefault();
+
+    // Check if this is a column reorder (not a card drop)
+    const columnId = e.dataTransfer.getData('columnId');
+    if (columnId) {
+      return; // Let handleColumnReorder handle it
+    }
+
+    // Handle card drop
     const cardId = e.dataTransfer.getData('cardId');
     const fromColumnId = e.dataTransfer.getData('fromColumnId');
 
@@ -70,6 +80,53 @@ const KanbanBoard = () => {
   const handleColumnDragOver = (e: React.DragEvent) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleColumnDragStart = (e: React.DragEvent, columnId: string) => {
+    setDraggedColumnId(columnId);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('columnId', columnId);
+  };
+
+  const handleColumnDragEnd = () => {
+    setDraggedColumnId(null);
+    setDragOverColumnId(null);
+  };
+
+  const handleColumnDragEnter = (e: React.DragEvent, columnId: string) => {
+    e.preventDefault();
+    if (draggedColumnId && draggedColumnId !== columnId) {
+      setDragOverColumnId(columnId);
+    }
+  };
+
+  const handleColumnDragLeave = (e: React.DragEvent) => {
+    if (e.currentTarget === e.target) {
+      setDragOverColumnId(null);
+    }
+  };
+
+  const handleColumnReorder = (e: React.DragEvent, targetColumnId: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const sourceColumnId = e.dataTransfer.getData('columnId');
+    if (!sourceColumnId || sourceColumnId === targetColumnId || !board) return;
+
+    const currentOrder = board.columns.map((c) => c.id);
+    const sourceIndex = currentOrder.indexOf(sourceColumnId);
+    const targetIndex = currentOrder.indexOf(targetColumnId);
+
+    if (sourceIndex === -1 || targetIndex === -1) return;
+
+    const newOrder = [...currentOrder];
+    newOrder.splice(sourceIndex, 1);
+    newOrder.splice(targetIndex, 0, sourceColumnId);
+
+    reorderColumns(board.id, newOrder);
+
+    setDraggedColumnId(null);
+    setDragOverColumnId(null);
   };
 
   const handleAddColumn = () => {
@@ -108,6 +165,13 @@ const KanbanBoard = () => {
                 onColumnDrop={handleColumnDrop}
                 onColumnDragOver={handleColumnDragOver}
                 draggedCardId={draggedCardId}
+                onColumnDragStart={handleColumnDragStart}
+                onColumnDragEnd={handleColumnDragEnd}
+                onColumnDragEnter={handleColumnDragEnter}
+                onColumnDragLeave={handleColumnDragLeave}
+                onColumnReorder={handleColumnReorder}
+                isDraggingColumn={draggedColumnId === column.id}
+                isDropTarget={dragOverColumnId === column.id}
               />
             ))}
 
