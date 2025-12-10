@@ -141,11 +141,21 @@ const Column = ({
     }
   };
 
+  const handleColumnDragStart = (e: React.DragEvent) => {
+    // Don't initiate column drag if we're dragging a card
+    const target = e.target as HTMLElement;
+    const isCardDrag = target.closest('[data-card-element="true"]');
+
+    if (!isCardDrag) {
+      onColumnDragStartProp(e, column.id);
+    }
+  };
+
   return (
     <motion.div
       layout
       draggable={true}
-      onDragStart={(e) => onColumnDragStartProp(e as any, column.id)}
+      onDragStart={handleColumnDragStart}
       onDragEnd={onColumnDragEndProp}
       onDragEnter={(e) => onColumnDragEnter(e as any, column.id)}
       onDragLeave={(e) => onColumnDragLeave(e as any)}

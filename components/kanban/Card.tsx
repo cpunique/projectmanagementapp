@@ -86,6 +86,7 @@ const Card = ({ card, boardId, columnId, onDragStart, onDragEnd, isDragging }: C
       <motion.div
         layout
         draggable
+        data-card-element="true"
         onDragStart={(e) => onDragStart(e, card.id, columnId)}
         onDragEnd={onDragEnd}
         onMouseEnter={() => setIsHovering(true)}
