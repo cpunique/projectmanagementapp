@@ -83,11 +83,21 @@ const Column = ({
 
   const handleCardDragOver = (e: React.DragEvent, targetCardId: string) => {
     e.preventDefault();
-    setDropTargetCardId(targetCardId);
+    e.stopPropagation();
+
+    const cardId = e.dataTransfer.getData('cardId');
+    const fromColumnId = e.dataTransfer.getData('fromColumnId');
+
+    // Only show drop indicator for same-column reordering
+    if (fromColumnId === column.id && cardId !== targetCardId) {
+      setDropTargetCardId(targetCardId);
+    }
   };
 
   const handleCardDrop = (e: React.DragEvent, targetCardId: string) => {
+    e.preventDefault();
     e.stopPropagation();
+
     const cardId = e.dataTransfer.getData('cardId');
     const fromColumnId = e.dataTransfer.getData('fromColumnId');
 
@@ -121,8 +131,12 @@ const Column = ({
     setDropTargetCardId(null);
   };
 
-  const handleCardDragLeave = () => {
-    setDropTargetCardId(null);
+  const handleCardDragLeave = (e: React.DragEvent) => {
+    // Only clear if we're actually leaving the card wrapper
+    const relatedTarget = e.relatedTarget as HTMLElement;
+    if (!relatedTarget || !e.currentTarget.contains(relatedTarget)) {
+      setDropTargetCardId(null);
+    }
   };
 
   return (
@@ -236,11 +250,14 @@ const Column = ({
               onDragOver={(e) => handleCardDragOver(e, card.id)}
               onDrop={(e) => handleCardDrop(e, card.id)}
               onDragLeave={handleCardDragLeave}
-              className={`w-full flex justify-center transition-all duration-200 ${
+              className={`w-full flex justify-center transition-all duration-150 ${
                 dropTargetCardId === card.id
-                  ? 'opacity-50 border-t-2 border-purple-500'
+                  ? 'border-t-2 border-purple-500 pt-2'
                   : ''
               }`}
+              style={{
+                minHeight: dropTargetCardId === card.id ? '120px' : 'auto'
+              }}
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.8 }}
