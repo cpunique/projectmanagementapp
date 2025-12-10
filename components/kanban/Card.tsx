@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
+import { motion } from 'framer-motion';
 import { useKanbanStore } from '@/lib/store';
 import { type Card as CardType } from '@/types';
 import { PRIORITY_LABELS } from '@/lib/constants';
@@ -74,7 +75,8 @@ const Card = ({ card, boardId, columnId, onDragStart, onDragEnd, isDragging }: C
 
   return (
     <>
-      <div
+      <motion.div
+        layout
         draggable
         onDragStart={(e) => onDragStart(e, card.id, columnId)}
         onDragEnd={onDragEnd}
@@ -87,7 +89,7 @@ const Card = ({ card, boardId, columnId, onDragStart, onDragEnd, isDragging }: C
           }
         }}
         className={`group relative rounded-lg border border-gray-200 dark:border-gray-700 cursor-pointer transition-all duration-200 ease-out w-60 flex flex-col ${
-          isDragging ? 'opacity-50' : 'opacity-100'
+          isDragging ? 'opacity-50 scale-105' : 'opacity-100 scale-100'
         } hover:-translate-y-0.5 hover:shadow-md hover:border-gray-300 dark:hover:border-gray-600`}
         style={{
           padding: '1rem',
@@ -95,6 +97,14 @@ const Card = ({ card, boardId, columnId, onDragStart, onDragEnd, isDragging }: C
           backgroundColor: cardColor,
           boxShadow: isDragging ? '0 10px 20px rgba(0, 0, 0, 0.2)' : '0 1px 3px rgba(0, 0, 0, 0.08)'
         }}
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.9 }}
+        transition={{
+          layout: { type: 'spring', stiffness: 350, damping: 35 },
+          default: { duration: 0.25 }
+        }}
+        whileHover={{ y: -2 }}
       >
         {/* Action Buttons */}
         {isHovering && (
@@ -233,14 +243,18 @@ const Card = ({ card, boardId, columnId, onDragStart, onDragEnd, isDragging }: C
             )}
           </div>
         )}
-      </div>
+      </motion.div>
 
-      <CardModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        card={card}
-        boardId={boardId}
-      />
+      {/* CardModal - Rendered via Portal to avoid z-index issues */}
+      {typeof window !== 'undefined' && createPortal(
+        <CardModal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          card={card}
+          boardId={boardId}
+        />,
+        document.body
+      )}
 
       {/* Notes Tooltip - Rendered via Portal */}
       {showNotesTooltip && card.notes && typeof window !== 'undefined' && createPortal(
