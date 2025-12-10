@@ -65,6 +65,14 @@ const Card = ({ card, boardId, columnId, onDragStart, onDragEnd, isDragging }: C
   // Determine if due date is overdue
   const isDue = card.dueDate && isOverdue(card.dueDate);
 
+  // Helper to check if notes have actual content (strip HTML tags)
+  const hasNotes = (notes: string | undefined): boolean => {
+    if (!notes) return false;
+    // Strip HTML tags and check if there's any text content
+    const stripped = notes.replace(/<[^>]*>/g, '').trim();
+    return stripped.length > 0;
+  };
+
   // Determine text color based on background color
   const defaultColor = getDefaultCardColor(actualDarkMode);
   const cardColor = card.color || defaultColor;
@@ -203,7 +211,7 @@ const Card = ({ card, boardId, columnId, onDragStart, onDragEnd, isDragging }: C
         )}
 
         {/* Metadata Footer */}
-        {(card.dueDate || (card.notes && card.notes.trim())) && (
+        {(card.dueDate || hasNotes(card.notes)) && (
           <div className={`flex items-center gap-3 pt-2 mt-auto border-t ${isLight ? 'border-gray-100' : 'border-gray-600'}`}>
             {/* Due Date */}
             {card.dueDate && (
@@ -220,7 +228,7 @@ const Card = ({ card, boardId, columnId, onDragStart, onDragEnd, isDragging }: C
             )}
 
             {/* Notes Indicator with Hover Tooltip */}
-            {card.notes && card.notes.trim() && (
+            {hasNotes(card.notes) && (
               <div
                 ref={notesIconRef}
                 className="pointer-events-auto"
@@ -257,7 +265,7 @@ const Card = ({ card, boardId, columnId, onDragStart, onDragEnd, isDragging }: C
       )}
 
       {/* Notes Tooltip - Rendered via Portal */}
-      {showNotesTooltip && card.notes && card.notes.trim() && typeof window !== 'undefined' && createPortal(
+      {showNotesTooltip && hasNotes(card.notes) && typeof window !== 'undefined' && createPortal(
         <div
           className="fixed z-[9999] pointer-events-none"
           style={{
