@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useKanbanStore } from '@/lib/store';
 import { type Column as ColumnType } from '@/types';
 import Card from './Card';
@@ -228,24 +228,38 @@ const Column = ({
           </div>
         )}
 
-        {currentColumn?.cards.map((card) => (
-          <div
-            key={card.id}
-            onDragOver={(e) => handleCardDragOver(e, card.id)}
-            onDrop={(e) => handleCardDrop(e, card.id)}
-            onDragLeave={handleCardDragLeave}
-            className={`w-full flex justify-center ${dropTargetCardId === card.id ? 'opacity-50 border-t-2 border-purple-500' : ''}`}
-          >
-            <Card
-              card={card}
-              boardId={boardId}
-              columnId={column.id}
-              onDragStart={onCardDragStart}
-              onDragEnd={onCardDragEnd}
-              isDragging={draggedCardId === card.id}
-            />
-          </div>
-        ))}
+        <AnimatePresence mode="popLayout">
+          {currentColumn?.cards.map((card) => (
+            <motion.div
+              key={card.id}
+              layout
+              onDragOver={(e) => handleCardDragOver(e, card.id)}
+              onDrop={(e) => handleCardDrop(e, card.id)}
+              onDragLeave={handleCardDragLeave}
+              className={`w-full flex justify-center transition-all duration-200 ${
+                dropTargetCardId === card.id
+                  ? 'opacity-50 border-t-2 border-purple-500'
+                  : ''
+              }`}
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.8 }}
+              transition={{
+                layout: { type: 'spring', stiffness: 350, damping: 35 },
+                default: { duration: 0.2 }
+              }}
+            >
+              <Card
+                card={card}
+                boardId={boardId}
+                columnId={column.id}
+                onDragStart={onCardDragStart}
+                onDragEnd={onCardDragEnd}
+                isDragging={draggedCardId === card.id}
+              />
+            </motion.div>
+          ))}
+        </AnimatePresence>
 
         {/* Add Card Input - appears right after cards */}
         {isAddingCard && (
