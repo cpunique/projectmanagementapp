@@ -96,13 +96,14 @@ const Column = ({
 
   const handleCardDrop = (e: React.DragEvent, targetCardId: string) => {
     e.preventDefault();
-    e.stopPropagation();
 
     const cardId = e.dataTransfer.getData('cardId');
     const fromColumnId = e.dataTransfer.getData('fromColumnId');
 
-    // Same column reordering
+    // Only handle same-column reordering here
     if (fromColumnId === column.id && cardId !== targetCardId && currentColumn) {
+      e.stopPropagation(); // Only stop propagation for same-column drops
+
       const cardIds = currentColumn.cards.map((c) => c.id);
       const fromIndex = cardIds.indexOf(cardId);
       const toIndex = cardIds.indexOf(targetCardId);
@@ -127,6 +128,7 @@ const Column = ({
         reorderCards(boardId, column.id, newCardIds);
       }
     }
+    // For cross-column drops, don't stop propagation - let it bubble to column handler
 
     setDropTargetCardId(null);
   };
