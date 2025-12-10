@@ -47,6 +47,13 @@ const CardModal = ({ isOpen, onClose, card, boardId }: CardModalProps) => {
   const [checklist, setChecklist] = useState<ChecklistItem[]>(card?.checklist || []);
   const [checklistInput, setChecklistInput] = useState('');
 
+  // Sync checklist state with card prop
+  useEffect(() => {
+    if (card?.checklist) {
+      setChecklist(card.checklist);
+    }
+  }, [card?.checklist]);
+
   // Listen for theme changes
   useEffect(() => {
     if (typeof window === 'undefined') return;

@@ -62,10 +62,10 @@ export const DEMO_CARDS = [
     tags: ["feature", "react"],
     columnOrder: 1, // In Progress
     checklist: [
-      { text: "Set up DndContext", completed: true },
-      { text: "Make cards draggable", completed: true },
-      { text: "Handle drop logic", completed: false },
-      { text: "Add animations", completed: false },
+      { id: "cl1", text: "Set up DndContext", completed: true },
+      { id: "cl2", text: "Make cards draggable", completed: true },
+      { id: "cl3", text: "Handle drop logic", completed: false },
+      { id: "cl4", text: "Add animations", completed: false },
     ],
   },
   {
@@ -89,9 +89,9 @@ export const DEMO_CARDS = [
     tags: ["infrastructure", "state"],
     columnOrder: 2, // Completed
     checklist: [
-      { text: "Create store", completed: true },
-      { text: "Add persistence middleware", completed: true },
-      { text: "Add undo/redo", completed: true },
+      { id: "cl5", text: "Create store", completed: true },
+      { id: "cl6", text: "Add persistence middleware", completed: true },
+      { id: "cl7", text: "Add undo/redo", completed: true },
     ],
   },
   {
