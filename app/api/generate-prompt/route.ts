@@ -1,3 +1,4 @@
+import { Anthropic } from '@anthropic-ai/sdk';
 import { NextResponse } from 'next/server';
 
 interface GeneratePromptRequest {
@@ -12,10 +13,10 @@ interface GeneratePromptRequest {
 export async function POST(request: Request) {
   try {
     // 1. Validate API key
-    const apiKey = process.env.OPENAI_API_KEY;
+    const apiKey = process.env.ANTHROPIC_API_KEY;
     if (!apiKey) {
       return NextResponse.json(
-        { error: 'OpenAI API key not configured. Please add OPENAI_API_KEY to .env.local' },
+        { error: 'Anthropic API key not configured. Please add ANTHROPIC_API_KEY to .env.local' },
         { status: 500 }
       );
     }
@@ -62,56 +63,29 @@ export async function POST(request: Request) {
       contextPrompt += `Priority Level: ${body.priority}\n\n`;
     }
 
-    // 4. Call OpenAI API
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model: 'gpt-3.5-turbo',
-        messages: [
-          {
-            role: 'system',
-            content: `You are a helpful assistant that converts feature requests into clear, simple implementation instructions for developers. Keep the language friendly and straightforward, not overly technical. Focus on what needs to be built and why, breaking it down into logical, actionable steps. Be concise but thorough.`
-          },
-          {
-            role: 'user',
-            content: contextPrompt
-          }
-        ],
-        temperature: 0.7,
-        max_tokens: 1000,
-      }),
+    // 4. Call Claude API
+    const client = new Anthropic({ apiKey });
+
+    const message = await client.messages.create({
+      model: 'claude-3-5-sonnet-20241022',
+      max_tokens: 1024,
+      messages: [
+        {
+          role: 'user',
+          content: `You are a helpful assistant that converts feature requests into clear, simple implementation instructions for developers. Keep the language friendly and straightforward, not overly technical. Focus on what needs to be built and why, breaking it down into logical, actionable steps. Be concise but thorough.
+
+${contextPrompt}
+
+Please provide implementation instructions for this feature.`,
+        },
+      ],
     });
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      console.error('OpenAI API error:', errorData);
-
-      if (response.status === 401) {
-        return NextResponse.json(
-          { error: 'Invalid OpenAI API key. Please check your .env.local configuration.' },
-          { status: 401 }
-        );
-      }
-
-      if (response.status === 429) {
-        return NextResponse.json(
-          { error: 'Rate limit exceeded. Please try again in a moment.' },
-          { status: 429 }
-        );
-      }
-
-      return NextResponse.json(
-        { error: 'Failed to generate prompt from OpenAI' },
-        { status: response.status }
-      );
-    }
-
-    const data = await response.json();
-    const generatedPrompt = data.choices[0]?.message?.content || '';
+    // 5. Extract the response
+    const generatedPrompt = message.content
+      .filter(block => block.type === 'text')
+      .map(block => (block as { type: 'text'; text: string }).text)
+      .join('\n');
 
     if (!generatedPrompt) {
       return NextResponse.json(
@@ -120,7 +94,7 @@ export async function POST(request: Request) {
       );
     }
 
-    // 5. Return formatted response
+    // 6. Return formatted response
     return NextResponse.json({ prompt: generatedPrompt });
 
   } catch (error) {
@@ -133,8 +107,25 @@ export async function POST(request: Request) {
       );
     }
 
+    const errorMessage = error instanceof Error ? error.message : 'Internal server error';
+
+    // Handle specific Anthropic errors
+    if (errorMessage.includes('401') || errorMessage.includes('authentication')) {
+      return NextResponse.json(
+        { error: 'Invalid Anthropic API key. Please check your .env.local configuration.' },
+        { status: 401 }
+      );
+    }
+
+    if (errorMessage.includes('429') || errorMessage.includes('rate')) {
+      return NextResponse.json(
+        { error: 'Rate limit exceeded. Please try again in a moment.' },
+        { status: 429 }
+      );
+    }
+
     return NextResponse.json(
-      { error: 'Internal server error. Please try again.' },
+      { error: 'Failed to generate prompt. Please try again.' },
       { status: 500 }
     );
   }
