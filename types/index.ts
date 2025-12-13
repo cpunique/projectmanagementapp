@@ -20,6 +20,7 @@ export interface Card {
   color?: string; // Hex color code
   dueDate?: string; // ISO date string
   checklist?: ChecklistItem[];
+  aiPrompt?: string; // Generated AI implementation prompt
 }
 
 export interface Column {

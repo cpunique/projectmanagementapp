@@ -346,6 +346,23 @@ const CardModal = ({ isOpen, onClose, card, boardId }: CardModalProps) => {
           />
         </div>
 
+        {/* AI Prompt Section */}
+        {card.aiPrompt && (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              AI Generated Prompt
+            </label>
+            <div className="px-4 py-3 bg-purple-50 dark:bg-purple-900/20 border-2 border-purple-200 dark:border-purple-800 rounded-lg">
+              <pre className="whitespace-pre-wrap font-sans text-sm text-gray-900 dark:text-white">
+                {card.aiPrompt}
+              </pre>
+            </div>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+              Click the AI button on the card to regenerate or edit this prompt
+            </p>
+          </div>
+        )}
+
         {/* Metadata */}
         <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
           <div className="text-xs text-gray-500 dark:text-gray-400 space-y-1">

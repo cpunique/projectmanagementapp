@@ -8,6 +8,7 @@ import { type Card as CardType } from '@/types';
 import { PRIORITY_LABELS } from '@/lib/constants';
 import { formatDate, isOverdue, isLightColor, getDefaultCardColor } from '@/lib/utils';
 import CardModal from './CardModal';
+import AIPromptModal from './AIPromptModal';
 
 interface CardProps {
   card: CardType;
@@ -22,6 +23,7 @@ const Card = ({ card, boardId, columnId, onDragStart, onDragEnd, isDragging }: C
   const { deleteCard } = useKanbanStore();
   const [isHovering, setIsHovering] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isAIModalOpen, setIsAIModalOpen] = useState(false);
   const [showNotesTooltip, setShowNotesTooltip] = useState(false);
   const [tooltipPosition, setTooltipPosition] = useState({ top: 0, left: 0 });
   const notesIconRef = useRef<HTMLDivElement>(null);
@@ -118,6 +120,25 @@ const Card = ({ card, boardId, columnId, onDragStart, onDragEnd, isDragging }: C
         {/* Action Buttons */}
         {isHovering && (
           <div className="absolute top-2 right-2 flex gap-1">
+            {/* AI Prompt Button */}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsAIModalOpen(true);
+              }}
+              className={`p-1 rounded transition-colors duration-150 pointer-events-auto ${
+                card.aiPrompt
+                  ? 'text-purple-600 dark:text-purple-400 hover:bg-purple-100 dark:hover:bg-purple-900/30 hover:text-purple-700 dark:hover:text-purple-300'
+                  : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-purple-600 dark:text-gray-400 dark:hover:text-purple-400'
+              }`}
+              title={card.aiPrompt ? "View AI prompt" : "Generate AI prompt"}
+            >
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+            </button>
+
+            {/* Edit Button */}
             <button
               onClick={(e) => {
                 e.stopPropagation();
@@ -130,6 +151,8 @@ const Card = ({ card, boardId, columnId, onDragStart, onDragEnd, isDragging }: C
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
               </svg>
             </button>
+
+            {/* Delete Button */}
             <button
               onClick={(e) => {
                 e.stopPropagation();
@@ -259,6 +282,17 @@ const Card = ({ card, boardId, columnId, onDragStart, onDragEnd, isDragging }: C
         <CardModal
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
+          card={card}
+          boardId={boardId}
+        />,
+        document.body
+      )}
+
+      {/* AI Prompt Modal - Rendered via Portal */}
+      {typeof window !== 'undefined' && createPortal(
+        <AIPromptModal
+          isOpen={isAIModalOpen}
+          onClose={() => setIsAIModalOpen(false)}
           card={card}
           boardId={boardId}
         />,
