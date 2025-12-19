@@ -302,7 +302,7 @@ const AIPromptModal = ({ isOpen, onClose, card, boardId }: AIPromptModalProps) =
             </div>
 
             {/* Footer */}
-            <div className="sticky bottom-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 px-6 py-4 flex gap-3 justify-end">
+            <div className="sticky bottom-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 px-6 py-4 flex gap-3 justify-center">
               {step === 1 && (
                 <>
                   <Button onClick={handleClose} variant="outline">
