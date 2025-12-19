@@ -1,3 +1,4 @@
+// API route for generating AI prompts using Claude
 import { Anthropic } from '@anthropic-ai/sdk';
 import { NextResponse } from 'next/server';
 
