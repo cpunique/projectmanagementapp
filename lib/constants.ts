@@ -10,6 +10,13 @@ export const COMPLETED_COLUMN_KEYWORDS = [
   "delivered",
 ] as const;
 
+export const DESCOPED_COLUMN_KEYWORDS = [
+  "descoped",
+  "descope",
+  "out of scope",
+  "backlog",
+] as const;
+
 export const PRIORITY_COLORS = {
   low: "#10b981", // Green
   medium: "#f59e0b", // Amber
@@ -29,6 +36,7 @@ export const DEFAULT_COLUMNS = [
   { title: "TODO", order: 0 },
   { title: "In Progress", order: 1 },
   { title: "Completed", order: 2 },
+  { title: "Descoped", order: 3 },
 ] as const;
 
 export const CARD_COLORS = [

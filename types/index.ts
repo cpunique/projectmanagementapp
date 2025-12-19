@@ -21,6 +21,7 @@ export interface Card {
   dueDate?: string; // ISO date string
   checklist?: ChecklistItem[];
   aiPrompt?: string; // Generated AI implementation prompt
+  status?: "active" | "descoped"; // Card status - defaults to 'active'
 }
 
 export interface Column {
