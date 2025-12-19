@@ -1,5 +1,6 @@
 import type { NextConfig } from "next";
 
+// Build configuration with fixes for TypeScript and ESLint
 const nextConfig: NextConfig = {
   // Using webpack bundler instead of Turbopack
   eslint: {
