@@ -5,10 +5,11 @@ import { createPortal } from 'react-dom';
 import { motion } from 'framer-motion';
 import { useKanbanStore } from '@/lib/store';
 import { type Card as CardType } from '@/types';
-import { PRIORITY_LABELS } from '@/lib/constants';
+import { PRIORITY_LABELS, DESCOPED_COLUMN_KEYWORDS } from '@/lib/constants';
 import { formatDate, isOverdue, isLightColor, getDefaultCardColor } from '@/lib/utils';
 import CardModal from './CardModal';
 import AIPromptModal from './AIPromptModal';
+import CardContextMenu from './CardContextMenu';
 
 interface CardProps {
   card: CardType;
@@ -20,12 +21,13 @@ interface CardProps {
 }
 
 const Card = ({ card, boardId, columnId, onDragStart, onDragEnd, isDragging }: CardProps) => {
-  const { deleteCard } = useKanbanStore();
+  const { deleteCard, boards } = useKanbanStore();
   const [isHovering, setIsHovering] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isAIModalOpen, setIsAIModalOpen] = useState(false);
   const [showNotesTooltip, setShowNotesTooltip] = useState(false);
   const [tooltipPosition, setTooltipPosition] = useState({ top: 0, left: 0 });
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
   const notesIconRef = useRef<HTMLDivElement>(null);
 
   // Detect actual theme from DOM instead of store (since store's darkMode is broken)
@@ -75,6 +77,15 @@ const Card = ({ card, boardId, columnId, onDragStart, onDragEnd, isDragging }: C
     return stripped.length > 0;
   };
 
+  // Check if card is descoped
+  const isDescoped = card.status === 'descoped';
+
+  // Handle right-click context menu
+  const handleContextMenu = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setContextMenu({ x: e.clientX, y: e.clientY });
+  };
+
   // Determine text color based on background color
   const defaultColor = getDefaultCardColor(actualDarkMode);
   const cardColor = card.color || defaultColor;
@@ -93,15 +104,16 @@ const Card = ({ card, boardId, columnId, onDragStart, onDragEnd, isDragging }: C
         onDragEnd={onDragEnd}
         onMouseEnter={() => setIsHovering(true)}
         onMouseLeave={() => setIsHovering(false)}
+        onContextMenu={handleContextMenu}
         onClick={(e) => {
           // Only open modal if not clicking on action buttons
           if (!(e.target as HTMLElement).closest('button')) {
             setIsModalOpen(true);
           }
         }}
-        className={`group relative rounded-lg border border-gray-200 dark:border-gray-700 cursor-pointer transition-all duration-200 ease-out w-60 flex flex-col ${
-          isDragging ? 'opacity-50 scale-105' : 'opacity-100 scale-100'
-        } hover:-translate-y-0.5 hover:shadow-md hover:border-gray-300 dark:hover:border-gray-600`}
+        className={`group relative rounded-lg border cursor-pointer transition-all duration-200 ease-out w-60 flex flex-col ${
+          isDragging ? 'opacity-50 scale-105' : isDescoped ? 'opacity-50 scale-100' : 'opacity-100 scale-100'
+        } ${isDescoped ? 'border-dashed border-gray-400 dark:border-gray-600' : 'border-gray-200 dark:border-gray-700'} hover:-translate-y-0.5 hover:shadow-md hover:border-gray-300 dark:hover:border-gray-600`}
         style={{
           padding: '1rem',
           gap: '0.5rem',
@@ -117,8 +129,15 @@ const Card = ({ card, boardId, columnId, onDragStart, onDragEnd, isDragging }: C
         }}
         whileHover={{ y: -2 }}
       >
+        {/* Descoped Badge */}
+        {isDescoped && (
+          <div className="absolute top-2 right-2 px-2 py-1 bg-gray-500 dark:bg-gray-600 text-white text-xs font-medium rounded-full whitespace-nowrap">
+            📋 DESCOPED
+          </div>
+        )}
+
         {/* Action Buttons */}
-        {isHovering && (
+        {isHovering && !isDescoped && (
           <div className="absolute top-2 right-2 flex gap-1">
             {/* AI Prompt Button */}
             <button
@@ -321,6 +340,18 @@ const Card = ({ card, boardId, columnId, onDragStart, onDragEnd, isDragging }: C
         </div>,
         document.body
       )}
+
+      {/* Context Menu - Rendered via Portal */}
+      <CardContextMenu
+        isOpen={contextMenu !== null}
+        position={contextMenu || { x: 0, y: 0 }}
+        card={card}
+        boardId={boardId}
+        columnId={columnId}
+        onClose={() => setContextMenu(null)}
+        onEditCard={() => setIsModalOpen(true)}
+        onDeleteCard={handleDelete}
+      />
     </>
   );
 };
