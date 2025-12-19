@@ -89,7 +89,7 @@ const Card = ({ card, boardId, columnId, onDragStart, onDragEnd, isDragging }: C
         layout
         draggable
         data-card-element="true"
-        onDragStart={(e) => onDragStart(e as React.DragEvent<HTMLDivElement>, card.id, columnId)}
+        onDragStart={(e) => onDragStart(e as unknown as React.DragEvent<HTMLDivElement>, card.id, columnId)}
         onDragEnd={onDragEnd}
         onMouseEnter={() => setIsHovering(true)}
         onMouseLeave={() => setIsHovering(false)}
@@ -311,7 +311,7 @@ const Card = ({ card, boardId, columnId, onDragStart, onDragEnd, isDragging }: C
           <div className="bg-gray-900 dark:bg-gray-700 text-white text-xs rounded-lg p-4 shadow-xl w-72 max-h-96 overflow-y-auto">
             <div
               className="prose prose-sm prose-invert max-w-none break-words whitespace-normal leading-relaxed [&>*]:break-words [&_p]:m-0 [&_p]:mb-2 [&_p:last-child]:mb-0 [&_ul]:m-0 [&_ul]:mb-2 [&_ol]:m-0 [&_ol]:mb-2 [&_h1]:text-base [&_h1]:mb-2 [&_h2]:text-sm [&_h2]:mb-2 [&_h3]:text-xs [&_h3]:mb-1"
-              dangerouslySetInnerHTML={{ __html: card.notes }}
+              dangerouslySetInnerHTML={{ __html: card.notes || '' }}
             />
             {/* Arrow pointing left */}
             <div className="absolute top-3 right-full">

@@ -141,13 +141,14 @@ const Column = ({
     }
   };
 
-  const handleColumnDragStart = (e: React.DragEvent) => {
+  const handleColumnDragStart = (e: unknown) => {
     // Don't initiate column drag if we're dragging a card
-    const target = e.target as HTMLElement;
+    const dragEvent = e as React.DragEvent;
+    const target = dragEvent.target as HTMLElement;
     const isCardDrag = target.closest('[data-card-element="true"]');
 
     if (!isCardDrag) {
-      onColumnDragStartProp(e, column.id);
+      onColumnDragStartProp(dragEvent, column.id);
     }
   };
 
