@@ -125,8 +125,8 @@ export function DueDatePanel() {
           style={{ width: `${dueDatePanelWidth}px` }}
           className={`
             flex flex-col border-l border-gray-200 dark:border-gray-700
-            bg-white dark:bg-gray-800 h-[calc(100vh-4rem)]
-            overflow-hidden md:static fixed right-0 top-16 z-30
+            bg-white dark:bg-gray-800 h-full
+            overflow-hidden md:static fixed right-0 top-16 z-30 bottom-0
             md:relative
           `}
         >
