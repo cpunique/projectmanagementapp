@@ -75,6 +75,8 @@ export const useKanbanStore = create<KanbanStore>()(
       darkMode: true,
       searchQuery: '',
       filters: {},
+      dueDatePanelOpen: true,
+      dueDatePanelWidth: 320,
 
       // Board actions
       addBoard: (name: string) => {
@@ -476,6 +478,15 @@ export const useKanbanStore = create<KanbanStore>()(
               : b
           ),
         }));
+      },
+
+      // Due dates panel actions
+      toggleDueDatePanel: () => set((state) => ({ dueDatePanelOpen: !state.dueDatePanelOpen })),
+      setDueDatePanelWidth: (width: number) => {
+        const MIN_WIDTH = 280;
+        const MAX_WIDTH = 600;
+        const constrainedWidth = Math.max(MIN_WIDTH, Math.min(MAX_WIDTH, width));
+        set({ dueDatePanelWidth: constrainedWidth });
       },
 
       // UI state actions

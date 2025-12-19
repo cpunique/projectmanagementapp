@@ -1,9 +1,10 @@
 import KanbanBoard from '@/components/kanban/KanbanBoard';
+import { BoardWithPanel } from '@/components/layout/BoardWithPanel';
 
 export default function Home() {
   return (
-    <div className="w-full">
+    <BoardWithPanel>
       <KanbanBoard />
-    </div>
+    </BoardWithPanel>
   );
 }

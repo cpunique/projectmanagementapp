@@ -53,6 +53,9 @@ export interface KanbanState {
   };
   // Internal state for demo mode - stored boards before entering demo
   _userBoardsBackup?: Board[];
+  // Due dates panel state
+  dueDatePanelOpen: boolean;
+  dueDatePanelWidth: number;
 }
 
 export interface KanbanActions {
@@ -98,6 +101,10 @@ export interface KanbanActions {
   setSearchQuery: (query: string) => void;
   setFilters: (filters: KanbanState["filters"]) => void;
   clearFilters: () => void;
+
+  // Due dates panel actions
+  toggleDueDatePanel: () => void;
+  setDueDatePanelWidth: (width: number) => void;
 
   // History actions
   undo: () => void;

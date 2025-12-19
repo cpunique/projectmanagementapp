@@ -2,6 +2,14 @@ export const MAX_COLUMNS = 10;
 export const MAX_HISTORY = 50;
 export const DEBOUNCE_DELAY = 300;
 
+export const COMPLETED_COLUMN_KEYWORDS = [
+  "completed",
+  "done",
+  "finished",
+  "closed",
+  "delivered",
+] as const;
+
 export const PRIORITY_COLORS = {
   low: "#10b981", // Green
   medium: "#f59e0b", // Amber
