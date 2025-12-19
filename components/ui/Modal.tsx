@@ -48,7 +48,7 @@ const Modal = ({
       <div className="absolute inset-0 overflow-y-auto p-8 flex items-center justify-center">
         <div
           className={cn(
-            'relative bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-4xl w-full max-h-[85vh] overflow-y-auto my-8',
+            'relative bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-3xl w-full max-h-[85vh] overflow-y-auto my-8',
             'transform transition-all duration-200',
             contentClassName
           )}
