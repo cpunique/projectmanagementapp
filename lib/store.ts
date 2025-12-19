@@ -9,7 +9,8 @@ import {
   DEFAULT_BOARD_ID,
   DEFAULT_BOARD_NAME,
   DEFAULT_COLUMNS,
-  DEMO_CARDS
+  DEMO_CARDS,
+  DESCOPED_COLUMN_KEYWORDS
 } from '@/lib/constants';
 
 // Create default board with default columns
@@ -339,9 +340,15 @@ export const useKanbanStore = create<KanbanStore>()(
                     ...b,
                     columns: b.columns.map((c) => {
                       if (c.id === toColumnId) {
-                        const updatedCard = {
+                        // Auto-detect if destination is a descoped column and update status
+                        const isDescopedColumn = DESCOPED_COLUMN_KEYWORDS.some((keyword) =>
+                          c.title.toLowerCase().includes(keyword)
+                        );
+
+                        const updatedCard: Card = {
                           ...card!,
                           columnId: toColumnId,
+                          status: isDescopedColumn ? 'descoped' : 'active' as const,
                         };
                         const newCards = [...c.cards];
                         newCards.splice(newOrder, 0, updatedCard);
