@@ -32,7 +32,7 @@ const CardContextMenu = ({
   const menuRef = useRef<HTMLDivElement>(null);
   const [adjustedPosition, setAdjustedPosition] = useState(position);
 
-  // Handle click outside to close menu
+  // Handle click outside to close menu and suppress browser context menu
   useEffect(() => {
     if (!isOpen) return;
 
@@ -49,12 +49,21 @@ const CardContextMenu = ({
       }
     };
 
+    // Prevent browser context menu while our menu is open
+    const handleContextMenu = (e: MouseEvent) => {
+      if (isOpen) {
+        e.preventDefault();
+      }
+    };
+
     document.addEventListener('mousedown', handleClickOutside);
     document.addEventListener('keydown', handleKeyDown);
+    document.addEventListener('contextmenu', handleContextMenu);
 
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
       document.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('contextmenu', handleContextMenu);
     };
   }, [isOpen, onClose]);
 

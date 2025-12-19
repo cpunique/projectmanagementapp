@@ -83,6 +83,7 @@ const Card = ({ card, boardId, columnId, onDragStart, onDragEnd, isDragging }: C
   // Handle right-click context menu
   const handleContextMenu = (e: React.MouseEvent) => {
     e.preventDefault();
+    e.stopPropagation();
     setContextMenu({ x: e.clientX, y: e.clientY });
   };
 
