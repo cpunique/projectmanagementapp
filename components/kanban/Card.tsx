@@ -89,7 +89,7 @@ const Card = ({ card, boardId, columnId, onDragStart, onDragEnd, isDragging }: C
         layout
         draggable
         data-card-element="true"
-        onDragStart={(e) => onDragStart(e, card.id, columnId)}
+        onDragStart={(e) => onDragStart(e as React.DragEvent<HTMLDivElement>, card.id, columnId)}
         onDragEnd={onDragEnd}
         onMouseEnter={() => setIsHovering(true)}
         onMouseLeave={() => setIsHovering(false)}
