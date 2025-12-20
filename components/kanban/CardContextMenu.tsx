@@ -91,8 +91,6 @@ const CardContextMenu = ({
     setAdjustedPosition({ x: adjustedX, y: adjustedY });
   }, [isOpen, position]);
 
-  if (!isOpen) return null;
-
   // Find the board and current column
   const board = boards.find((b) => b.id === boardId);
   const currentColumn = board?.columns.find((c) => c.id === columnId);
