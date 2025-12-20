@@ -130,9 +130,9 @@ const Card = ({ card, boardId, columnId, onDragStart, onDragEnd, isDragging }: C
         }}
         whileHover={{ y: -2 }}
       >
-        {/* Descoped Badge */}
+        {/* Descoped Badge - Bottom Right */}
         {isDescoped && (
-          <div className="absolute top-2 right-2 px-2 py-1 bg-gray-500 dark:bg-gray-600 text-white text-xs font-medium rounded-full whitespace-nowrap">
+          <div className="absolute bottom-2 right-2 px-2 py-1 bg-gray-500 dark:bg-gray-600 text-white text-xs font-medium rounded-full whitespace-nowrap">
             📋 DESCOPED
           </div>
         )}

@@ -137,6 +137,19 @@ const CardContextMenu = ({
     onClose();
   };
 
+  const handleDuplicate = () => {
+    // Copy card content to clipboard as JSON for manual duplication
+    const cardData = {
+      title: card.title,
+      description: card.description,
+      notes: card.notes,
+      priority: card.priority,
+      tags: card.tags,
+    };
+    navigator.clipboard.writeText(JSON.stringify(cardData, null, 2));
+    onClose();
+  };
+
   return createPortal(
     <AnimatePresence>
       {isOpen && (
@@ -193,6 +206,18 @@ const CardContextMenu = ({
             <span className="text-base">✏️</span>
             Edit Card
           </button>
+
+          {/* Duplicate Card */}
+          <button
+            onClick={handleDuplicate}
+            className="w-full px-4 py-2 text-left text-sm text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center gap-2"
+            title="Copy card data to clipboard"
+          >
+            <span className="text-base">📋</span>
+            Copy Card Data
+          </button>
+
+          <div className="h-px bg-gray-200 dark:bg-gray-700 my-1" />
 
           {/* Delete Card */}
           <button
