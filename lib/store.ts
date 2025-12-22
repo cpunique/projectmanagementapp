@@ -67,6 +67,38 @@ function createDemoBoard(): Board {
   return board;
 }
 
+// Ensure board has all default columns (migration function)
+function ensureDefaultColumns(board: Board): Board {
+  // Check which default columns are missing
+  const existingTitles = board.columns.map((c) =>
+    c.title.toLowerCase()
+  );
+  const missingColumns = DEFAULT_COLUMNS.filter(
+    (col) => !existingTitles.includes(col.title.toLowerCase())
+  );
+
+  // If all columns exist, return board unchanged
+  if (missingColumns.length === 0) {
+    return board;
+  }
+
+  // Create new columns for missing ones
+  const maxOrder = Math.max(...board.columns.map((c) => c.order), -1);
+  const newColumns: Column[] = missingColumns.map((col, index) => ({
+    id: nanoid(),
+    title: col.title,
+    order: maxOrder + 1 + index,
+    boardId: board.id,
+    cards: [],
+  }));
+
+  // Return board with existing and new columns
+  return {
+    ...board,
+    columns: [...board.columns, ...newColumns],
+  };
+}
+
 export const useKanbanStore = create<KanbanStore>()(
   persist(
     (set, get) => ({
@@ -549,6 +581,19 @@ export const useKanbanStore = create<KanbanStore>()(
     {
       name: 'kanban-store',
       version: 1,
+      migrate: (persistedState: any, version: number) => {
+        // Apply migrations for all versions
+        if (version === 1) {
+          // Ensure all boards have default columns
+          return {
+            ...persistedState,
+            boards: persistedState.boards?.map((board: Board) =>
+              ensureDefaultColumns(board)
+            ) || [createDefaultBoard()],
+          };
+        }
+        return persistedState;
+      },
     }
   )
 );
