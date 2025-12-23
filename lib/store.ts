@@ -607,11 +607,27 @@ export const useKanbanStore = create<KanbanStore>()(
           // Only has the empty default board, restore from backup
           const backupBoards = (PRODUCTION_BACKUP_DATA as any)?.state?.boards;
           if (backupBoards && backupBoards.length > 0) {
+            // Debug: Log backup data structure
+            const backupCardsWithPrompts = backupBoards.flatMap((b: any) =>
+              b.columns.flatMap((c: any) =>
+                c.cards.filter((card: any) => card.aiPrompt)
+              )
+            );
+            console.log(`📦 Backup data contains ${backupCardsWithPrompts.length} cards with AI prompts:`, backupCardsWithPrompts.map((c: any) => ({ title: c.title, promptLength: c.aiPrompt?.length || 0 })));
+
             state.boards = backupBoards.map((board: Board) =>
               ensureDefaultColumns(board)
             );
             state.activeBoard = backupBoards[0]?.id || DEFAULT_BOARD_ID;
+
+            // Debug: Log cards with aiPrompt to verify restoration
+            const cardsWithPrompts = state.boards.flatMap((b: Board) =>
+              b.columns.flatMap((c: Column) =>
+                c.cards.filter((card: Card) => card.aiPrompt)
+              )
+            );
             console.log(`✅ Restored ${backupBoards.length} board(s) from backup data`);
+            console.log(`📝 Restored cards with AI prompts: ${cardsWithPrompts.length}`, cardsWithPrompts.map((c: Card) => ({ title: c.title, promptLength: c.aiPrompt?.length || 0 })));
           }
         }
       },
