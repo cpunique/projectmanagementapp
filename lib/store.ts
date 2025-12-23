@@ -601,6 +601,20 @@ export const useKanbanStore = create<KanbanStore>()(
     {
       name: 'kanban-store',
       version: 2,
+      onRehydrateStorage: () => (state, error) => {
+        // After rehydration, check if we need to restore backup data
+        if (state && state.boards && state.boards.length === 1 && state.boards[0].id === DEFAULT_BOARD_ID && state.boards[0].columns.every((c: any) => c.cards.length === 0)) {
+          // Only has the empty default board, restore from backup
+          const backupBoards = (PRODUCTION_BACKUP_DATA as any)?.state?.boards;
+          if (backupBoards && backupBoards.length > 0) {
+            state.boards = backupBoards.map((board: Board) =>
+              ensureDefaultColumns(board)
+            );
+            state.activeBoard = backupBoards[0]?.id || DEFAULT_BOARD_ID;
+            console.log(`✅ Restored ${backupBoards.length} board(s) from backup data`);
+          }
+        }
+      },
       migrate: (persistedState: any, version: number) => {
         // Try to recover from corrupted or missing state
         let boards = [];
