@@ -170,7 +170,7 @@ const Column = ({
       }}
       onDragOver={onColumnDragOver}
       className={`
-        w-72 h-96 flex-shrink-0 rounded-lg flex flex-col my-4 transition-all overflow-visible
+        w-72 h-full flex-shrink-0 rounded-lg flex flex-col my-4 transition-all overflow-visible
         ${isDraggingColumn
           ? 'opacity-50 cursor-grabbing shadow-2xl scale-105'
           : 'opacity-100 cursor-grab shadow-sm hover:shadow-md'
@@ -246,7 +246,7 @@ const Column = ({
       </div>
 
       {/* Cards List */}
-      <div className="overflow-y-auto overflow-x-visible space-y-1 scrollbar-hide max-h-96 pb-6 flex flex-col items-center">
+      <div className="overflow-y-auto overflow-x-visible space-y-1 scrollbar-hide flex-1 pb-6 flex flex-col items-center">
         {(currentColumn?.cards.length || 0) === 0 && !isAddingCard && (
           <div className="text-center py-6 px-4">
             <p className="text-gray-500 dark:text-gray-400 text-xs">
