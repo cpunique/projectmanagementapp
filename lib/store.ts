@@ -580,27 +580,47 @@ export const useKanbanStore = create<KanbanStore>()(
     }),
     {
       name: 'kanban-store',
-      version: 1,
+      version: 2,
       migrate: (persistedState: any, version: number) => {
-        // Always process boards to ensure data integrity
+        // Preserve all existing data from previous versions
+        if (!persistedState) {
+          return {
+            boards: [createDefaultBoard()],
+            activeBoard: DEFAULT_BOARD_ID,
+            demoMode: false,
+            darkMode: true,
+            searchQuery: '',
+            filters: {},
+            dueDatePanelOpen: true,
+            dueDatePanelWidth: 320,
+          };
+        }
+
+        // For any old version, ensure boards exist and have proper structure
         let boards = persistedState.boards || [];
 
-        // For versions less than 1 (old/missing versions), apply the default columns migration
-        if (version < 1) {
+        // If we have boards from the old version, migrate their structure
+        if (boards.length > 0 && version < 2) {
           boards = boards.map((board: Board) =>
             ensureDefaultColumns(board)
           );
         }
 
-        // Ensure we always have at least the default board
+        // Ensure we always have at least the default board if none exist
         if (boards.length === 0) {
           boards = [createDefaultBoard()];
         }
 
+        // Preserve the active board if it still exists, otherwise use the first board
+        const validActiveBoard = persistedState.activeBoard &&
+          boards.some((b: Board) => b.id === persistedState.activeBoard)
+          ? persistedState.activeBoard
+          : boards[0]?.id || DEFAULT_BOARD_ID;
+
         return {
           ...persistedState,
           boards,
-          activeBoard: boards.find((b: Board) => b.id === persistedState.activeBoard)?.id || boards[0]?.id || DEFAULT_BOARD_ID,
+          activeBoard: validActiveBoard,
         };
       },
     }
