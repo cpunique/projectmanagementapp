@@ -600,7 +600,7 @@ export const useKanbanStore = create<KanbanStore>()(
         return {
           ...persistedState,
           boards,
-          activeBoard: boards.find((b) => b.id === persistedState.activeBoard)?.id || boards[0]?.id || DEFAULT_BOARD_ID,
+          activeBoard: boards.find((b: Board) => b.id === persistedState.activeBoard)?.id || boards[0]?.id || DEFAULT_BOARD_ID,
         };
       },
     }

@@ -1,10 +1,7 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
 import "./globals.css";
 import Header from "@/components/layout/Header";
 import DarkModeProvider from "@/components/providers/DarkModeProvider";
-
-const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "Kanban Board - Project Management",
@@ -40,7 +37,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className={`${inter.className} bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100`}>
+      <body className="bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 font-sans">
         <DarkModeProvider>
           <Header />
           <main className="min-h-screen">
