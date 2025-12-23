@@ -138,8 +138,8 @@ const KanbanBoard = () => {
   };
 
   return (
-    <div className="bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 min-h-[calc(100vh-4rem)] overflow-visible">
-      <div className="py-6 overflow-visible" style={{ marginLeft: '2rem', marginRight: '2rem' }}>
+    <div className="bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 h-[calc(100vh-4rem)] flex flex-col">
+      <div className="py-6 overflow-visible flex-shrink-0" style={{ marginLeft: '2rem', marginRight: '2rem' }}>
         {/* Board Title */}
         <div className="mb-6">
           <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
@@ -153,8 +153,8 @@ const KanbanBoard = () => {
         </div>
 
         {/* Columns Grid */}
-        <div className="overflow-x-auto overflow-y-visible pb-4">
-          <div className="flex gap-4 min-w-min items-start">
+        <div className="flex-1 overflow-x-auto overflow-y-hidden">
+          <div className="flex gap-4 min-w-min items-stretch h-full">
             {board.columns.map((column) => (
               <Column
                 key={column.id}
