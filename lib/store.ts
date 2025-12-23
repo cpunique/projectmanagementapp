@@ -582,17 +582,26 @@ export const useKanbanStore = create<KanbanStore>()(
       name: 'kanban-store',
       version: 1,
       migrate: (persistedState: any, version: number) => {
-        // Apply migrations for all versions
-        if (version === 1) {
-          // Ensure all boards have default columns
-          return {
-            ...persistedState,
-            boards: persistedState.boards?.map((board: Board) =>
-              ensureDefaultColumns(board)
-            ) || [createDefaultBoard()],
-          };
+        // Always process boards to ensure data integrity
+        let boards = persistedState.boards || [];
+
+        // For versions less than 1 (old/missing versions), apply the default columns migration
+        if (version < 1) {
+          boards = boards.map((board: Board) =>
+            ensureDefaultColumns(board)
+          );
         }
-        return persistedState;
+
+        // Ensure we always have at least the default board
+        if (boards.length === 0) {
+          boards = [createDefaultBoard()];
+        }
+
+        return {
+          ...persistedState,
+          boards,
+          activeBoard: boards.find((b) => b.id === persistedState.activeBoard)?.id || boards[0]?.id || DEFAULT_BOARD_ID,
+        };
       },
     }
   )
