@@ -67,6 +67,7 @@ export interface KanbanActions {
   switchBoard: (boardId: string) => void;
   exportBoards: (boardId?: string) => string; // JSON string
   importBoards: (jsonData: string) => void;
+  recoverFromBackup: (backupData: string) => void; // Recovery function for data loss
 
   // Column actions
   addColumn: (boardId: string, title: string) => void;

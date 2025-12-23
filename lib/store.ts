@@ -110,6 +110,7 @@ export const useKanbanStore = create<KanbanStore>()(
       filters: {},
       dueDatePanelOpen: true,
       dueDatePanelWidth: 320,
+      _dataRecovery: null as any, // Store for data recovery attempts
 
       // Board actions
       addBoard: (name: string) => {
@@ -185,6 +186,24 @@ export const useKanbanStore = create<KanbanStore>()(
           }
         } catch (error) {
           console.error('Failed to import boards:', error);
+        }
+      },
+
+      recoverFromBackup: (backupData: string) => {
+        try {
+          const data = JSON.parse(backupData);
+          // Handle both full state backups and just boards array
+          const boards = data.boards || (Array.isArray(data) ? data : []);
+          if (boards.length > 0) {
+            set((state) => ({
+              boards: boards.map((board: Board) => ensureDefaultColumns(board)),
+              activeBoard: boards[0]?.id || DEFAULT_BOARD_ID,
+              demoMode: false,
+            }));
+            console.log(`Successfully recovered ${boards.length} board(s)`);
+          }
+        } catch (error) {
+          console.error('Failed to recover from backup:', error);
         }
       },
 
@@ -582,24 +601,29 @@ export const useKanbanStore = create<KanbanStore>()(
       name: 'kanban-store',
       version: 2,
       migrate: (persistedState: any, version: number) => {
-        // Preserve all existing data from previous versions
-        if (!persistedState) {
-          return {
-            boards: [createDefaultBoard()],
-            activeBoard: DEFAULT_BOARD_ID,
-            demoMode: false,
-            darkMode: true,
-            searchQuery: '',
-            filters: {},
-            dueDatePanelOpen: true,
-            dueDatePanelWidth: 320,
+        // Try to recover from corrupted or missing state
+        let boards = [];
+        let activeBoard = DEFAULT_BOARD_ID;
+        let darkMode = true;
+        let otherState: any = {};
+
+        if (persistedState && typeof persistedState === 'object') {
+          // Extract boards from persisted state
+          boards = persistedState.boards || [];
+          activeBoard = persistedState.activeBoard || DEFAULT_BOARD_ID;
+          darkMode = persistedState.darkMode !== undefined ? persistedState.darkMode : true;
+
+          // Preserve other state properties
+          otherState = {
+            searchQuery: persistedState.searchQuery || '',
+            filters: persistedState.filters || {},
+            dueDatePanelOpen: persistedState.dueDatePanelOpen !== undefined ? persistedState.dueDatePanelOpen : true,
+            dueDatePanelWidth: persistedState.dueDatePanelWidth || 320,
+            demoMode: persistedState.demoMode || false,
           };
         }
 
-        // For any old version, ensure boards exist and have proper structure
-        let boards = persistedState.boards || [];
-
-        // If we have boards from the old version, migrate their structure
+        // If we have boards from old version, apply migration
         if (boards.length > 0 && version < 2) {
           boards = boards.map((board: Board) =>
             ensureDefaultColumns(board)
@@ -611,16 +635,21 @@ export const useKanbanStore = create<KanbanStore>()(
           boards = [createDefaultBoard()];
         }
 
-        // Preserve the active board if it still exists, otherwise use the first board
-        const validActiveBoard = persistedState.activeBoard &&
-          boards.some((b: Board) => b.id === persistedState.activeBoard)
-          ? persistedState.activeBoard
+        // Validate active board exists
+        const validActiveBoard = boards.some((b: Board) => b.id === activeBoard)
+          ? activeBoard
           : boards[0]?.id || DEFAULT_BOARD_ID;
 
         return {
-          ...persistedState,
           boards,
           activeBoard: validActiveBoard,
+          darkMode,
+          demoMode: false,
+          searchQuery: otherState.searchQuery || '',
+          filters: otherState.filters || {},
+          dueDatePanelOpen: otherState.dueDatePanelOpen !== undefined ? otherState.dueDatePanelOpen : true,
+          dueDatePanelWidth: otherState.dueDatePanelWidth || 320,
+          ...otherState,
         };
       },
     }
