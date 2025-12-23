@@ -10,7 +10,8 @@ import {
   DEFAULT_BOARD_NAME,
   DEFAULT_COLUMNS,
   DEMO_CARDS,
-  DESCOPED_COLUMN_KEYWORDS
+  DESCOPED_COLUMN_KEYWORDS,
+  PRODUCTION_BACKUP_DATA
 } from '@/lib/constants';
 
 // Create default board with default columns
@@ -630,9 +631,19 @@ export const useKanbanStore = create<KanbanStore>()(
           );
         }
 
-        // Ensure we always have at least the default board if none exist
+        // If no boards exist, try to use the production backup data
         if (boards.length === 0) {
-          boards = [createDefaultBoard()];
+          const backupBoards = (PRODUCTION_BACKUP_DATA as any)?.state?.boards;
+          if (backupBoards && backupBoards.length > 0) {
+            boards = backupBoards.map((board: Board) =>
+              ensureDefaultColumns(board)
+            );
+            activeBoard = backupBoards[0]?.id || DEFAULT_BOARD_ID;
+            console.log(`✅ Recovered ${boards.length} board(s) from backup data`);
+          } else {
+            // Fall back to creating a default board
+            boards = [createDefaultBoard()];
+          }
         }
 
         // Validate active board exists
