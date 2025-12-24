@@ -102,32 +102,49 @@ function ensureDefaultColumns(board: Board): Board {
 
 export const useKanbanStore = create<KanbanStore>()(
   persist(
-    (set, get) => ({
-      boards: [createDefaultBoard()],
-      activeBoard: DEFAULT_BOARD_ID,
-      demoMode: false,
-      darkMode: true,
-      searchQuery: '',
-      filters: {},
-      dueDatePanelOpen: true,
-      dueDatePanelWidth: 320,
-      _dataRecovery: null as any, // Store for data recovery attempts
+    (set, get) => {
+      // Initialize with backup data if available, otherwise use default board
+      const backupBoards = (PRODUCTION_BACKUP_DATA as any)?.state?.boards;
+      const initialBoards = backupBoards && backupBoards.length > 0
+        ? backupBoards.map((board: Board) => ensureDefaultColumns(board))
+        : [createDefaultBoard()];
 
-      // Board actions
-      addBoard: (name: string) => {
-        const newBoard: Board = {
-          id: nanoid(),
-          name,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          columns: DEFAULT_COLUMNS.map((col) => ({
+      console.log(`🚀 Store initialized with ${initialBoards.length} board(s)`);
+      if (backupBoards && backupBoards.length > 0) {
+        const cardsWithPrompts = initialBoards.flatMap((b: Board) =>
+          b.columns.flatMap((c: Column) =>
+            c.cards.filter((card: Card) => card.aiPrompt)
+          )
+        );
+        console.log(`📝 Initial state has ${cardsWithPrompts.length} cards with AI prompts`);
+      }
+
+      return {
+        boards: initialBoards,
+        activeBoard: initialBoards[0]?.id || DEFAULT_BOARD_ID,
+        demoMode: false,
+        darkMode: true,
+        searchQuery: '',
+        filters: {},
+        dueDatePanelOpen: true,
+        dueDatePanelWidth: 320,
+        _dataRecovery: null as any, // Store for data recovery attempts
+
+        // Board actions
+        addBoard: (name: string) => {
+          const newBoard: Board = {
             id: nanoid(),
-            title: col.title,
-            order: col.order,
-            boardId: '',
-            cards: [],
-          })),
-        };
+            name,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            columns: DEFAULT_COLUMNS.map((col) => ({
+              id: nanoid(),
+              title: col.title,
+              order: col.order,
+              boardId: '',
+              cards: [],
+            })),
+          };
 
         // Update board IDs
         newBoard.columns.forEach((col) => {
@@ -597,7 +614,8 @@ export const useKanbanStore = create<KanbanStore>()(
       clearHistory: () => {
         // Will be enhanced with temporal middleware
       },
-    }),
+    };
+    },
     {
       name: 'kanban-store',
       version: 2,

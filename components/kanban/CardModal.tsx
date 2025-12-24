@@ -25,12 +25,11 @@ const CardModal = ({ isOpen, onClose, card, boardId }: CardModalProps) => {
 
   // Debug: Log card data when modal opens
   useEffect(() => {
-    if (isOpen && card) {
+    if (typeof window !== 'undefined' && isOpen && card) {
       console.log('📝 CardModal opened for:', {
         title: card.title,
         hasAiPrompt: !!card.aiPrompt,
         aiPromptLength: card.aiPrompt?.length || 0,
-        card: card
       });
     }
   }, [isOpen, card]);
