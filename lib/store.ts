@@ -109,16 +109,6 @@ export const useKanbanStore = create<KanbanStore>()(
         ? backupBoards.map((board: Board) => ensureDefaultColumns(board))
         : [createDefaultBoard()];
 
-      console.log(`🚀 Store initialized with ${initialBoards.length} board(s)`);
-      if (backupBoards && backupBoards.length > 0) {
-        const cardsWithPrompts = initialBoards.flatMap((b: Board) =>
-          b.columns.flatMap((c: Column) =>
-            c.cards.filter((card: Card) => card.aiPrompt)
-          )
-        );
-        console.log(`📝 Initial state has ${cardsWithPrompts.length} cards with AI prompts`);
-      }
-
       return {
         boards: initialBoards,
         activeBoard: initialBoards[0]?.id || DEFAULT_BOARD_ID,
@@ -621,36 +611,14 @@ export const useKanbanStore = create<KanbanStore>()(
       version: 2,
       onRehydrateStorage: () => (state, error) => {
         // After rehydration, check if we need to restore backup data
+        // This handles cases where localStorage had only the empty default board
         if (state && state.boards && state.boards.length === 1 && state.boards[0].id === DEFAULT_BOARD_ID && state.boards[0].columns.every((c: any) => c.cards.length === 0)) {
-          // Only has the empty default board, restore from backup
           const backupBoards = (PRODUCTION_BACKUP_DATA as any)?.state?.boards;
           if (backupBoards && backupBoards.length > 0) {
-            // Debug: Log backup data structure BEFORE restoration
-            const backupCardsWithPrompts = backupBoards.flatMap((b: any) =>
-              b.columns.flatMap((c: any) =>
-                c.cards.filter((card: any) => card.aiPrompt)
-              )
-            );
-            console.log(`📦 Backup data contains ${backupCardsWithPrompts.length} cards with AI prompts:`, backupCardsWithPrompts.map((c: any) => ({ title: c.title, promptLength: c.aiPrompt?.length || 0 })));
-
-            // Restore and log the restored state
-            const restoredBoards = backupBoards.map((board: Board) =>
+            state.boards = backupBoards.map((board: Board) =>
               ensureDefaultColumns(board)
             );
-
-            // Debug: Check if restoration preserved aiPrompt fields
-            const restoredCardsWithPrompts = restoredBoards.flatMap((b: Board) =>
-              b.columns.flatMap((c: Column) =>
-                c.cards.filter((card: Card) => card.aiPrompt)
-              )
-            );
-            console.log(`✅ After ensureDefaultColumns: ${restoredCardsWithPrompts.length} cards have AI prompts`);
-
-            state.boards = restoredBoards;
             state.activeBoard = backupBoards[0]?.id || DEFAULT_BOARD_ID;
-
-            console.log(`✅ Restored ${backupBoards.length} board(s) from backup data`);
-            console.log(`📝 Final state cards with AI prompts:`, restoredCardsWithPrompts.map((c: Card) => ({ title: c.title, promptLength: c.aiPrompt?.length || 0 })));
           }
         }
       },

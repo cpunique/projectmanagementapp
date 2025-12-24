@@ -23,17 +23,6 @@ const CardModal = ({ isOpen, onClose, card, boardId }: CardModalProps) => {
   const deleteChecklistItem = useKanbanStore((state) => state.deleteChecklistItem);
   const toggleChecklistItem = useKanbanStore((state) => state.toggleChecklistItem);
 
-  // Debug: Log card data when modal opens
-  useEffect(() => {
-    if (typeof window !== 'undefined' && isOpen && card) {
-      console.log('📝 CardModal opened for:', {
-        title: card.title,
-        hasAiPrompt: !!card.aiPrompt,
-        aiPromptLength: card.aiPrompt?.length || 0,
-      });
-    }
-  }, [isOpen, card]);
-
   // Detect actual theme from DOM instead of store (since store's darkMode is broken)
   const [actualDarkMode, setActualDarkMode] = useState(() => {
     if (typeof window !== 'undefined') {
