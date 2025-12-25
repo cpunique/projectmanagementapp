@@ -577,6 +577,36 @@ export const useKanbanStore = create<KanbanStore>()(
       clearHistory: () => {
         // Will be enhanced with temporal middleware
       },
+
+      // Firebase sync actions
+      setBoards: (boards: Board[]) => {
+        set({ boards });
+      },
+
+      updateBoardFromFirebase: (boardId: string, updatedBoard: Board) => {
+        set((state) => ({
+          boards: state.boards.map((b) => (b.id === boardId ? updatedBoard : b)),
+        }));
+      },
+
+      // Load all boards from localStorage (for migration purposes)
+      loadAllBoardsFromLocalStorage: () => {
+        try {
+          // Access the persisted Zustand state directly from localStorage
+          const stored = localStorage.getItem('kanban-store');
+          if (stored) {
+            const parsed = JSON.parse(stored);
+            const allBoards = parsed.state?.boards || [];
+            if (allBoards.length > 0) {
+              set({ boards: allBoards });
+              return allBoards;
+            }
+          }
+        } catch (error) {
+          console.error('Failed to load all boards from localStorage:', error);
+        }
+        return get().boards;
+      },
     }),
     {
       name: 'kanban-store',

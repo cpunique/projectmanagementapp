@@ -4,6 +4,8 @@ import { useKanbanStore } from '@/lib/store';
 import Button from '@/components/ui/Button';
 import Container from './Container';
 import BoardSwitcher from '@/components/kanban/BoardSwitcher';
+import UserMenu from '@/components/auth/UserMenu';
+import SyncStatus from '@/components/ui/SyncStatus';
 
 const Header = () => {
   const darkMode = useKanbanStore((state) => state.darkMode);
@@ -33,6 +35,12 @@ const Header = () => {
 
           {/* Controls */}
           <div className="flex items-center gap-3">
+            {/* Sync Status */}
+            <SyncStatus />
+
+            {/* User Menu */}
+            <UserMenu />
+
             {/* Demo Toggle */}
             <Button
               variant={demoMode ? 'primary' : 'outline'}

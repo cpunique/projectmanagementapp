@@ -111,6 +111,11 @@ export interface KanbanActions {
   undo: () => void;
   redo: () => void;
   clearHistory: () => void;
+
+  // Firebase sync actions
+  setBoards: (boards: Board[]) => void;
+  updateBoardFromFirebase: (boardId: string, updatedBoard: Board) => void;
+  loadAllBoardsFromLocalStorage: () => Board[];
 }
 
 export type KanbanStore = KanbanState & KanbanActions;

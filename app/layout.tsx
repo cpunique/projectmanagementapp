@@ -3,6 +3,8 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import Header from "@/components/layout/Header";
 import DarkModeProvider from "@/components/providers/DarkModeProvider";
+import { AuthProvider } from "@/lib/firebase/AuthContext";
+import { FirebaseWrapper } from "@/components/firebase/FirebaseWrapper";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -41,12 +43,16 @@ export default function RootLayout({
         />
       </head>
       <body className={`${inter.className} bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100`}>
-        <DarkModeProvider>
-          <Header />
-          <main className="min-h-screen">
-            {children}
-          </main>
-        </DarkModeProvider>
+        <AuthProvider>
+          <FirebaseWrapper>
+            <DarkModeProvider>
+              <Header />
+              <main className="min-h-screen">
+                {children}
+              </main>
+            </DarkModeProvider>
+          </FirebaseWrapper>
+        </AuthProvider>
       </body>
     </html>
   );
