@@ -6,7 +6,18 @@ import { getAuth as getFirebaseAuth } from 'firebase/auth';
 
 // Only initialize if we're in a browser environment with required env vars
 const isValidConfig = () => {
-  return typeof window !== 'undefined' && process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
+  const hasApiKey = typeof window !== 'undefined' && !!process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
+  if (!hasApiKey && typeof window !== 'undefined') {
+    console.error('Firebase config missing API key. Available env vars:', {
+      apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY ? 'present' : 'MISSING',
+      authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN ? 'present' : 'MISSING',
+      projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID ? 'present' : 'MISSING',
+      storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET ? 'present' : 'MISSING',
+      messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID ? 'present' : 'MISSING',
+      appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID ? 'present' : 'MISSING',
+    });
+  }
+  return hasApiKey;
 };
 
 const firebaseConfig = {
