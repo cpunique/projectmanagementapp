@@ -1,6 +1,6 @@
 import { initializeApp, getApps } from 'firebase/app';
 import { getFirestore } from 'firebase/firestore';
-import { getAuth } from 'firebase/auth';
+import { getAuth as getFirebaseAuth } from 'firebase/auth';
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -11,13 +11,21 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-// Initialize Firebase (singleton pattern to prevent multiple initializations)
-const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
+// Lazy initialization - only initialize when actually needed on client
+let app: any = null;
+let db: any = null;
+let auth: any = null;
 
-// Initialize Firestore
-const db = getFirestore(app);
+const initializeFirebase = () => {
+  if (app) return { app, db, auth };
 
-// Initialize Auth
-const auth = getAuth(app);
+  app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
+  db = getFirestore(app);
+  auth = getFirebaseAuth(app);
 
-export { app, db, auth };
+  return { app, db, auth };
+};
+
+export const getApp = () => initializeFirebase().app;
+export const getDb = () => initializeFirebase().db;
+export const getAuth = () => initializeFirebase().auth;

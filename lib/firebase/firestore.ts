@@ -12,11 +12,11 @@ import {
   serverTimestamp,
   Timestamp,
 } from 'firebase/firestore';
-import { db } from './config';
+import { getDb } from './config';
 import type { Board } from '@/types';
 
-// Reference to boards collection
-export const boardsCollection = collection(db, 'boards');
+// Lazy get boards collection
+const getBoardsCollection = () => collection(getDb(), 'boards');
 
 /**
  * Create a new board in Firestore
@@ -25,7 +25,7 @@ export async function createBoard(
   userId: string,
   board: Omit<Board, 'createdAt' | 'updatedAt'>
 ) {
-  const boardRef = doc(boardsCollection, board.id);
+  const boardRef = doc(getBoardsCollection(), board.id);
   await setDoc(boardRef, {
     ...board,
     ownerId: userId,
@@ -39,7 +39,7 @@ export async function createBoard(
  * Get a single board by ID
  */
 export async function getBoard(boardId: string): Promise<Board | null> {
-  const boardRef = doc(boardsCollection, boardId);
+  const boardRef = doc(getBoardsCollection(), boardId);
   const boardSnap = await getDoc(boardRef);
 
   if (!boardSnap.exists()) return null;
@@ -56,7 +56,7 @@ export async function getBoard(boardId: string): Promise<Board | null> {
  * Update a board
  */
 export async function updateBoard(boardId: string, updates: Partial<Board>) {
-  const boardRef = doc(boardsCollection, boardId);
+  const boardRef = doc(getBoardsCollection(), boardId);
   await updateDoc(boardRef, {
     ...updates,
     updatedAt: serverTimestamp(),
@@ -67,7 +67,7 @@ export async function updateBoard(boardId: string, updates: Partial<Board>) {
  * Delete a board
  */
 export async function deleteBoard(boardId: string) {
-  const boardRef = doc(boardsCollection, boardId);
+  const boardRef = doc(getBoardsCollection(), boardId);
   await deleteDoc(boardRef);
 }
 
@@ -76,11 +76,11 @@ export async function deleteBoard(boardId: string) {
  */
 export async function getUserBoards(userId: string): Promise<Board[]> {
   // Query for boards owned by the user
-  const ownedQuery = query(boardsCollection, where('ownerId', '==', userId));
+  const ownedQuery = query(getBoardsCollection(), where('ownerId', '==', userId));
   const ownedSnapshot = await getDocs(ownedQuery);
 
   // Query for boards shared with the user
-  const sharedQuery = query(boardsCollection, where('sharedWith', 'array-contains', userId));
+  const sharedQuery = query(getBoardsCollection(), where('sharedWith', 'array-contains', userId));
   const sharedSnapshot = await getDocs(sharedQuery);
 
   // Combine and deduplicate results
@@ -115,7 +115,7 @@ export function subscribeToBoard(
   boardId: string,
   callback: (board: Board | null) => void
 ): () => void {
-  const boardRef = doc(boardsCollection, boardId);
+  const boardRef = doc(getBoardsCollection(), boardId);
 
   return onSnapshot(boardRef, (snapshot) => {
     if (!snapshot.exists()) {
@@ -142,7 +142,7 @@ export function subscribeToUserBoards(
 ): () => void {
   // For now, we'll subscribe to owned boards only
   // A more advanced implementation could listen to both owned and shared
-  const q = query(boardsCollection, where('ownerId', '==', userId));
+  const q = query(getBoardsCollection(), where('ownerId', '==', userId));
 
   return onSnapshot(q, (snapshot) => {
     const boards = snapshot.docs.map((doc) => {
