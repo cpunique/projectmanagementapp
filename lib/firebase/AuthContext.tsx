@@ -30,13 +30,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const auth = getAuth();
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setUser(user);
-      setLoading(false);
-    });
+    try {
+      const auth = getAuth();
+      const unsubscribe = onAuthStateChanged(auth, (user) => {
+        setUser(user);
+        setLoading(false);
+      });
 
-    return () => unsubscribe();
+      return () => unsubscribe();
+    } catch (error) {
+      console.error('Failed to initialize auth listener:', error);
+      setError('Firebase is not properly configured');
+      setLoading(false);
+    }
   }, []);
 
   const signIn = async (email: string, password: string) => {
