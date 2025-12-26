@@ -11,22 +11,21 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    // Get the board document
-    function getBoard(boardId) {
-      return get(/databases/$(database)/documents/boards/$(boardId)).data;
+    // Check if user owns the board (for write operations using request.resource)
+    function isOwnerWrite(boardId) {
+      return isAuthenticated() && request.resource.data.ownerId == request.auth.uid;
     }
 
-    // Check if user owns the board
-    function isOwner(boardId) {
-      return isAuthenticated() && getBoard(boardId).ownerId == request.auth.uid;
+    // Check if user owns the board (for read/update operations using resource)
+    function isOwnerRead(boardId) {
+      return isAuthenticated() && resource.data.ownerId == request.auth.uid;
     }
 
-    // Check if user has access to board (owner or shared)
+    // Check if user has access to board (owner or shared) - for read/update
     function canAccessBoard(boardId) {
-      let board = getBoard(boardId);
       return isAuthenticated() && (
-        request.auth.uid == board.ownerId ||
-        request.auth.uid in board.sharedWith
+        request.auth.uid == resource.data.ownerId ||
+        request.auth.uid in resource.data.sharedWith
       );
     }
 
@@ -66,7 +65,7 @@ service cloud.firestore {
       allow update: if isAuthenticated() && canAccessBoard(boardId);
 
       // Delete: Can delete only if owner
-      allow delete: if isAuthenticated() && isOwner(boardId);
+      allow delete: if isAuthenticated() && isOwnerRead(boardId);
 
       // ============================================
       // Nested Collections (future use)
