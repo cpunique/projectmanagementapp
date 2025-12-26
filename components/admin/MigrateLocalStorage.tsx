@@ -28,15 +28,30 @@ export function MigrateLocalStorage() {
   // Check on component mount if there are boards to migrate
   useEffect(() => {
     if (!loading && user) {
-      // Check current boards in store
-      const currentBoards = boards;
+      // Check if there are local boards in localStorage that need migration
+      // Only show migration banner if boards exist locally but not in user's ownerId
+      const storedData = localStorage.getItem('kanban-store');
+      let localBoards: any[] = [];
 
-      if (currentBoards && currentBoards.length > 0) {
-        // Show migration prompt for any boards in current store
+      if (storedData) {
+        try {
+          const parsed = JSON.parse(storedData);
+          localBoards = parsed.state?.boards || [];
+        } catch (error) {
+          console.error('Failed to parse localStorage:', error);
+        }
+      }
+
+      // Only show migration if there are local boards AND they don't have ownerId set
+      // (meaning they haven't been migrated yet)
+      const unmigrationBoards = localBoards.filter((b: any) => !b.ownerId);
+
+      if (unmigrationBoards.length > 0) {
+        // Show migration prompt for unmigrated boards
         setMigrationState({
           status: 'checking',
-          message: `You have ${currentBoards.length} local board(s) that can be migrated to the cloud.`,
-          boardsToMigrate: currentBoards.length,
+          message: `You have ${unmigrationBoards.length} local board(s) that can be migrated to the cloud.`,
+          boardsToMigrate: unmigrationBoards.length,
           boardsMigrated: 0,
         });
       } else {
@@ -55,7 +70,7 @@ export function MigrateLocalStorage() {
         boardsMigrated: 0,
       });
     }
-  }, [user, loading, boards]);
+  }, [user, loading]);
 
   const handleMigrate = async () => {
     if (!user) {
