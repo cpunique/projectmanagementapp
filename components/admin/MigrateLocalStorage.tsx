@@ -100,6 +100,9 @@ export function MigrateLocalStorage() {
         boardsMigrated: migrated,
       });
 
+      // Clear localStorage to prevent banner from showing again
+      localStorage.removeItem('kanban-store');
+
       // Auto-dismiss after 5 seconds
       setTimeout(() => {
         setShowDismiss(true);
