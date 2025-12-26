@@ -39,7 +39,7 @@ export async function initializeFirebaseSync(user: User) {
       if (currentState._userBoardsBackup && currentState._userBoardsBackup.length > 0) {
         // Restore from backup and migrate to Firebase
         const backupBoards = currentState._userBoardsBackup;
-        console.log('Found backed up boards, restoring:', backupBoards.map(b => b.name));
+        console.log('Found backed up boards, restoring:', backupBoards.map((b: any) => b.name));
         store.setBoards(backupBoards);
 
         // Migrate to Firebase
@@ -60,7 +60,7 @@ export async function initializeFirebaseSync(user: User) {
         console.log('Reloading boards from Firebase');
         const migratedBoards = await getUserBoards(user.uid);
         if (migratedBoards.length > 0) {
-          console.log('Successfully loaded migrated boards from Firebase:', migratedBoards.map(b => b.name));
+          console.log('Successfully loaded migrated boards from Firebase:', migratedBoards.map((b: any) => b.name));
           store.setBoards(migratedBoards);
           store.switchBoard(migratedBoards[0].id);
         } else {
