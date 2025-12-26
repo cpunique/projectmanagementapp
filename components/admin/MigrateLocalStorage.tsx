@@ -100,8 +100,20 @@ export function MigrateLocalStorage() {
         boardsMigrated: migrated,
       });
 
-      // Clear localStorage to prevent banner from showing again
-      localStorage.removeItem('kanban-store');
+      // Mark migration as complete in localStorage to prevent duplicate migrations
+      const storeData = localStorage.getItem('kanban-store');
+      if (storeData) {
+        try {
+          const parsed = JSON.parse(storeData);
+          parsed.state = {
+            ...parsed.state,
+            boards: [], // Clear local boards after successful migration
+          };
+          localStorage.setItem('kanban-store', JSON.stringify(parsed));
+        } catch (error) {
+          console.error('Failed to update localStorage:', error);
+        }
+      }
 
       // Auto-dismiss after 5 seconds
       setTimeout(() => {
