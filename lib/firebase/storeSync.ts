@@ -19,29 +19,62 @@ const activeSubscriptions = new Map<string, () => void>();
  */
 export async function initializeFirebaseSync(user: User) {
   try {
-    // Load all boards for the user
-    const userBoards = await getUserBoards(user.uid);
-
-    // Update Zustand store with user's boards
     const store = useKanbanStore.getState();
 
-    // If user has boards in Firebase, use those; otherwise, use local boards
+    // Load all boards for the user from Firebase
+    const userBoards = await getUserBoards(user.uid);
+
     if (userBoards.length > 0) {
+      // User has boards in Firebase - use those
       store.setBoards(userBoards);
       store.switchBoard(userBoards[0].id);
-    } else if (store.boards.length > 0) {
-      // User has local boards but nothing in Firebase yet
-      // This is the first sync - migrate local boards to Firebase
-      for (const board of store.boards) {
-        await createBoard(user.uid, board);
+      // Disable demo mode if enabled
+      if (store.demoMode) {
+        store.toggleDemoMode();
       }
-      // Update timestamps from Firebase response
-      const migratedBoards = await getUserBoards(user.uid);
-      store.setBoards(migratedBoards);
+    } else {
+      // No boards in Firebase yet
+      // Check if we have backed up user boards from demo mode
+      const currentState = store as any;
+      if (currentState._userBoardsBackup && currentState._userBoardsBackup.length > 0) {
+        // Restore from backup and migrate to Firebase
+        const backupBoards = currentState._userBoardsBackup;
+        store.setBoards(backupBoards);
+
+        // Migrate to Firebase
+        for (const board of backupBoards) {
+          try {
+            await createBoard(user.uid, board);
+          } catch (error) {
+            console.error(`Failed to migrate board ${board.name}:`, error);
+          }
+        }
+
+        // Reload from Firebase to get proper timestamps
+        const migratedBoards = await getUserBoards(user.uid);
+        store.setBoards(migratedBoards);
+        store.switchBoard(migratedBoards[0].id);
+      } else if (store.boards.length > 0 && !store.demoMode) {
+        // User has local boards but nothing in Firebase yet (not in demo mode)
+        // Migrate local boards to Firebase
+        for (const board of store.boards) {
+          await createBoard(user.uid, board);
+        }
+
+        // Update timestamps from Firebase response
+        const migratedBoards = await getUserBoards(user.uid);
+        store.setBoards(migratedBoards);
+      }
+
+      // Disable demo mode if enabled
+      if (store.demoMode) {
+        store.toggleDemoMode();
+      }
     }
 
     // Subscribe to each board for real-time updates
-    for (const board of userBoards) {
+    const finalBoards = store.boards;
+    for (const board of finalBoards) {
       subscribeToBoard(board.id, (updatedBoard) => {
         if (updatedBoard) {
           store.updateBoardFromFirebase(board.id, updatedBoard);
