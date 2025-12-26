@@ -110,12 +110,32 @@ export async function getUserBoards(userId: string): Promise<Board[]> {
     // Combine and deduplicate results
     const boardMap = new Map<string, Board>();
 
+    // Helper function to safely convert timestamps
+    const convertTimestamp = (ts: any): string => {
+      if (!ts) return new Date().toISOString();
+      if (typeof ts.toDate === 'function') {
+        return ts.toDate().toISOString();
+      }
+      if (ts instanceof Date) {
+        return ts.toISOString();
+      }
+      if (typeof ts === 'string') {
+        return ts;
+      }
+      // If it's a Timestamp-like object with seconds property
+      if (ts.seconds !== undefined) {
+        return new Date(ts.seconds * 1000).toISOString();
+      }
+      console.warn('Unable to convert timestamp:', ts);
+      return new Date().toISOString();
+    };
+
     ownedSnapshot.docs.forEach((doc) => {
       const data = doc.data();
       boardMap.set(doc.id, {
         ...data,
-        createdAt: (data.createdAt as Timestamp).toDate().toISOString(),
-        updatedAt: (data.updatedAt as Timestamp).toDate().toISOString(),
+        createdAt: convertTimestamp(data.createdAt),
+        updatedAt: convertTimestamp(data.updatedAt),
       } as Board);
     });
 
@@ -123,8 +143,8 @@ export async function getUserBoards(userId: string): Promise<Board[]> {
       const data = doc.data();
       boardMap.set(doc.id, {
         ...data,
-        createdAt: (data.createdAt as Timestamp).toDate().toISOString(),
-        updatedAt: (data.updatedAt as Timestamp).toDate().toISOString(),
+        createdAt: convertTimestamp(data.createdAt),
+        updatedAt: convertTimestamp(data.updatedAt),
       } as Board);
     });
 
@@ -145,6 +165,24 @@ export function subscribeToBoard(
 ): () => void {
   const boardRef = doc(getBoardsCollection(), boardId);
 
+  // Helper function to safely convert timestamps
+  const convertTimestamp = (ts: any): string => {
+    if (!ts) return new Date().toISOString();
+    if (typeof ts.toDate === 'function') {
+      return ts.toDate().toISOString();
+    }
+    if (ts instanceof Date) {
+      return ts.toISOString();
+    }
+    if (typeof ts === 'string') {
+      return ts;
+    }
+    if (ts.seconds !== undefined) {
+      return new Date(ts.seconds * 1000).toISOString();
+    }
+    return new Date().toISOString();
+  };
+
   return onSnapshot(boardRef, (snapshot) => {
     if (!snapshot.exists()) {
       callback(null);
@@ -154,8 +192,8 @@ export function subscribeToBoard(
     const data = snapshot.data();
     callback({
       ...data,
-      createdAt: (data.createdAt as Timestamp).toDate().toISOString(),
-      updatedAt: (data.updatedAt as Timestamp).toDate().toISOString(),
+      createdAt: convertTimestamp(data.createdAt),
+      updatedAt: convertTimestamp(data.updatedAt),
     } as Board);
   });
 }
@@ -172,13 +210,31 @@ export function subscribeToUserBoards(
   // A more advanced implementation could listen to both owned and shared
   const q = query(getBoardsCollection(), where('ownerId', '==', userId));
 
+  // Helper function to safely convert timestamps
+  const convertTimestamp = (ts: any): string => {
+    if (!ts) return new Date().toISOString();
+    if (typeof ts.toDate === 'function') {
+      return ts.toDate().toISOString();
+    }
+    if (ts instanceof Date) {
+      return ts.toISOString();
+    }
+    if (typeof ts === 'string') {
+      return ts;
+    }
+    if (ts.seconds !== undefined) {
+      return new Date(ts.seconds * 1000).toISOString();
+    }
+    return new Date().toISOString();
+  };
+
   return onSnapshot(q, (snapshot) => {
     const boards = snapshot.docs.map((doc) => {
       const data = doc.data();
       return {
         ...data,
-        createdAt: (data.createdAt as Timestamp).toDate().toISOString(),
-        updatedAt: (data.updatedAt as Timestamp).toDate().toISOString(),
+        createdAt: convertTimestamp(data.createdAt),
+        updatedAt: convertTimestamp(data.updatedAt),
       } as Board;
     });
     callback(boards);
