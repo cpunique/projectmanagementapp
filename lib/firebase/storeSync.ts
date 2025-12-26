@@ -19,10 +19,14 @@ const activeSubscriptions = new Map<string, () => void>();
  */
 export async function initializeFirebaseSync(user: User) {
   try {
+    console.log('=== Starting Firebase Sync ===');
     const store = useKanbanStore.getState();
+    console.log('Store state:', { demoMode: store.demoMode, boardCount: store.boards.length });
 
     // Load all boards for the user from Firebase
+    console.log('Calling getUserBoards for userId:', user.uid);
     const userBoards = await getUserBoards(user.uid);
+    console.log('Got userBoards:', userBoards.length);
 
     if (userBoards.length > 0) {
       // User has boards in Firebase - use those

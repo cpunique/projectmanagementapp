@@ -26,13 +26,25 @@ export async function createBoard(
   board: Omit<Board, 'createdAt' | 'updatedAt'>
 ) {
   const boardRef = doc(getBoardsCollection(), board.id);
-  await setDoc(boardRef, {
+  const boardData = {
     ...board,
     ownerId: userId,
     sharedWith: [],
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
-  });
+  };
+
+  try {
+    await setDoc(boardRef, boardData);
+  } catch (error) {
+    console.error('Error creating board:', {
+      boardId: board.id,
+      boardName: board.name,
+      error: error instanceof Error ? error.message : String(error),
+      boardData,
+    });
+    throw error;
+  }
 }
 
 /**
@@ -75,36 +87,46 @@ export async function deleteBoard(boardId: string) {
  * Get all boards for a user (owned or shared with them)
  */
 export async function getUserBoards(userId: string): Promise<Board[]> {
-  // Query for boards owned by the user
-  const ownedQuery = query(getBoardsCollection(), where('ownerId', '==', userId));
-  const ownedSnapshot = await getDocs(ownedQuery);
+  try {
+    console.log('getUserBoards: Querying for userId:', userId);
+    // Query for boards owned by the user
+    const ownedQuery = query(getBoardsCollection(), where('ownerId', '==', userId));
+    console.log('getUserBoards: Running owned query...');
+    const ownedSnapshot = await getDocs(ownedQuery);
+    console.log('getUserBoards: Owned snapshot count:', ownedSnapshot.docs.length);
 
-  // Query for boards shared with the user
-  const sharedQuery = query(getBoardsCollection(), where('sharedWith', 'array-contains', userId));
-  const sharedSnapshot = await getDocs(sharedQuery);
+    // Query for boards shared with the user
+    const sharedQuery = query(getBoardsCollection(), where('sharedWith', 'array-contains', userId));
+    console.log('getUserBoards: Running shared query...');
+    const sharedSnapshot = await getDocs(sharedQuery);
+    console.log('getUserBoards: Shared snapshot count:', sharedSnapshot.docs.length);
 
-  // Combine and deduplicate results
-  const boardMap = new Map<string, Board>();
+    // Combine and deduplicate results
+    const boardMap = new Map<string, Board>();
 
-  ownedSnapshot.docs.forEach((doc) => {
-    const data = doc.data();
-    boardMap.set(doc.id, {
-      ...data,
-      createdAt: (data.createdAt as Timestamp).toDate().toISOString(),
-      updatedAt: (data.updatedAt as Timestamp).toDate().toISOString(),
-    } as Board);
-  });
+    ownedSnapshot.docs.forEach((doc) => {
+      const data = doc.data();
+      boardMap.set(doc.id, {
+        ...data,
+        createdAt: (data.createdAt as Timestamp).toDate().toISOString(),
+        updatedAt: (data.updatedAt as Timestamp).toDate().toISOString(),
+      } as Board);
+    });
 
-  sharedSnapshot.docs.forEach((doc) => {
-    const data = doc.data();
-    boardMap.set(doc.id, {
-      ...data,
-      createdAt: (data.createdAt as Timestamp).toDate().toISOString(),
-      updatedAt: (data.updatedAt as Timestamp).toDate().toISOString(),
-    } as Board);
-  });
+    sharedSnapshot.docs.forEach((doc) => {
+      const data = doc.data();
+      boardMap.set(doc.id, {
+        ...data,
+        createdAt: (data.createdAt as Timestamp).toDate().toISOString(),
+        updatedAt: (data.updatedAt as Timestamp).toDate().toISOString(),
+      } as Board);
+    });
 
-  return Array.from(boardMap.values());
+    return Array.from(boardMap.values());
+  } catch (error) {
+    console.error('getUserBoards error:', error instanceof Error ? error.message : String(error));
+    throw error;
+  }
 }
 
 /**
