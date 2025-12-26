@@ -211,12 +211,20 @@ export function MigrateLocalStorage() {
 
         <div className="flex gap-2">
           {(migrationState.status === 'checking' || migrationState.status === 'error') && (
-            <button
-              onClick={handleMigrate}
-              className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded transition-colors whitespace-nowrap"
-            >
-              Migrate Now
-            </button>
+            <>
+              <button
+                onClick={handleMigrate}
+                className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded transition-colors whitespace-nowrap"
+              >
+                Migrate Now
+              </button>
+              <button
+                onClick={handleDismiss}
+                className="px-3 py-1 bg-gray-600 hover:bg-gray-700 text-white text-sm rounded transition-colors whitespace-nowrap"
+              >
+                Dismiss
+              </button>
+            </>
           )}
 
           {migrationState.status === 'migrating' && (
