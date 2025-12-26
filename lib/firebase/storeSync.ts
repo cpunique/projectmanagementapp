@@ -72,14 +72,18 @@ export async function initializeFirebaseSync(user: User) {
       }
     }
 
-    // Subscribe to each board for real-time updates
+    // Subscribe to each board for real-time updates (only boards with ownerId)
     const finalBoards = store.boards;
     for (const board of finalBoards) {
-      subscribeToBoard(board.id, (updatedBoard) => {
-        if (updatedBoard) {
-          store.updateBoardFromFirebase(board.id, updatedBoard);
-        }
-      });
+      // Only subscribe to boards that have been migrated to Firebase (have ownerId)
+      const boardWithOwner = board as any;
+      if (boardWithOwner.ownerId) {
+        subscribeToBoard(board.id, (updatedBoard) => {
+          if (updatedBoard) {
+            store.updateBoardFromFirebase(board.id, updatedBoard);
+          }
+        });
+      }
     }
   } catch (error) {
     console.error('Failed to initialize Firebase sync:', error);
@@ -155,12 +159,15 @@ export function subscribeToStoreChanges(user: User) {
         // Debounce the sync to avoid too many Firebase calls
         clearTimeout(syncTimeout);
         syncTimeout = setTimeout(async () => {
-          // Sync all boards to Firebase
+          // Sync all boards to Firebase (only boards with ownerId)
           for (const board of state.boards) {
-            try {
-              await updateBoard(board.id, board);
-            } catch (error) {
-              console.error(`Failed to sync board ${board.id} to Firebase:`, error);
+            const boardWithOwner = board as any;
+            if (boardWithOwner.ownerId) {
+              try {
+                await updateBoard(board.id, board);
+              } catch (error) {
+                console.error(`Failed to sync board ${board.id} to Firebase:`, error);
+              }
             }
           }
         }, 1000); // Wait 1 second after last change before syncing
