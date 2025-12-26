@@ -39,21 +39,37 @@ export async function initializeFirebaseSync(user: User) {
       if (currentState._userBoardsBackup && currentState._userBoardsBackup.length > 0) {
         // Restore from backup and migrate to Firebase
         const backupBoards = currentState._userBoardsBackup;
+        console.log('Found backed up boards, restoring:', backupBoards.map(b => b.name));
         store.setBoards(backupBoards);
 
         // Migrate to Firebase
         for (const board of backupBoards) {
           try {
+            console.log('Migrating board to Firebase:', board.name);
             await createBoard(user.uid, board);
           } catch (error) {
             console.error(`Failed to migrate board ${board.name}:`, error);
           }
         }
 
+        // Wait a moment for Firestore to propagate writes
+        console.log('Waiting for Firestore propagation...');
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
         // Reload from Firebase to get proper timestamps
+        console.log('Reloading boards from Firebase');
         const migratedBoards = await getUserBoards(user.uid);
-        store.setBoards(migratedBoards);
-        store.switchBoard(migratedBoards[0].id);
+        if (migratedBoards.length > 0) {
+          console.log('Successfully loaded migrated boards from Firebase:', migratedBoards.map(b => b.name));
+          store.setBoards(migratedBoards);
+          store.switchBoard(migratedBoards[0].id);
+        } else {
+          // If Firebase query still comes back empty, use the backup boards as-is
+          // They have the correct ownerId set from the backup
+          console.warn('Firebase query returned no boards after migration. Using backup boards directly.');
+          store.setBoards(backupBoards);
+          store.switchBoard(backupBoards[0].id);
+        }
       } else if (store.boards.length > 0 && !store.demoMode) {
         // User has local boards but nothing in Firebase yet (not in demo mode)
         // Migrate local boards to Firebase
