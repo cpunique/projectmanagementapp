@@ -26,8 +26,12 @@ export async function createBoard(
   board: Omit<Board, 'createdAt' | 'updatedAt'>
 ) {
   const boardRef = doc(getBoardsCollection(), board.id);
+
+  // Ensure we only send valid Board data - explicitly construct to avoid extra fields
   const boardData = {
-    ...board,
+    id: board.id,
+    name: board.name,
+    columns: board.columns,
     ownerId: userId,
     sharedWith: [],
     createdAt: serverTimestamp(),
@@ -35,7 +39,9 @@ export async function createBoard(
   };
 
   try {
+    console.log('Creating board:', board.name, 'with ID:', board.id);
     await setDoc(boardRef, boardData);
+    console.log('Successfully created board:', board.name);
   } catch (error) {
     console.error('Error creating board:', {
       boardId: board.id,
