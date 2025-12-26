@@ -18,6 +18,9 @@ import type { Board } from '@/types';
 // Lazy get boards collection
 const getBoardsCollection = () => collection(getDb(), 'boards');
 
+// Lazy get users collection
+const getUsersCollection = () => collection(getDb(), 'users');
+
 /**
  * Create a new board in Firestore
  */
@@ -239,4 +242,43 @@ export function subscribeToUserBoards(
     });
     callback(boards);
   });
+}
+
+/**
+ * Get user's default board preference from Firestore
+ */
+export async function getUserDefaultBoard(userId: string): Promise<string | null> {
+  try {
+    const userRef = doc(getUsersCollection(), userId);
+    const userSnap = await getDoc(userRef);
+
+    if (!userSnap.exists()) return null;
+
+    const data = userSnap.data();
+    return data.defaultBoardId || null;
+  } catch (error) {
+    console.error('Error getting user default board:', error);
+    return null;
+  }
+}
+
+/**
+ * Set user's default board preference in Firestore
+ */
+export async function setUserDefaultBoard(userId: string, boardId: string | null) {
+  try {
+    const userRef = doc(getUsersCollection(), userId);
+    await setDoc(
+      userRef,
+      {
+        defaultBoardId: boardId,
+        updatedAt: serverTimestamp(),
+      },
+      { merge: true }
+    );
+    console.log('Set default board for user:', userId, 'boardId:', boardId);
+  } catch (error) {
+    console.error('Error setting user default board:', error);
+    throw error;
+  }
 }

@@ -104,6 +104,7 @@ export const useKanbanStore = create<KanbanStore>()(
     (set, get) => ({
       boards: [createDefaultBoard()],
       activeBoard: DEFAULT_BOARD_ID,
+      defaultBoardId: null,
       demoMode: false,
       darkMode: true,
       searchQuery: '',
@@ -164,6 +165,10 @@ export const useKanbanStore = create<KanbanStore>()(
 
       switchBoard: (boardId: string) => {
         set({ activeBoard: boardId });
+      },
+
+      setDefaultBoard: (boardId: string | null) => {
+        set({ defaultBoardId: boardId });
       },
 
       exportBoards: (boardId?: string) => {

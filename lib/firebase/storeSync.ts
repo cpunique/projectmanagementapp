@@ -7,6 +7,8 @@ import {
   createBoard,
   updateBoard,
   deleteBoard as deleteFirestoreBoard,
+  getUserDefaultBoard,
+  setUserDefaultBoard,
 } from './firestore';
 import type { Board } from '@/types';
 
@@ -31,7 +33,18 @@ export async function initializeFirebaseSync(user: User) {
     if (userBoards.length > 0) {
       // User has boards in Firebase - use those
       store.setBoards(userBoards);
-      store.switchBoard(userBoards[0].id);
+
+      // Load user's default board preference
+      const defaultBoardId = await getUserDefaultBoard(user.uid);
+      store.setDefaultBoard(defaultBoardId);
+
+      // Switch to default board if it exists and user has access, otherwise use first board
+      if (defaultBoardId && userBoards.some((b) => b.id === defaultBoardId)) {
+        store.switchBoard(defaultBoardId);
+      } else {
+        store.switchBoard(userBoards[0].id);
+      }
+
       // Disable demo mode if enabled
       if (store.demoMode) {
         store.toggleDemoMode();
@@ -167,14 +180,20 @@ async function syncActionToFirebase(userId: string) {
 export function subscribeToStoreChanges(user: User) {
   let syncTimeout: NodeJS.Timeout;
   let lastBoardsJson = '';
+  let lastDefaultBoardId: string | null = '';
 
   return useKanbanStore.subscribe(
     (state) => {
       const currentBoardsJson = JSON.stringify(state.boards);
+      const currentDefaultBoardId = state.defaultBoardId;
 
-      // Only trigger if boards have actually changed
-      if (currentBoardsJson !== lastBoardsJson) {
+      // Check if boards or default board have changed
+      const boardsChanged = currentBoardsJson !== lastBoardsJson;
+      const defaultBoardChanged = currentDefaultBoardId !== lastDefaultBoardId;
+
+      if (boardsChanged || defaultBoardChanged) {
         lastBoardsJson = currentBoardsJson;
+        lastDefaultBoardId = currentDefaultBoardId;
 
         // Debounce the sync to avoid too many Firebase calls
         clearTimeout(syncTimeout);
@@ -188,6 +207,15 @@ export function subscribeToStoreChanges(user: User) {
               } catch (error) {
                 console.error(`Failed to sync board ${board.id} to Firebase:`, error);
               }
+            }
+          }
+
+          // Sync default board preference to Firebase
+          if (defaultBoardChanged) {
+            try {
+              await setUserDefaultBoard(user.uid, currentDefaultBoardId);
+            } catch (error) {
+              console.error('Failed to sync default board preference to Firebase:', error);
             }
           }
         }, 1000); // Wait 1 second after last change before syncing
