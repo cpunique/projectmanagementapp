@@ -178,7 +178,8 @@ async function syncActionToFirebase(userId: string) {
  * Returns an unsubscribe function
  */
 export function subscribeToStoreChanges(user: User) {
-  let syncTimeout: NodeJS.Timeout;
+  let boardSyncTimeout: NodeJS.Timeout;
+  let defaultBoardSyncTimeout: NodeJS.Timeout;
   let lastBoardsJson = '';
   let lastDefaultBoardId: string | null = '';
 
@@ -187,18 +188,12 @@ export function subscribeToStoreChanges(user: User) {
       const currentBoardsJson = JSON.stringify(state.boards);
       const currentDefaultBoardId = state.defaultBoardId;
 
-      // Check if boards or default board have changed
-      const boardsChanged = currentBoardsJson !== lastBoardsJson;
-      const defaultBoardChanged = currentDefaultBoardId !== lastDefaultBoardId;
-
-      if (boardsChanged || defaultBoardChanged) {
+      // Only sync boards if they changed
+      if (currentBoardsJson !== lastBoardsJson) {
         lastBoardsJson = currentBoardsJson;
-        lastDefaultBoardId = currentDefaultBoardId;
 
-        // Debounce the sync to avoid too many Firebase calls
-        clearTimeout(syncTimeout);
-        syncTimeout = setTimeout(async () => {
-          // Sync all boards to Firebase (only boards with ownerId)
+        clearTimeout(boardSyncTimeout);
+        boardSyncTimeout = setTimeout(async () => {
           for (const board of state.boards) {
             const boardWithOwner = board as any;
             if (boardWithOwner.ownerId) {
@@ -209,16 +204,21 @@ export function subscribeToStoreChanges(user: User) {
               }
             }
           }
+        }, 1000);
+      }
 
-          // Sync default board preference to Firebase
-          if (defaultBoardChanged) {
-            try {
-              await setUserDefaultBoard(user.uid, currentDefaultBoardId);
-            } catch (error) {
-              console.error('Failed to sync default board preference to Firebase:', error);
-            }
+      // Only sync default board preference if it changed
+      if (currentDefaultBoardId !== lastDefaultBoardId) {
+        lastDefaultBoardId = currentDefaultBoardId;
+
+        clearTimeout(defaultBoardSyncTimeout);
+        defaultBoardSyncTimeout = setTimeout(async () => {
+          try {
+            await setUserDefaultBoard(user.uid, currentDefaultBoardId);
+          } catch (error) {
+            console.error('Failed to sync default board preference to Firebase:', error);
           }
-        }, 1000); // Wait 1 second after last change before syncing
+        }, 500); // Faster sync for default board preference
       }
     }
   );

@@ -18,8 +18,6 @@ const BoardSwitcher = () => {
   const deleteBoard = useKanbanStore((state) => state.deleteBoard);
   const updateBoard = useKanbanStore((state) => state.updateBoard);
 
-  console.log('BoardSwitcher rendering, defaultBoardId:', defaultBoardId);
-
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [newBoardName, setNewBoardName] = useState('');
   const [isRenamingBoardId, setIsRenamingBoardId] = useState<string | null>(null);
