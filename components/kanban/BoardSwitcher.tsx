@@ -108,11 +108,6 @@ const BoardSwitcher = () => {
                       </span>
                     )}
                   </button>
-                  {defaultBoardId === board.id && (
-                    <span className="text-xs bg-purple-200 dark:bg-purple-700 text-purple-900 dark:text-purple-100 px-2 py-1 rounded whitespace-nowrap">
-                      Default
-                    </span>
-                  )}
                 </div>
 
                 <div className="flex items-center gap-1">
