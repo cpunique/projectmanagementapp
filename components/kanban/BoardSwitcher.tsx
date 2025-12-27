@@ -120,10 +120,15 @@ const BoardSwitcher = () => {
                     onClick={() =>
                       setDefaultBoard(defaultBoardId === board.id ? null : board.id)
                     }
-                    className="px-3 py-1 text-xs rounded font-bold bg-blue-500 text-white hover:bg-blue-600"
-                    title="Click to set as default"
+                    className={cn(
+                      'px-2 py-1 text-xs rounded font-medium transition-colors',
+                      defaultBoardId === board.id
+                        ? 'bg-purple-600 text-white hover:bg-purple-700'
+                        : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+                    )}
+                    title={defaultBoardId === board.id ? 'Remove as default' : 'Make default'}
                   >
-                    DEFAULT
+                    {defaultBoardId === board.id ? '★' : '☆'}
                   </button>
                   {boards.length > 1 && !isRenamingBoardId && (
                     <button
