@@ -118,17 +118,15 @@ const BoardSwitcher = () => {
                 </div>
 
                 <div className="flex items-center gap-1">
-                  {!isRenamingBoardId && (
-                    <button
-                      onClick={() =>
-                        setDefaultBoard(defaultBoardId === board.id ? null : board.id)
-                      }
-                      className="px-3 py-1 text-xs rounded font-bold bg-blue-500 text-white hover:bg-blue-600"
-                      title="Click to set as default"
-                    >
-                      DEFAULT
-                    </button>
-                  )}
+                  <button
+                    onClick={() =>
+                      setDefaultBoard(defaultBoardId === board.id ? null : board.id)
+                    }
+                    className="px-3 py-1 text-xs rounded font-bold bg-blue-500 text-white hover:bg-blue-600"
+                    title="Click to set as default"
+                  >
+                    DEFAULT
+                  </button>
                   {boards.length > 1 && !isRenamingBoardId && (
                     <button
                       onClick={() => handleDeleteBoard(board.id)}
