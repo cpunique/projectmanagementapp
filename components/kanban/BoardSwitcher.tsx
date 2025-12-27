@@ -22,6 +22,7 @@ const BoardSwitcher = () => {
   const [newBoardName, setNewBoardName] = useState('');
   const [isRenamingBoardId, setIsRenamingBoardId] = useState<string | null>(null);
   const [renameBoardValue, setRenameBoardValue] = useState('');
+  const [animatingStarId, setAnimatingStarId] = useState<string | null>(null);
 
   const currentBoard = boards.find((b) => b.id === activeBoard);
 
@@ -45,6 +46,12 @@ const BoardSwitcher = () => {
     if (boards.length > 1) {
       deleteBoard(boardId);
     }
+  };
+
+  const handleSetDefault = (boardId: string) => {
+    setDefaultBoard(defaultBoardId === boardId ? null : boardId);
+    setAnimatingStarId(boardId);
+    setTimeout(() => setAnimatingStarId(null), 400);
   };
 
   const triggerContent = (
@@ -112,14 +119,19 @@ const BoardSwitcher = () => {
 
                 <div className="flex items-center gap-1">
                   <button
-                    onClick={() =>
-                      setDefaultBoard(defaultBoardId === board.id ? null : board.id)
+                    onClick={() => handleSetDefault(board.id)}
+                    style={
+                      animatingStarId === board.id
+                        ? {
+                            animation: 'starBounce 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55)',
+                          }
+                        : undefined
                     }
                     className={cn(
-                      'px-2 py-1 text-xs rounded font-medium transition-colors',
+                      'px-2 py-1 text-xs rounded font-medium transition-all',
                       defaultBoardId === board.id
                         ? 'bg-purple-600 text-white hover:bg-purple-700'
-                        : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+                        : 'opacity-0 group-hover:opacity-100 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
                     )}
                     title={defaultBoardId === board.id ? 'Remove as default' : 'Make default'}
                   >
@@ -196,6 +208,20 @@ const BoardSwitcher = () => {
           </div>
         </div>
       </Modal>
+
+      <style>{`
+        @keyframes starBounce {
+          0% {
+            transform: scale(1);
+          }
+          50% {
+            transform: scale(1.2);
+          }
+          100% {
+            transform: scale(1);
+          }
+        }
+      `}</style>
     </>
   );
 };
