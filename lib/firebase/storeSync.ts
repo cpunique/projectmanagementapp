@@ -204,7 +204,7 @@ export function subscribeToStoreChanges(user: User) {
               }
             }
           }
-        }, 1000);
+        }, 300); // Reduced from 1000ms to 300ms for faster syncing
       }
 
       // Only sync default board preference if it changed
@@ -218,7 +218,7 @@ export function subscribeToStoreChanges(user: User) {
           } catch (error) {
             console.error('Failed to sync default board preference to Firebase:', error);
           }
-        }, 500); // Faster sync for default board preference
+        }, 300); // Also reduced for consistency
       }
     }
   );
