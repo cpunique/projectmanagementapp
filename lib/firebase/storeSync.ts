@@ -207,8 +207,11 @@ export function subscribeToStoreChanges(user: User) {
 
   return useKanbanStore.subscribe(
     (state) => {
+      console.log('[Sync] Store changed, isSyncingFromFirebase:', isSyncingFromFirebase, 'boards:', state.boards.length);
+
       // Skip sync if changes are coming FROM Firebase (not user actions)
       if (isSyncingFromFirebase) {
+        console.log('[Sync] Skipping sync - changes from Firebase');
         // Still update our tracking map to stay in sync
         state.boards.forEach((board) => {
           lastBoardsMap.set(board.id, JSON.stringify(board));
@@ -235,6 +238,8 @@ export function subscribeToStoreChanges(user: User) {
       if (defaultBoardChanged) {
         lastDefaultBoardId = state.defaultBoardId;
       }
+
+      console.log('[Sync] Changes detected - boards:', changedBoards.length, 'defaultBoard:', defaultBoardChanged);
 
       // Only sync if there are actual changes
       if (changedBoards.length > 0 || defaultBoardChanged) {
