@@ -58,6 +58,8 @@ export interface KanbanState {
   // Due dates panel state
   dueDatePanelOpen: boolean;
   dueDatePanelWidth: number;
+  // Unsaved changes tracking
+  hasUnsavedChanges: boolean;
 }
 
 export interface KanbanActions {
@@ -118,6 +120,11 @@ export interface KanbanActions {
   setBoards: (boards: Board[]) => void;
   updateBoardFromFirebase: (boardId: string, updatedBoard: Board) => void;
   loadAllBoardsFromLocalStorage: () => Board[];
+
+  // Manual save actions
+  markAsUnsaved: () => void;
+  markAsSaved: () => void;
+  saveToFirebase: () => Promise<void>;
 }
 
 export type KanbanStore = KanbanState & KanbanActions;

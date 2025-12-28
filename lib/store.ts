@@ -111,6 +111,7 @@ export const useKanbanStore = create<KanbanStore>()(
       filters: {},
       dueDatePanelOpen: true,
       dueDatePanelWidth: 320,
+      hasUnsavedChanges: false,
 
       // Board actions
       addBoard: (name: string) => {
@@ -136,6 +137,7 @@ export const useKanbanStore = create<KanbanStore>()(
         set((state) => ({
           boards: [...state.boards, newBoard],
           activeBoard: newBoard.id,
+          hasUnsavedChanges: true,
         }));
       },
 
@@ -149,6 +151,7 @@ export const useKanbanStore = create<KanbanStore>()(
           return {
             boards,
             activeBoard: newActiveBoard,
+            hasUnsavedChanges: true,
           };
         });
       },
@@ -160,6 +163,7 @@ export const useKanbanStore = create<KanbanStore>()(
               ? { ...b, name, updatedAt: new Date().toISOString() }
               : b
           ),
+          hasUnsavedChanges: true,
         }));
       },
 
@@ -168,7 +172,7 @@ export const useKanbanStore = create<KanbanStore>()(
       },
 
       setDefaultBoard: (boardId: string | null) => {
-        set({ defaultBoardId: boardId });
+        set({ defaultBoardId: boardId, hasUnsavedChanges: true });
       },
 
       exportBoards: (boardId?: string) => {
@@ -213,6 +217,7 @@ export const useKanbanStore = create<KanbanStore>()(
                 ? { ...b, columns: [...b.columns, newColumn] }
                 : b
             ),
+            hasUnsavedChanges: true,
           };
         });
       },
@@ -227,6 +232,7 @@ export const useKanbanStore = create<KanbanStore>()(
                 }
               : b
           ),
+          hasUnsavedChanges: true,
         }));
       },
 
@@ -242,6 +248,7 @@ export const useKanbanStore = create<KanbanStore>()(
                 }
               : b
           ),
+          hasUnsavedChanges: true,
         }));
       },
 
@@ -260,6 +267,7 @@ export const useKanbanStore = create<KanbanStore>()(
                 }
               : b
           ),
+          hasUnsavedChanges: true,
         }));
       },
 
@@ -292,6 +300,7 @@ export const useKanbanStore = create<KanbanStore>()(
                 }
               : b
           ),
+          hasUnsavedChanges: true,
         }));
       },
 
@@ -308,6 +317,7 @@ export const useKanbanStore = create<KanbanStore>()(
                 }
               : b
           ),
+          hasUnsavedChanges: true,
         }));
       },
 
@@ -332,6 +342,7 @@ export const useKanbanStore = create<KanbanStore>()(
                 }
               : b
           ),
+          hasUnsavedChanges: true,
         }));
       },
 
@@ -403,6 +414,7 @@ export const useKanbanStore = create<KanbanStore>()(
                   }
                 : b
             ),
+            hasUnsavedChanges: true,
           };
         });
       },
@@ -429,6 +441,7 @@ export const useKanbanStore = create<KanbanStore>()(
                 }
               : b
           ),
+          hasUnsavedChanges: true,
         }));
       },
 
@@ -461,6 +474,7 @@ export const useKanbanStore = create<KanbanStore>()(
                 }
               : b
           ),
+          hasUnsavedChanges: true,
         }));
       },
 
@@ -490,6 +504,7 @@ export const useKanbanStore = create<KanbanStore>()(
                 }
               : b
           ),
+          hasUnsavedChanges: true,
         }));
       },
 
@@ -521,6 +536,7 @@ export const useKanbanStore = create<KanbanStore>()(
                 }
               : b
           ),
+          hasUnsavedChanges: true,
         }));
       },
 
@@ -611,6 +627,15 @@ export const useKanbanStore = create<KanbanStore>()(
           console.error('Failed to load all boards from localStorage:', error);
         }
         return get().boards;
+      },
+
+      // Manual save actions
+      markAsUnsaved: () => set({ hasUnsavedChanges: true }),
+      markAsSaved: () => set({ hasUnsavedChanges: false }),
+      saveToFirebase: async () => {
+        // This is a placeholder - actual implementation is in SaveButton
+        // which has access to the authenticated user
+        set({ hasUnsavedChanges: false });
       },
     }),
     {
