@@ -5,7 +5,8 @@ import {
   User,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
-  signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   GoogleAuthProvider,
   signOut as firebaseSignOut,
   onAuthStateChanged,
@@ -32,6 +33,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     try {
       const auth = getAuth();
+
+      // Handle redirect result from Google Sign-In
+      getRedirectResult(auth)
+        .then((result) => {
+          if (result) {
+            console.log('Google Sign-In redirect successful:', result.user.email);
+          }
+        })
+        .catch((error) => {
+          console.error('Google Sign-In redirect error:', error);
+          setError(error.message || 'Failed to sign in with Google');
+        });
+
       const unsubscribe = onAuthStateChanged(auth, (user) => {
         setUser(user);
         setLoading(false);
@@ -80,7 +94,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         prompt: 'select_account'
       });
 
-      await signInWithPopup(auth, provider);
+      // Use redirect instead of popup for better multi-account handling
+      // User will be redirected to Google, select account, then redirected back
+      await signInWithRedirect(auth, provider);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to sign in with Google';
       setError(errorMessage);
