@@ -58,7 +58,7 @@ const BoardSwitcher = () => {
 
   return (
     <>
-      <Dropdown trigger={triggerContent} width="w-96">
+      <Dropdown trigger={triggerContent} width="w-64">
         <div className="py-2">
           {/* Board List */}
           <div className="max-h-64 overflow-y-auto">
@@ -108,11 +108,6 @@ const BoardSwitcher = () => {
                       </span>
                     )}
                   </button>
-                  {defaultBoardId === board.id && (
-                    <span className="text-xs bg-purple-200 dark:bg-purple-700 text-purple-900 dark:text-purple-100 px-2 py-1 rounded whitespace-nowrap">
-                      Default
-                    </span>
-                  )}
                 </div>
 
                 <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -122,10 +117,10 @@ const BoardSwitcher = () => {
                         setDefaultBoard(defaultBoardId === board.id ? null : board.id)
                       }
                       className={cn(
-                        'px-2 py-1 text-xs rounded whitespace-nowrap font-medium transition-colors',
+                        'p-1 text-lg transition-all',
                         defaultBoardId === board.id
-                          ? 'bg-purple-600 text-white hover:bg-purple-700'
-                          : 'bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-500'
+                          ? 'text-yellow-500 hover:text-yellow-600 scale-110'
+                          : 'text-gray-400 dark:text-gray-500 hover:text-yellow-400'
                       )}
                       title={
                         defaultBoardId === board.id
