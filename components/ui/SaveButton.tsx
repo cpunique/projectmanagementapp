@@ -12,10 +12,12 @@ const SaveButton = () => {
   const { user } = useAuth();
   const hasUnsavedChanges = useKanbanStore((state) => state.hasUnsavedChanges);
   const boards = useKanbanStore((state) => state.boards);
+  const activeBoard = useKanbanStore((state) => state.activeBoard);
   const defaultBoardId = useKanbanStore((state) => state.defaultBoardId);
   const markAsSaved = useKanbanStore((state) => state.markAsSaved);
   const [saveState, setSaveState] = useState<SaveState>('idle');
   const [isVisible, setIsVisible] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   // Show button when there are unsaved changes
   useEffect(() => {
@@ -31,18 +33,26 @@ const SaveButton = () => {
     if (saveState === 'saving' || !user) return;
 
     setSaveState('saving');
+    setErrorMessage(null);
 
     try {
-      // Save all boards to Firebase
-      for (const board of boards) {
-        const boardWithOwner = board as any;
+      console.log('[SaveButton] Starting save...');
+
+      // Only save the currently active board to avoid quota issues
+      const currentBoard = boards.find((b) => b.id === activeBoard);
+      if (currentBoard) {
+        const boardWithOwner = currentBoard as any;
         if (boardWithOwner.ownerId) {
-          await updateBoard(board.id, board);
+          console.log('[SaveButton] Saving active board:', currentBoard.name);
+          await updateBoard(currentBoard.id, currentBoard);
+          console.log('[SaveButton] Active board saved successfully');
         }
       }
 
       // Save default board preference
+      console.log('[SaveButton] Saving default board preference...');
       await setUserDefaultBoard(user.uid, defaultBoardId);
+      console.log('[SaveButton] Default board preference saved');
 
       // Mark as saved
       markAsSaved();
@@ -56,10 +66,22 @@ const SaveButton = () => {
           setSaveState('idle');
         }, 300); // Match the fade-out duration
       }, 2000);
-    } catch (error) {
-      console.error('Failed to save:', error);
+    } catch (error: any) {
+      console.error('[SaveButton] Failed to save:', error);
+
+      // Handle quota exceeded error specifically
+      if (error?.code === 'resource-exhausted') {
+        setErrorMessage('Firebase quota exceeded. Changes saved locally.');
+      } else {
+        setErrorMessage('Failed to save. Please try again.');
+      }
+
       setSaveState('idle');
-      // Could show error state here
+
+      // Show error message for 5 seconds
+      setTimeout(() => {
+        setErrorMessage(null);
+      }, 5000);
     }
   };
 
@@ -78,24 +100,30 @@ const SaveButton = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [hasUnsavedChanges, saveState, user]);
 
-  // Don't render if not visible
-  if (!isVisible) return null;
+  // Don't render if not visible and no error
+  if (!isVisible && !errorMessage) return null;
 
   return (
-    <button
-      onClick={handleSave}
-      disabled={saveState === 'saving'}
-      className={cn(
-        'flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200',
-        'shadow-sm hover:shadow-md',
-        'animate-in fade-in slide-in-from-top-2 duration-300',
-        saveState === 'idle' && 'bg-purple-600 hover:bg-purple-700 text-white hover:scale-105',
-        saveState === 'saving' && 'bg-purple-500 text-white cursor-wait',
-        saveState === 'saved' && 'bg-green-600 text-white',
-        !isVisible && 'animate-out fade-out slide-out-to-top-2 duration-300'
+    <div className="relative">
+      {errorMessage && (
+        <div className="absolute top-full right-0 mt-2 px-4 py-2 bg-red-500 text-white text-sm rounded-lg shadow-lg whitespace-nowrap z-50 animate-in fade-in slide-in-from-top-2 duration-300">
+          {errorMessage}
+        </div>
       )}
-      title={saveState === 'idle' ? 'Save changes (Cmd/Ctrl+S)' : ''}
-    >
+      <button
+        onClick={handleSave}
+        disabled={saveState === 'saving'}
+        className={cn(
+          'flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200',
+          'shadow-sm hover:shadow-md',
+          isVisible && 'animate-in fade-in slide-in-from-top-2 duration-300',
+          saveState === 'idle' && 'bg-purple-600 hover:bg-purple-700 text-white hover:scale-105',
+          saveState === 'saving' && 'bg-purple-500 text-white cursor-wait',
+          saveState === 'saved' && 'bg-green-600 text-white',
+          !isVisible && 'hidden'
+        )}
+        title={saveState === 'idle' ? 'Save active board (Cmd/Ctrl+S)' : ''}
+      >
       {saveState === 'idle' && (
         <>
           <span className="relative flex h-2 w-2">
@@ -151,6 +179,7 @@ const SaveButton = () => {
         </>
       )}
     </button>
+    </div>
   );
 };
 
