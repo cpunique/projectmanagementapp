@@ -74,6 +74,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const auth = getAuth();
       const provider = new GoogleAuthProvider();
+
+      // Force account selection - allows user to choose which Google account
+      provider.setCustomParameters({
+        prompt: 'select_account'
+      });
+
       await signInWithPopup(auth, provider);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to sign in with Google';
