@@ -118,25 +118,9 @@ export async function initializeFirebaseSync(user: User) {
       }
     }
 
-    // Subscribe to each board for real-time updates (only boards with ownerId)
-    const finalBoards = store.boards;
-    for (const board of finalBoards) {
-      // Only subscribe to boards that have been migrated to Firebase (have ownerId)
-      const boardWithOwner = board as any;
-      if (boardWithOwner.ownerId) {
-        subscribeToBoard(board.id, (updatedBoard) => {
-          if (updatedBoard) {
-            // Set flag to prevent sync loop when Firebase pushes updates
-            isSyncingFromFirebase = true;
-            store.updateBoardFromFirebase(board.id, updatedBoard);
-            // Reset flag after a short delay to allow user edits
-            setTimeout(() => {
-              isSyncingFromFirebase = false;
-            }, 100);
-          }
-        });
-      }
-    }
+    // Real-time listeners disabled to prevent sync loop
+    // Boards are loaded on login and auto-saved on changes
+    // This prevents Firebase updates from syncing back to Firebase
 
     // Reset flag after initialization completes
     isSyncingFromFirebase = false;
