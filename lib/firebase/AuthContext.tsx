@@ -31,37 +31,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const initAuth = async () => {
-      try {
-        const auth = getAuth();
+    const auth = getAuth();
 
-        // First, check for redirect result from Google Sign-In
-        console.log('[Auth] Checking for redirect result...');
-        const result = await getRedirectResult(auth);
+    // Handle redirect result (will be null if not coming from redirect)
+    getRedirectResult(auth)
+      .then((result) => {
         if (result) {
           console.log('[Auth] Google Sign-In redirect successful:', result.user.email);
-          setUser(result.user);
-          setLoading(false);
-          return;
+        } else {
+          console.log('[Auth] No redirect result (normal page load)');
         }
-        console.log('[Auth] No redirect result found');
+      })
+      .catch((error) => {
+        console.error('[Auth] Redirect error:', error);
+        setError(error.message || 'Failed to sign in with Google');
+      });
 
-        // Set up auth state listener
-        const unsubscribe = onAuthStateChanged(auth, (user) => {
-          console.log('[Auth] Auth state changed:', user?.email || 'no user');
-          setUser(user);
-          setLoading(false);
-        });
+    // Always set up auth state listener - it will pick up the authenticated user
+    // whether from redirect or existing session
+    console.log('[Auth] Setting up auth state listener...');
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      console.log('[Auth] Auth state changed:', user?.email || 'no user');
+      setUser(user);
+      setLoading(false);
+    });
 
-        return () => unsubscribe();
-      } catch (error: any) {
-        console.error('[Auth] Failed to initialize auth:', error);
-        setError(error.message || 'Firebase is not properly configured');
-        setLoading(false);
-      }
-    };
-
-    initAuth();
+    return () => unsubscribe();
   }, []);
 
   const signIn = async (email: string, password: string) => {
