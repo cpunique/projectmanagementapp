@@ -172,7 +172,8 @@ export const useKanbanStore = create<KanbanStore>()(
       },
 
       setDefaultBoard: (boardId: string | null) => {
-        set({ defaultBoardId: boardId, hasUnsavedChanges: true });
+        // Don't mark as unsaved - default board is saved immediately in BoardSwitcher
+        set({ defaultBoardId: boardId });
       },
 
       exportBoards: (boardId?: string) => {

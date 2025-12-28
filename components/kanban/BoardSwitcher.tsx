@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 import { useKanbanStore } from '@/lib/store';
+import { useAuth } from '@/lib/firebase/AuthContext';
+import { setUserDefaultBoard } from '@/lib/firebase/firestore';
 import { cn, generateId } from '@/lib/utils';
 import Dropdown from '@/components/ui/Dropdown';
 import Button from '@/components/ui/Button';
@@ -9,6 +11,7 @@ import Modal from '@/components/ui/Modal';
 import Input from '@/components/ui/Input';
 
 const BoardSwitcher = () => {
+  const { user } = useAuth();
   const boards = useKanbanStore((state) => state.boards);
   const activeBoard = useKanbanStore((state) => state.activeBoard);
   const defaultBoardId = useKanbanStore((state) => state.defaultBoardId);
@@ -44,6 +47,24 @@ const BoardSwitcher = () => {
   const handleDeleteBoard = (boardId: string) => {
     if (boards.length > 1) {
       deleteBoard(boardId);
+    }
+  };
+
+  const handleSetDefaultBoard = async (boardId: string) => {
+    const newDefaultId = defaultBoardId === boardId ? null : boardId;
+
+    // Update local state immediately
+    setDefaultBoard(newDefaultId);
+
+    // Save to Firebase immediately (don't wait for manual save)
+    if (user) {
+      try {
+        console.log('[BoardSwitcher] Saving default board to Firebase:', newDefaultId);
+        await setUserDefaultBoard(user.uid, newDefaultId);
+        console.log('[BoardSwitcher] Default board saved successfully');
+      } catch (error) {
+        console.error('[BoardSwitcher] Failed to save default board:', error);
+      }
     }
   };
 
@@ -113,9 +134,7 @@ const BoardSwitcher = () => {
                 <div className="flex items-center gap-1.5">
                   {!isRenamingBoardId && (
                     <button
-                      onClick={() =>
-                        setDefaultBoard(defaultBoardId === board.id ? null : board.id)
-                      }
+                      onClick={() => handleSetDefaultBoard(board.id)}
                       className={cn(
                         'p-1 text-base transition-all duration-200 ease-in-out',
                         defaultBoardId === board.id
