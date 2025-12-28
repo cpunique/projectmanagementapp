@@ -98,8 +98,18 @@ const SaveButton = () => {
           }, 300);
         }, 3000);
       } else {
-        setErrorMessage('Failed to save. Please try again.');
-        setSaveState('idle');
+        setErrorMessage('Saved locally. Firebase sync failed - will retry later.');
+
+        // Still mark as saved locally since Zustand persist handles it
+        markAsSaved();
+        setSaveState('saved');
+
+        setTimeout(() => {
+          setIsVisible(false);
+          setTimeout(() => {
+            setSaveState('idle');
+          }, 300);
+        }, 3000);
       }
 
       // Show error message for 8 seconds
