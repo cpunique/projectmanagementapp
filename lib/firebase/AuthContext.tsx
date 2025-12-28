@@ -5,8 +5,7 @@ import {
   User,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
-  signInWithRedirect,
-  getRedirectResult,
+  signInWithPopup,
   GoogleAuthProvider,
   signOut as firebaseSignOut,
   onAuthStateChanged,
@@ -33,37 +32,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const auth = getAuth();
 
-    // Handle redirect result (will be null if not coming from redirect)
-    console.log('[Auth] Initializing auth, checking for redirect...');
-    getRedirectResult(auth)
-      .then((result) => {
-        if (result) {
-          console.log('[Auth] ✅ Google Sign-In redirect successful:', result.user.email);
-          console.log('[Auth] User ID:', result.user.uid);
-        } else {
-          console.log('[Auth] No redirect result (normal page load)');
-        }
-      })
-      .catch((error) => {
-        console.error('[Auth] ❌ Redirect error:', error);
-        console.error('[Auth] Error code:', error.code);
-        console.error('[Auth] Error message:', error.message);
-
-        // Check for common errors
-        if (error.code === 'auth/unauthorized-domain') {
-          console.error('[Auth] ⚠️ UNAUTHORIZED DOMAIN - Add this domain to Firebase Console:');
-          console.error('[Auth] Domain:', window.location.hostname);
-          setError(`Unauthorized domain: ${window.location.hostname}. Please add this domain to Firebase Console.`);
-        } else if (error.code === 'auth/operation-not-allowed') {
-          console.error('[Auth] ⚠️ Google Sign-In not enabled in Firebase Console');
-          setError('Google Sign-In is not enabled. Please enable it in Firebase Console.');
-        } else {
-          setError(error.message || 'Failed to sign in with Google');
-        }
-      });
-
-    // Always set up auth state listener - it will pick up the authenticated user
-    // whether from redirect or existing session
+    // Set up auth state listener
     console.log('[Auth] Setting up auth state listener...');
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       console.log('[Auth] Auth state changed:', user?.email || 'no user');
@@ -113,10 +82,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         prompt: 'select_account'
       });
 
-      // Use redirect instead of popup for better multi-account handling
-      // User will be redirected to Google, select account, then redirected back
-      await signInWithRedirect(auth, provider);
-    } catch (err) {
+      console.log('[Auth] Starting Google Sign-In with popup...');
+      const result = await signInWithPopup(auth, provider);
+      console.log('[Auth] ✅ Google Sign-In successful:', result.user.email);
+      console.log('[Auth] User ID:', result.user.uid);
+    } catch (err: any) {
+      console.error('[Auth] ❌ Google Sign-In error:', err);
+      console.error('[Auth] Error code:', err.code);
+      console.error('[Auth] Error message:', err.message);
+
       const errorMessage = err instanceof Error ? err.message : 'Failed to sign in with Google';
       setError(errorMessage);
       throw err;
