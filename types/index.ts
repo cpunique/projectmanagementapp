@@ -38,6 +38,8 @@ export interface Board {
   createdAt: string;
   updatedAt: string;
   columns: Column[];
+  ownerId?: string; // User ID of the board owner
+  sharedWith?: string[]; // User IDs the board is shared with
 }
 
 export interface KanbanState {

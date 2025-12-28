@@ -57,7 +57,6 @@ export async function initializeFirebaseSync(user: User) {
         // Restore from backup and migrate to Firebase
         const backupBoards = currentState._userBoardsBackup;
         console.log('Found backed up boards, restoring:', backupBoards.map((b: any) => b.name));
-        store.setBoards(backupBoards);
 
         // Migrate to Firebase
         for (const board of backupBoards) {
@@ -73,7 +72,7 @@ export async function initializeFirebaseSync(user: User) {
         console.log('Waiting for Firestore propagation...');
         await new Promise(resolve => setTimeout(resolve, 1000));
 
-        // Reload from Firebase to get proper timestamps
+        // Reload from Firebase to get proper timestamps and ownerId
         console.log('Reloading boards from Firebase');
         const migratedBoards = await getUserBoards(user.uid);
         if (migratedBoards.length > 0) {
@@ -81,11 +80,16 @@ export async function initializeFirebaseSync(user: User) {
           store.setBoards(migratedBoards);
           store.switchBoard(migratedBoards[0].id);
         } else {
-          // If Firebase query still comes back empty, use the backup boards as-is
-          // They have the correct ownerId set from the backup
-          console.warn('Firebase query returned no boards after migration. Using backup boards directly.');
-          store.setBoards(backupBoards);
-          store.switchBoard(backupBoards[0].id);
+          // If Firebase query still comes back empty, add ownerId to backup boards and use them
+          // This ensures they have ownerId for syncing even if Firebase query failed
+          console.warn('Firebase query returned no boards after migration. Setting ownerId on backup boards.');
+          const boardsWithOwnerId = backupBoards.map((b: any) => ({
+            ...b,
+            ownerId: user.uid,
+            sharedWith: [],
+          }));
+          store.setBoards(boardsWithOwnerId);
+          store.switchBoard(boardsWithOwnerId[0].id);
         }
       } else if (store.boards.length > 0 && !store.demoMode) {
         // User has local boards but nothing in Firebase yet (not in demo mode)
@@ -94,7 +98,7 @@ export async function initializeFirebaseSync(user: User) {
           await createBoard(user.uid, board);
         }
 
-        // Update timestamps from Firebase response
+        // Reload from Firebase to get proper timestamps and ownerId
         const migratedBoards = await getUserBoards(user.uid);
         store.setBoards(migratedBoards);
       }
@@ -183,6 +187,30 @@ export function subscribeToStoreChanges(user: User) {
   let lastBoardsJson = '';
   let lastDefaultBoardId: string | null = '';
 
+  // Add safety: Sync on page unload (critical data loss prevention)
+  const handleBeforeUnload = async () => {
+    const state = useKanbanStore.getState();
+    console.log('Page unload: Syncing boards to Firebase immediately');
+
+    for (const board of state.boards) {
+      const boardWithOwner = board as any;
+      if (boardWithOwner.ownerId) {
+        try {
+          await updateBoard(board.id, board);
+          console.log('✓ Synced board on unload:', board.id);
+        } catch (error) {
+          console.error(`✗ Failed to sync board ${board.id} on unload:`, error);
+        }
+      } else {
+        console.warn('⚠ Board missing ownerId, skipping sync:', board.id, board);
+      }
+    }
+  };
+
+  if (typeof window !== 'undefined') {
+    window.addEventListener('beforeunload', handleBeforeUnload);
+  }
+
   return useKanbanStore.subscribe(
     (state) => {
       const currentBoardsJson = JSON.stringify(state.boards);
@@ -194,17 +222,21 @@ export function subscribeToStoreChanges(user: User) {
 
         clearTimeout(boardSyncTimeout);
         boardSyncTimeout = setTimeout(async () => {
+          console.log('Syncing boards to Firebase...');
           for (const board of state.boards) {
             const boardWithOwner = board as any;
             if (boardWithOwner.ownerId) {
               try {
                 await updateBoard(board.id, board);
+                console.log('✓ Successfully synced board:', board.id);
               } catch (error) {
-                console.error(`Failed to sync board ${board.id} to Firebase:`, error);
+                console.error(`✗ Failed to sync board ${board.id} to Firebase:`, error);
               }
+            } else {
+              console.warn('⚠ Board missing ownerId, skipping sync:', board.id, board);
             }
           }
-        }, 300); // Reduced from 1000ms to 300ms for faster syncing
+        }, 300);
       }
 
       // Only sync default board preference if it changed
@@ -215,10 +247,11 @@ export function subscribeToStoreChanges(user: User) {
         defaultBoardSyncTimeout = setTimeout(async () => {
           try {
             await setUserDefaultBoard(user.uid, currentDefaultBoardId);
+            console.log('✓ Synced default board preference:', currentDefaultBoardId);
           } catch (error) {
-            console.error('Failed to sync default board preference to Firebase:', error);
+            console.error('✗ Failed to sync default board preference to Firebase:', error);
           }
-        }, 300); // Also reduced for consistency
+        }, 300);
       }
     }
   );
