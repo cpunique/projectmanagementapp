@@ -13,6 +13,9 @@ import type { Board } from '@/types';
 // Track active subscriptions to prevent memory leaks
 const activeSubscriptions = new Map<string, () => void>();
 
+// Flag to prevent syncing TO Firebase when changes come FROM Firebase
+let isSyncingFromFirebase = false;
+
 /**
  * Initialize Firebase sync for a user
  * Load all user boards from Firebase and set up real-time listeners
@@ -22,6 +25,9 @@ export async function initializeFirebaseSync(user: User) {
     console.log('=== Starting Firebase Sync ===');
     const store = useKanbanStore.getState();
     console.log('Store state:', { demoMode: store.demoMode, boardCount: store.boards.length });
+
+    // Set flag to prevent sync loop during initialization
+    isSyncingFromFirebase = true;
 
     // Load all boards for the user from Firebase
     console.log('Calling getUserBoards for userId:', user.uid);
@@ -100,13 +106,23 @@ export async function initializeFirebaseSync(user: User) {
       if (boardWithOwner.ownerId) {
         subscribeToBoard(board.id, (updatedBoard) => {
           if (updatedBoard) {
+            // Set flag to prevent sync loop when Firebase pushes updates
+            isSyncingFromFirebase = true;
             store.updateBoardFromFirebase(board.id, updatedBoard);
+            // Reset flag after a short delay to allow user edits
+            setTimeout(() => {
+              isSyncingFromFirebase = false;
+            }, 100);
           }
         });
       }
     }
+
+    // Reset flag after initialization completes
+    isSyncingFromFirebase = false;
   } catch (error) {
     console.error('Failed to initialize Firebase sync:', error);
+    isSyncingFromFirebase = false;
   }
 }
 
@@ -170,6 +186,15 @@ export function subscribeToStoreChanges(user: User) {
 
   return useKanbanStore.subscribe(
     (state) => {
+      // Skip sync if changes are coming FROM Firebase (not user actions)
+      if (isSyncingFromFirebase) {
+        // Still update our tracking map to stay in sync
+        state.boards.forEach((board) => {
+          lastBoardsMap.set(board.id, JSON.stringify(board));
+        });
+        return;
+      }
+
       // Track which boards have changed by comparing individual board JSON
       const changedBoards: Board[] = [];
 
