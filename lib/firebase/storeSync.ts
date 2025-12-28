@@ -166,31 +166,47 @@ async function syncActionToFirebase(userId: string) {
  */
 export function subscribeToStoreChanges(user: User) {
   let syncTimeout: NodeJS.Timeout;
-  let lastBoardsJson = '';
+  let lastBoardsMap = new Map<string, string>();
 
   return useKanbanStore.subscribe(
     (state) => {
-      const currentBoardsJson = JSON.stringify(state.boards);
+      // Track which boards have changed by comparing individual board JSON
+      const changedBoards: Board[] = [];
 
-      // Only trigger if boards have actually changed
-      if (currentBoardsJson !== lastBoardsJson) {
-        lastBoardsJson = currentBoardsJson;
+      state.boards.forEach((board) => {
+        const currentBoardJson = JSON.stringify(board);
+        const lastBoardJson = lastBoardsMap.get(board.id);
 
+        if (currentBoardJson !== lastBoardJson) {
+          lastBoardsMap.set(board.id, currentBoardJson);
+          changedBoards.push(board);
+        }
+      });
+
+      // Only sync if there are actual changes
+      if (changedBoards.length > 0) {
         // Debounce the sync to avoid too many Firebase calls
         clearTimeout(syncTimeout);
         syncTimeout = setTimeout(async () => {
-          // Sync all boards to Firebase (only boards with ownerId)
-          for (const board of state.boards) {
+          console.log(`Syncing ${changedBoards.length} changed board(s) to Firebase...`);
+
+          // Only sync the boards that actually changed
+          for (const board of changedBoards) {
             const boardWithOwner = board as any;
             if (boardWithOwner.ownerId) {
               try {
                 await updateBoard(board.id, board);
-              } catch (error) {
-                console.error(`Failed to sync board ${board.id} to Firebase:`, error);
+              } catch (error: any) {
+                // Handle quota exceeded errors gracefully
+                if (error?.code === 'resource-exhausted') {
+                  console.warn(`Firebase quota exceeded for board ${board.id}. Changes are saved locally and will sync later.`);
+                } else {
+                  console.error(`Failed to sync board ${board.id} to Firebase:`, error);
+                }
               }
             }
           }
-        }, 1000); // Wait 1 second after last change before syncing
+        }, 2000); // Increased to 2 seconds to reduce write frequency
       }
     }
   );

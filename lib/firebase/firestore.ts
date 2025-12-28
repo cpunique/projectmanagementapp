@@ -71,14 +71,33 @@ export async function getBoard(boardId: string): Promise<Board | null> {
 }
 
 /**
- * Update a board
+ * Update a board with exponential backoff retry for quota errors
  */
-export async function updateBoard(boardId: string, updates: Partial<Board>) {
+export async function updateBoard(
+  boardId: string,
+  updates: Partial<Board>,
+  retryCount = 0,
+  maxRetries = 3
+) {
   const boardRef = doc(getBoardsCollection(), boardId);
-  await updateDoc(boardRef, {
-    ...updates,
-    updatedAt: serverTimestamp(),
-  });
+
+  try {
+    await updateDoc(boardRef, {
+      ...updates,
+      updatedAt: serverTimestamp(),
+    });
+  } catch (error: any) {
+    // Handle quota exceeded errors with exponential backoff
+    if (error?.code === 'resource-exhausted' && retryCount < maxRetries) {
+      const delayMs = Math.pow(2, retryCount) * 1000; // 1s, 2s, 4s
+      console.log(`Quota exceeded. Retrying in ${delayMs}ms... (attempt ${retryCount + 1}/${maxRetries})`);
+
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
+      return updateBoard(boardId, updates, retryCount + 1, maxRetries);
+    }
+
+    throw error;
+  }
 }
 
 /**
