@@ -236,7 +236,7 @@ export function subscribeToStoreChanges(user: User) {
               console.warn('⚠ Board missing ownerId, skipping sync:', board.id, board);
             }
           }
-        }, 300);
+        }, 1000); // Increased from 300ms to prevent Firebase quota exceeded errors
       }
 
       // Only sync default board preference if it changed
@@ -251,7 +251,7 @@ export function subscribeToStoreChanges(user: User) {
           } catch (error) {
             console.error('✗ Failed to sync default board preference to Firebase:', error);
           }
-        }, 300);
+        }, 1000); // Increased from 300ms to prevent Firebase quota exceeded errors
       }
     }
   );
