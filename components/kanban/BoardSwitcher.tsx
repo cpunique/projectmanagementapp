@@ -11,7 +11,9 @@ import Input from '@/components/ui/Input';
 const BoardSwitcher = () => {
   const boards = useKanbanStore((state) => state.boards);
   const activeBoard = useKanbanStore((state) => state.activeBoard);
+  const defaultBoardId = useKanbanStore((state) => state.defaultBoardId);
   const switchBoard = useKanbanStore((state) => state.switchBoard);
+  const setDefaultBoard = useKanbanStore((state) => state.setDefaultBoard);
   const addBoard = useKanbanStore((state) => state.addBoard);
   const deleteBoard = useKanbanStore((state) => state.deleteBoard);
   const updateBoard = useKanbanStore((state) => state.updateBoard);
@@ -64,57 +66,86 @@ const BoardSwitcher = () => {
               <div
                 key={board.id}
                 className={cn(
-                  'px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center justify-between',
+                  'px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center justify-between group',
                   activeBoard === board.id
                     ? 'bg-purple-50 dark:bg-purple-900/20 border-l-2 border-purple-600'
                     : ''
                 )}
               >
-                <button
-                  onClick={() => switchBoard(board.id)}
-                  className="flex-1 text-left text-sm hover:text-purple-600 dark:hover:text-purple-400"
-                >
-                  {isRenamingBoardId === board.id ? (
-                    <input
-                      autoFocus
-                      value={renameBoardValue}
-                      onChange={(e) => setRenameBoardValue(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          handleRenameBoard(board.id);
-                        } else if (e.key === 'Escape') {
+                <div className="flex-1 flex items-center gap-2">
+                  <button
+                    onClick={() => switchBoard(board.id)}
+                    className="flex-1 text-left text-sm hover:text-purple-600 dark:hover:text-purple-400"
+                  >
+                    {isRenamingBoardId === board.id ? (
+                      <input
+                        autoFocus
+                        value={renameBoardValue}
+                        onChange={(e) => setRenameBoardValue(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            handleRenameBoard(board.id);
+                          } else if (e.key === 'Escape') {
+                            setIsRenamingBoardId(null);
+                            setRenameBoardValue('');
+                          }
+                        }}
+                        onBlur={() => {
                           setIsRenamingBoardId(null);
                           setRenameBoardValue('');
-                        }
-                      }}
-                      onBlur={() => {
-                        setIsRenamingBoardId(null);
-                        setRenameBoardValue('');
-                      }}
-                      className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-500 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                      onClick={(e) => e.stopPropagation()}
-                    />
-                  ) : (
-                    <span
-                      onDoubleClick={() => {
-                        setIsRenamingBoardId(board.id);
-                        setRenameBoardValue(board.name);
-                      }}
-                    >
-                      {board.name}
+                        }}
+                        className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-500 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                    ) : (
+                      <span
+                        onDoubleClick={() => {
+                          setIsRenamingBoardId(board.id);
+                          setRenameBoardValue(board.name);
+                        }}
+                      >
+                        {board.name}
+                      </span>
+                    )}
+                  </button>
+                  {defaultBoardId === board.id && (
+                    <span className="text-xs bg-purple-200 dark:bg-purple-700 text-purple-900 dark:text-purple-100 px-2 py-1 rounded whitespace-nowrap">
+                      Default
                     </span>
                   )}
-                </button>
+                </div>
 
-                {boards.length > 1 && !isRenamingBoardId && (
-                  <button
-                    onClick={() => handleDeleteBoard(board.id)}
-                    className="ml-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 p-1 rounded text-sm"
-                    title="Delete board"
-                  >
-                    ✕
-                  </button>
-                )}
+                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  {!isRenamingBoardId && (
+                    <button
+                      onClick={() =>
+                        setDefaultBoard(defaultBoardId === board.id ? null : board.id)
+                      }
+                      className={cn(
+                        'px-2 py-1 text-xs rounded whitespace-nowrap font-medium transition-colors',
+                        defaultBoardId === board.id
+                          ? 'bg-purple-600 text-white hover:bg-purple-700'
+                          : 'bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-500'
+                      )}
+                      title={
+                        defaultBoardId === board.id
+                          ? 'Remove as default'
+                          : 'Make default'
+                      }
+                    >
+                      {defaultBoardId === board.id ? '★ Default' : '☆ Default'}
+                    </button>
+                  )}
+                  {boards.length > 1 && !isRenamingBoardId && (
+                    <button
+                      onClick={() => handleDeleteBoard(board.id)}
+                      className="text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 p-1 rounded text-sm"
+                      title="Delete board"
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
               </div>
             ))}
           </div>

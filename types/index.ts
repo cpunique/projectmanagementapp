@@ -43,6 +43,7 @@ export interface Board {
 export interface KanbanState {
   boards: Board[];
   activeBoard: string | null;
+  defaultBoardId: string | null;
   demoMode: boolean;
   darkMode: boolean;
   searchQuery: string;
@@ -65,6 +66,7 @@ export interface KanbanActions {
   deleteBoard: (boardId: string) => void;
   updateBoard: (boardId: string, name: string) => void;
   switchBoard: (boardId: string) => void;
+  setDefaultBoard: (boardId: string | null) => void;
   exportBoards: (boardId?: string) => string; // JSON string
   importBoards: (jsonData: string) => void;
 
