@@ -31,32 +31,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    try {
-      const auth = getAuth();
+    const initAuth = async () => {
+      try {
+        const auth = getAuth();
 
-      // Handle redirect result from Google Sign-In
-      getRedirectResult(auth)
-        .then((result) => {
-          if (result) {
-            console.log('Google Sign-In redirect successful:', result.user.email);
-          }
-        })
-        .catch((error) => {
-          console.error('Google Sign-In redirect error:', error);
-          setError(error.message || 'Failed to sign in with Google');
+        // First, check for redirect result from Google Sign-In
+        console.log('[Auth] Checking for redirect result...');
+        const result = await getRedirectResult(auth);
+        if (result) {
+          console.log('[Auth] Google Sign-In redirect successful:', result.user.email);
+          setUser(result.user);
+          setLoading(false);
+          return;
+        }
+        console.log('[Auth] No redirect result found');
+
+        // Set up auth state listener
+        const unsubscribe = onAuthStateChanged(auth, (user) => {
+          console.log('[Auth] Auth state changed:', user?.email || 'no user');
+          setUser(user);
+          setLoading(false);
         });
 
-      const unsubscribe = onAuthStateChanged(auth, (user) => {
-        setUser(user);
+        return () => unsubscribe();
+      } catch (error: any) {
+        console.error('[Auth] Failed to initialize auth:', error);
+        setError(error.message || 'Firebase is not properly configured');
         setLoading(false);
-      });
+      }
+    };
 
-      return () => unsubscribe();
-    } catch (error) {
-      console.error('Failed to initialize auth listener:', error);
-      setError('Firebase is not properly configured');
-      setLoading(false);
-    }
+    initAuth();
   }, []);
 
   const signIn = async (email: string, password: string) => {
