@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useAuth } from '@/lib/firebase/AuthContext';
+import { useKanbanStore } from '@/lib/store';
 import LoginModal from './LoginModal';
 
 interface AuthGateProps {
@@ -11,6 +12,16 @@ interface AuthGateProps {
 export default function AuthGate({ children }: AuthGateProps) {
   const { user, loading } = useAuth();
   const [loginModalOpen, setLoginModalOpen] = useState(!user);
+  const demoMode = useKanbanStore((state) => state.demoMode);
+  const toggleDemoMode = useKanbanStore((state) => state.toggleDemoMode);
+
+  // Enable demo mode when not authenticated to hide user data
+  useEffect(() => {
+    if (!loading && !user && !demoMode) {
+      console.log('[AuthGate] Not authenticated - enabling demo mode');
+      toggleDemoMode();
+    }
+  }, [user, loading, demoMode, toggleDemoMode]);
 
   if (loading) {
     return (
@@ -26,6 +37,8 @@ export default function AuthGate({ children }: AuthGateProps) {
   if (!user) {
     return (
       <>
+        {/* Show demo board in background with login modal overlay */}
+        {children}
         <LoginModal isOpen={loginModalOpen} onClose={() => setLoginModalOpen(false)} />
       </>
     );

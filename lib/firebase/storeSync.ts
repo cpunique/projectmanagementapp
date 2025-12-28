@@ -42,19 +42,24 @@ export async function initializeFirebaseSync(user: User) {
 
       // Load default board preference
       const defaultBoardId = await getUserDefaultBoard(user.uid);
+      console.log('[Sync] User default board preference:', defaultBoardId);
+
       if (defaultBoardId) {
-        store.setDefaultBoard(defaultBoardId);
-        // Switch to default board if it exists in userBoards
+        // Check if default board exists in userBoards
         const defaultBoardExists = userBoards.some(b => b.id === defaultBoardId);
         if (defaultBoardExists) {
+          console.log('[Sync] Switching to default board:', defaultBoardId);
+          store.setDefaultBoard(defaultBoardId);
           store.switchBoard(defaultBoardId);
         } else {
           // Default board doesn't exist anymore, clear preference and use first board
+          console.log('[Sync] Default board not found, clearing preference');
           await setUserDefaultBoard(user.uid, null);
           store.setDefaultBoard(null);
           store.switchBoard(userBoards[0].id);
         }
       } else {
+        console.log('[Sync] No default board preference, using first board');
         store.switchBoard(userBoards[0].id);
       }
 
@@ -62,6 +67,10 @@ export async function initializeFirebaseSync(user: User) {
       if (store.demoMode) {
         store.toggleDemoMode();
       }
+
+      // Mark as saved since we just loaded from Firebase (no unsaved changes)
+      store.markAsSaved();
+      console.log('[Sync] Initialization complete - marked as saved');
     } else {
       // No boards in Firebase yet
       // Check if we have backed up user boards from demo mode
@@ -116,6 +125,10 @@ export async function initializeFirebaseSync(user: User) {
       if (store.demoMode) {
         store.toggleDemoMode();
       }
+
+      // Mark as saved after migration
+      store.markAsSaved();
+      console.log('[Sync] Migration complete - marked as saved');
     }
 
     // Real-time listeners disabled to prevent sync loop
