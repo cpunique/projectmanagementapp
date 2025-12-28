@@ -66,7 +66,7 @@ const BoardSwitcher = () => {
               <div
                 key={board.id}
                 className={cn(
-                  'px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center justify-between group',
+                  'px-3 py-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center justify-between group',
                   activeBoard === board.id
                     ? 'bg-purple-50 dark:bg-purple-900/20 border-l-2 border-purple-600'
                     : ''
@@ -110,17 +110,17 @@ const BoardSwitcher = () => {
                   </button>
                 </div>
 
-                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="flex items-center gap-1.5">
                   {!isRenamingBoardId && (
                     <button
                       onClick={() =>
                         setDefaultBoard(defaultBoardId === board.id ? null : board.id)
                       }
                       className={cn(
-                        'p-1 text-lg transition-all',
+                        'p-1 text-base transition-all duration-200 ease-in-out',
                         defaultBoardId === board.id
-                          ? 'text-yellow-500 hover:text-yellow-600 scale-110'
-                          : 'text-gray-400 dark:text-gray-500 hover:text-yellow-400'
+                          ? 'text-purple-600 dark:text-purple-400 scale-110 drop-shadow-sm'
+                          : 'text-gray-300 dark:text-gray-600 hover:text-purple-400 dark:hover:text-purple-500 hover:scale-105'
                       )}
                       title={
                         defaultBoardId === board.id
