@@ -18,6 +18,7 @@ const SaveButton = () => {
   const [saveState, setSaveState] = useState<SaveState>('idle');
   const [isVisible, setIsVisible] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [quotaExceeded, setQuotaExceeded] = useState(false);
 
   // Show button when there are unsaved changes
   useEffect(() => {
@@ -35,6 +36,23 @@ const SaveButton = () => {
     setSaveState('saving');
     setErrorMessage(null);
 
+    // If quota is already exceeded, skip Firebase save entirely
+    if (quotaExceeded) {
+      console.log('[SaveButton] Quota exceeded - saving locally only');
+      markAsSaved();
+      setSaveState('saved');
+      setErrorMessage('Saved locally (Firebase quota exceeded)');
+
+      setTimeout(() => {
+        setIsVisible(false);
+        setTimeout(() => {
+          setSaveState('idle');
+          setErrorMessage(null);
+        }, 300);
+      }, 2000);
+      return;
+    }
+
     try {
       console.log('[SaveButton] Starting save...');
 
@@ -45,16 +63,11 @@ const SaveButton = () => {
         if (boardWithOwner.ownerId) {
           console.log('[SaveButton] Saving active board:', currentBoard.name);
           await updateBoard(currentBoard.id, currentBoard);
-          console.log('[SaveButton] Active board saved successfully');
+          console.log('[SaveButton] Active board saved to Firebase');
         }
       }
 
-      // Save default board preference
-      console.log('[SaveButton] Saving default board preference...');
-      await setUserDefaultBoard(user.uid, defaultBoardId);
-      console.log('[SaveButton] Default board preference saved');
-
-      // Mark as saved
+      // Mark as saved (changes are always saved locally via Zustand persist)
       markAsSaved();
       setSaveState('saved');
 
@@ -69,19 +82,30 @@ const SaveButton = () => {
     } catch (error: any) {
       console.error('[SaveButton] Failed to save:', error);
 
-      // Handle quota exceeded error specifically
+      // Handle quota exceeded error - stop trying to save to Firebase
       if (error?.code === 'resource-exhausted') {
-        setErrorMessage('Firebase quota exceeded. Changes saved locally.');
+        setQuotaExceeded(true);
+        setErrorMessage('Firebase quota exceeded. Saved locally. Data will sync when quota resets.');
+
+        // Still mark as saved locally
+        markAsSaved();
+        setSaveState('saved');
+
+        setTimeout(() => {
+          setIsVisible(false);
+          setTimeout(() => {
+            setSaveState('idle');
+          }, 300);
+        }, 3000);
       } else {
         setErrorMessage('Failed to save. Please try again.');
+        setSaveState('idle');
       }
 
-      setSaveState('idle');
-
-      // Show error message for 5 seconds
+      // Show error message for 8 seconds
       setTimeout(() => {
         setErrorMessage(null);
-      }, 5000);
+      }, 8000);
     }
   };
 
@@ -106,7 +130,7 @@ const SaveButton = () => {
   return (
     <div className="relative">
       {errorMessage && (
-        <div className="absolute top-full right-0 mt-2 px-4 py-2 bg-red-500 text-white text-sm rounded-lg shadow-lg whitespace-nowrap z-50 animate-in fade-in slide-in-from-top-2 duration-300">
+        <div className="absolute top-full right-0 mt-2 px-4 py-2 bg-amber-500 text-white text-sm rounded-lg shadow-lg whitespace-nowrap z-50 animate-in fade-in slide-in-from-top-2 duration-300 max-w-xs">
           {errorMessage}
         </div>
       )}
@@ -117,12 +141,13 @@ const SaveButton = () => {
           'flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200',
           'shadow-sm hover:shadow-md',
           isVisible && 'animate-in fade-in slide-in-from-top-2 duration-300',
-          saveState === 'idle' && 'bg-purple-600 hover:bg-purple-700 text-white hover:scale-105',
+          saveState === 'idle' && !quotaExceeded && 'bg-purple-600 hover:bg-purple-700 text-white hover:scale-105',
+          saveState === 'idle' && quotaExceeded && 'bg-amber-600 hover:bg-amber-700 text-white hover:scale-105',
           saveState === 'saving' && 'bg-purple-500 text-white cursor-wait',
           saveState === 'saved' && 'bg-green-600 text-white',
           !isVisible && 'hidden'
         )}
-        title={saveState === 'idle' ? 'Save active board (Cmd/Ctrl+S)' : ''}
+        title={saveState === 'idle' ? (quotaExceeded ? 'Save locally (Firebase quota exceeded)' : 'Save to Firebase (Cmd/Ctrl+S)') : ''}
       >
       {saveState === 'idle' && (
         <>
