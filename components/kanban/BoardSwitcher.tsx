@@ -58,7 +58,7 @@ const BoardSwitcher = () => {
 
   return (
     <>
-      <Dropdown trigger={triggerContent} width="w-64">
+      <Dropdown trigger={triggerContent} width="w-96">
         <div className="py-2">
           {/* Board List */}
           <div className="max-h-64 overflow-y-auto">
@@ -133,7 +133,7 @@ const BoardSwitcher = () => {
                           : 'Make default'
                       }
                     >
-                      {defaultBoardId === board.id ? '★ Default' : '☆ Default'}
+                      {defaultBoardId === board.id ? '★' : '☆'}
                     </button>
                   )}
                   {boards.length > 1 && !isRenamingBoardId && (
