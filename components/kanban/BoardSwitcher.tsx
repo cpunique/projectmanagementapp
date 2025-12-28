@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useKanbanStore } from '@/lib/store';
 import { useAuth } from '@/lib/firebase/AuthContext';
 import { setUserDefaultBoard } from '@/lib/firebase/firestore';
@@ -25,6 +25,7 @@ const BoardSwitcher = () => {
   const [newBoardName, setNewBoardName] = useState('');
   const [isRenamingBoardId, setIsRenamingBoardId] = useState<string | null>(null);
   const [renameBoardValue, setRenameBoardValue] = useState('');
+  const isSavingDefaultBoard = useRef(false);
 
   const currentBoard = boards.find((b) => b.id === activeBoard);
 
@@ -51,21 +52,49 @@ const BoardSwitcher = () => {
   };
 
   const handleSetDefaultBoard = async (boardId: string) => {
+    // Prevent concurrent executions (guard against double-clicks or rapid re-renders)
+    if (isSavingDefaultBoard.current) {
+      console.log('[BoardSwitcher] ⚠️ Already saving default board, ignoring duplicate call');
+      return;
+    }
+
+    const boardName = boards.find((b) => b.id === boardId)?.name || 'Unknown Board';
     const newDefaultId = defaultBoardId === boardId ? null : boardId;
+
+    console.log('═══════════════════════════════════════════════════════');
+    console.log('[BoardSwitcher] 🎯 handleSetDefaultBoard called');
+    console.log('[BoardSwitcher] Board clicked:', `"${boardName}" (ID: ${boardId})`);
+    console.log('[BoardSwitcher] Current default:', defaultBoardId ? `"${boards.find((b) => b.id === defaultBoardId)?.name}" (ID: ${defaultBoardId})` : 'None');
+    console.log('[BoardSwitcher] Action:', newDefaultId ? `Setting "${boardName}" as DEFAULT` : `Removing "${boardName}" as default`);
+    console.log('[BoardSwitcher] New default ID will be:', newDefaultId || 'null (no default)');
+
+    // Set guard flag
+    isSavingDefaultBoard.current = true;
 
     // Update local state immediately
     setDefaultBoard(newDefaultId);
+    console.log('[BoardSwitcher] ✅ Local state updated in Zustand store');
 
     // Save to Firebase immediately (don't wait for manual save)
     if (user) {
       try {
-        console.log('[BoardSwitcher] Saving default board to Firebase:', newDefaultId);
+        console.log('[BoardSwitcher] 💾 Saving to Firebase...');
         await setUserDefaultBoard(user.uid, newDefaultId);
-        console.log('[BoardSwitcher] Default board saved successfully');
+        console.log('[BoardSwitcher] ✅ Firebase save successful!');
+        console.log('═══════════════════════════════════════════════════════');
       } catch (error) {
-        console.error('[BoardSwitcher] Failed to save default board:', error);
+        console.error('[BoardSwitcher] ❌ Firebase save failed:', error);
+        console.log('═══════════════════════════════════════════════════════');
       }
+    } else {
+      console.log('[BoardSwitcher] ⚠️ No user authenticated, skipping Firebase save');
+      console.log('═══════════════════════════════════════════════════════');
     }
+
+    // Release guard flag after a short delay to prevent rapid successive clicks
+    setTimeout(() => {
+      isSavingDefaultBoard.current = false;
+    }, 500);
   };
 
   const triggerContent = (
@@ -134,7 +163,11 @@ const BoardSwitcher = () => {
                 <div className="flex items-center gap-1.5">
                   {!isRenamingBoardId && (
                     <button
-                      onClick={() => handleSetDefaultBoard(board.id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        handleSetDefaultBoard(board.id);
+                      }}
                       className={cn(
                         'p-1 text-base transition-all duration-200 ease-in-out',
                         defaultBoardId === board.id
