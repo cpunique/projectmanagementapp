@@ -40,26 +40,44 @@ export async function initializeFirebaseSync(user: User) {
       // User has boards in Firebase - use those
       store.setBoards(userBoards);
 
+      // Log all boards with their IDs and names for debugging
+      console.log('═══════════════════════════════════════════════════════');
+      console.log('[Sync] 📋 Loaded boards from Firebase:');
+      userBoards.forEach((board, index) => {
+        console.log(`  ${index + 1}. "${board.name}" (ID: ${board.id})`);
+      });
+      console.log('═══════════════════════════════════════════════════════');
+
       // Load default board preference
       const defaultBoardId = await getUserDefaultBoard(user.uid);
-      console.log('[Sync] User default board preference:', defaultBoardId);
+      const defaultBoard = userBoards.find(b => b.id === defaultBoardId);
+
+      if (defaultBoardId && defaultBoard) {
+        console.log(`[Sync] ⭐ User default board preference from Firebase: "${defaultBoard.name}" (ID: ${defaultBoardId})`);
+      } else if (defaultBoardId && !defaultBoard) {
+        console.log(`[Sync] ⚠️ Default board ID "${defaultBoardId}" not found in loaded boards`);
+      } else {
+        console.log('[Sync] ℹ️ No default board preference set in Firebase');
+      }
 
       if (defaultBoardId) {
         // Check if default board exists in userBoards
         const defaultBoardExists = userBoards.some(b => b.id === defaultBoardId);
         if (defaultBoardExists) {
-          console.log('[Sync] Switching to default board:', defaultBoardId);
+          const boardName = userBoards.find(b => b.id === defaultBoardId)?.name || 'Unknown';
+          console.log(`[Sync] ✅ Switching to default board: "${boardName}" (ID: ${defaultBoardId})`);
           store.setDefaultBoard(defaultBoardId);
           store.switchBoard(defaultBoardId);
         } else {
           // Default board doesn't exist anymore, clear preference and use first board
-          console.log('[Sync] Default board not found, clearing preference');
+          console.log('[Sync] ⚠️ Default board not found in loaded boards, clearing preference');
+          console.log(`[Sync] 📌 Falling back to first board: "${userBoards[0].name}" (ID: ${userBoards[0].id})`);
           await setUserDefaultBoard(user.uid, null);
           store.setDefaultBoard(null);
           store.switchBoard(userBoards[0].id);
         }
       } else {
-        console.log('[Sync] No default board preference, using first board');
+        console.log(`[Sync] 📌 No default set - using first board: "${userBoards[0].name}" (ID: ${userBoards[0].id})`);
         store.switchBoard(userBoards[0].id);
       }
 
