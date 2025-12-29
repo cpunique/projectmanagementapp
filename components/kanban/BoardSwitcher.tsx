@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import { useKanbanStore } from '@/lib/store';
 import { useAuth } from '@/lib/firebase/AuthContext';
 import { setUserDefaultBoard } from '@/lib/firebase/firestore';
@@ -25,7 +25,7 @@ const BoardSwitcher = () => {
   const [newBoardName, setNewBoardName] = useState('');
   const [isRenamingBoardId, setIsRenamingBoardId] = useState<string | null>(null);
   const [renameBoardValue, setRenameBoardValue] = useState('');
-  const isSavingDefaultBoard = useRef(false);
+  const [isSavingDefaultBoard, setIsSavingDefaultBoard] = useState(false);
 
   const currentBoard = boards.find((b) => b.id === activeBoard);
 
@@ -53,7 +53,7 @@ const BoardSwitcher = () => {
 
   const handleSetDefaultBoard = async (boardId: string) => {
     // Prevent concurrent executions (guard against double-clicks or rapid re-renders)
-    if (isSavingDefaultBoard.current) {
+    if (isSavingDefaultBoard) {
       console.log('[BoardSwitcher] ⚠️ Already saving default board, ignoring duplicate call');
       return;
     }
@@ -69,7 +69,7 @@ const BoardSwitcher = () => {
     console.log('[BoardSwitcher] New default ID will be:', newDefaultId || 'null (no default)');
 
     // Set guard flag
-    isSavingDefaultBoard.current = true;
+    setIsSavingDefaultBoard(true);
 
     // Update local state immediately
     setDefaultBoard(newDefaultId);
@@ -93,7 +93,7 @@ const BoardSwitcher = () => {
 
     // Release guard flag after a short delay to prevent rapid successive clicks
     setTimeout(() => {
-      isSavingDefaultBoard.current = false;
+      setIsSavingDefaultBoard(false);
     }, 500);
   };
 
@@ -163,16 +163,26 @@ const BoardSwitcher = () => {
                 <div className="flex items-center gap-1.5">
                   {!isRenamingBoardId && (
                     <button
+                      onMouseDown={(e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                      }}
                       onClick={(e) => {
                         e.stopPropagation();
                         e.preventDefault();
                         handleSetDefaultBoard(board.id);
                       }}
+                      onDoubleClick={(e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                      }}
+                      disabled={isSavingDefaultBoard}
                       className={cn(
                         'p-1 text-base transition-all duration-200 ease-in-out',
                         defaultBoardId === board.id
                           ? 'text-purple-600 dark:text-purple-400 scale-110 drop-shadow-sm'
-                          : 'text-gray-300 dark:text-gray-600 hover:text-purple-400 dark:hover:text-purple-500 hover:scale-105'
+                          : 'text-gray-300 dark:text-gray-600 hover:text-purple-400 dark:hover:text-purple-500 hover:scale-105',
+                        isSavingDefaultBoard && 'opacity-50 cursor-not-allowed'
                       )}
                       title={
                         defaultBoardId === board.id
