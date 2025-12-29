@@ -24,60 +24,35 @@ let isSyncingFromFirebase = false;
  */
 export async function initializeFirebaseSync(user: User) {
   try {
-    console.log('=== Starting Firebase Sync ===');
+    console.log('[Sync] Initializing Firebase sync');
     const store = useKanbanStore.getState();
-    console.log('Store state:', { demoMode: store.demoMode, boardCount: store.boards.length });
 
     // Set flag to prevent sync loop during initialization
     isSyncingFromFirebase = true;
 
     // Load all boards for the user from Firebase
-    console.log('Calling getUserBoards for userId:', user.uid);
     const userBoards = await getUserBoards(user.uid);
-    console.log('Got userBoards:', userBoards.length);
+    console.log(`[Sync] Loaded ${userBoards.length} board(s) from Firebase`);
 
     if (userBoards.length > 0) {
       // User has boards in Firebase - use those
       store.setBoards(userBoards);
-
-      // Log all boards with their IDs and names for debugging
-      console.log('═══════════════════════════════════════════════════════');
-      console.log('[Sync] 📋 Loaded boards from Firebase:');
-      userBoards.forEach((board, index) => {
-        console.log(`  ${index + 1}. "${board.name}" (ID: ${board.id})`);
-      });
-      console.log('═══════════════════════════════════════════════════════');
 
       // Load default board preference
       const defaultBoardId = await getUserDefaultBoard(user.uid);
       const defaultBoard = userBoards.find(b => b.id === defaultBoardId);
 
       if (defaultBoardId && defaultBoard) {
-        console.log(`[Sync] ⭐ User default board preference from Firebase: "${defaultBoard.name}" (ID: ${defaultBoardId})`);
+        console.log(`[Sync] Loading default board: "${defaultBoard.name}"`);
+        store.setDefaultBoard(defaultBoardId);
+        store.switchBoard(defaultBoardId);
       } else if (defaultBoardId && !defaultBoard) {
-        console.log(`[Sync] ⚠️ Default board ID "${defaultBoardId}" not found in loaded boards`);
+        console.warn(`[Sync] Default board ID "${defaultBoardId}" not found, clearing preference`);
+        await setUserDefaultBoard(user.uid, null);
+        store.setDefaultBoard(null);
+        store.switchBoard(userBoards[0].id);
       } else {
-        console.log('[Sync] ℹ️ No default board preference set in Firebase');
-      }
-
-      if (defaultBoardId) {
-        // Check if default board exists in userBoards
-        const defaultBoardExists = userBoards.some(b => b.id === defaultBoardId);
-        if (defaultBoardExists) {
-          const boardName = userBoards.find(b => b.id === defaultBoardId)?.name || 'Unknown';
-          console.log(`[Sync] ✅ Switching to default board: "${boardName}" (ID: ${defaultBoardId})`);
-          store.setDefaultBoard(defaultBoardId);
-          store.switchBoard(defaultBoardId);
-        } else {
-          // Default board doesn't exist anymore, clear preference and use first board
-          console.log('[Sync] ⚠️ Default board not found in loaded boards, clearing preference');
-          console.log(`[Sync] 📌 Falling back to first board: "${userBoards[0].name}" (ID: ${userBoards[0].id})`);
-          await setUserDefaultBoard(user.uid, null);
-          store.setDefaultBoard(null);
-          store.switchBoard(userBoards[0].id);
-        }
-      } else {
-        console.log(`[Sync] 📌 No default set - using first board: "${userBoards[0].name}" (ID: ${userBoards[0].id})`);
+        console.log(`[Sync] No default board set, using "${userBoards[0].name}"`);
         store.switchBoard(userBoards[0].id);
       }
 
@@ -88,7 +63,7 @@ export async function initializeFirebaseSync(user: User) {
 
       // Mark as saved since we just loaded from Firebase (no unsaved changes)
       store.markAsSaved();
-      console.log('[Sync] Initialization complete - marked as saved');
+      console.log('[Sync] Initialization complete');
     } else {
       // No boards in Firebase yet
       // Check if we have backed up user boards from demo mode

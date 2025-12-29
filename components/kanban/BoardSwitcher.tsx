@@ -54,41 +54,27 @@ const BoardSwitcher = () => {
   const handleSetDefaultBoard = async (boardId: string) => {
     // Prevent concurrent executions (guard against double-clicks or rapid re-renders)
     if (isSavingDefaultBoard) {
-      console.log('[BoardSwitcher] ⚠️ Already saving default board, ignoring duplicate call');
       return;
     }
 
     const boardName = boards.find((b) => b.id === boardId)?.name || 'Unknown Board';
     const newDefaultId = defaultBoardId === boardId ? null : boardId;
 
-    console.log('═══════════════════════════════════════════════════════');
-    console.log('[BoardSwitcher] 🎯 handleSetDefaultBoard called');
-    console.log('[BoardSwitcher] Board clicked:', `"${boardName}" (ID: ${boardId})`);
-    console.log('[BoardSwitcher] Current default:', defaultBoardId ? `"${boards.find((b) => b.id === defaultBoardId)?.name}" (ID: ${defaultBoardId})` : 'None');
-    console.log('[BoardSwitcher] Action:', newDefaultId ? `Setting "${boardName}" as DEFAULT` : `Removing "${boardName}" as default`);
-    console.log('[BoardSwitcher] New default ID will be:', newDefaultId || 'null (no default)');
+    console.log(`[BoardSwitcher] ${newDefaultId ? `Setting "${boardName}" as default` : `Removing default from "${boardName}"`}`);
 
     // Set guard flag
     setIsSavingDefaultBoard(true);
 
     // Update local state immediately
     setDefaultBoard(newDefaultId);
-    console.log('[BoardSwitcher] ✅ Local state updated in Zustand store');
 
     // Save to Firebase immediately (don't wait for manual save)
     if (user) {
       try {
-        console.log('[BoardSwitcher] 💾 Saving to Firebase...');
         await setUserDefaultBoard(user.uid, newDefaultId);
-        console.log('[BoardSwitcher] ✅ Firebase save successful!');
-        console.log('═══════════════════════════════════════════════════════');
       } catch (error) {
-        console.error('[BoardSwitcher] ❌ Firebase save failed:', error);
-        console.log('═══════════════════════════════════════════════════════');
+        console.error('[BoardSwitcher] Failed to save default board:', error);
       }
-    } else {
-      console.log('[BoardSwitcher] ⚠️ No user authenticated, skipping Firebase save');
-      console.log('═══════════════════════════════════════════════════════');
     }
 
     // Release guard flag after a short delay to prevent rapid successive clicks
