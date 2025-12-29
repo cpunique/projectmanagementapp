@@ -562,6 +562,7 @@ export const useKanbanStore = create<KanbanStore>()(
           if (newDemoMode) {
             // Entering demo mode - save current user boards in state and show demo board
             const demoBoard = createDemoBoard();
+            console.log('[Store] Entering demo mode - showing demo board');
             return {
               demoMode: newDemoMode,
               boards: [demoBoard],
@@ -570,15 +571,18 @@ export const useKanbanStore = create<KanbanStore>()(
             };
           } else {
             // Exiting demo mode - restore saved user boards
+            // BUT DO NOT change activeBoard - Firebase sync has already set the correct board
             const restoredBoards = state._userBoardsBackup;
             if (restoredBoards && restoredBoards.length > 0) {
+              console.log('[Store] Exiting demo mode - restoring user boards (keeping current activeBoard)');
               return {
                 demoMode: newDemoMode,
                 boards: restoredBoards,
-                activeBoard: restoredBoards[0].id,
+                // activeBoard: KEEP CURRENT - Firebase has already set it to default board
                 _userBoardsBackup: undefined,
               };
             } else {
+              console.log('[Store] Exiting demo mode - no backup found, creating default board');
               return {
                 demoMode: newDemoMode,
                 boards: [createDefaultBoard()],
