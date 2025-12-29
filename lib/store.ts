@@ -168,7 +168,10 @@ export const useKanbanStore = create<KanbanStore>()(
       },
 
       switchBoard: (boardId: string) => {
+        const currentBoard = get().boards.find(b => b.id === boardId);
+        console.log(`[Store] switchBoard called: "${currentBoard?.name || 'Unknown'}" (ID: ${boardId})`);
         set({ activeBoard: boardId });
+        console.log('[Store] activeBoard state updated to:', boardId);
       },
 
       setDefaultBoard: (boardId: string | null) => {
@@ -642,6 +645,12 @@ export const useKanbanStore = create<KanbanStore>()(
     {
       name: 'kanban-store',
       version: 1,
+      // Exclude activeBoard from localStorage - Firebase is the source of truth for authenticated users
+      partialize: (state) => {
+        const { activeBoard, ...rest } = state;
+        console.log('[Store] Persisting state to localStorage (excluding activeBoard)');
+        return rest;
+      },
       migrate: (persistedState: any, version: number) => {
         // Apply migrations for all versions
         if (version === 1) {
