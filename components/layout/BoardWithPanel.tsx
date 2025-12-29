@@ -24,10 +24,12 @@ export function BoardWithPanel({ children }: BoardWithPanelProps) {
         {children}
       </div>
 
-      {/* Due Date Panel */}
-      <div className="hidden md:flex">
-        <DueDatePanel />
-      </div>
+      {/* Due Date Panel - Desktop (conditionally rendered based on toggle state) */}
+      {dueDatePanelOpen && (
+        <div className="hidden md:flex">
+          <DueDatePanel />
+        </div>
+      )}
 
       {/* Mobile Toggle Button and Overlay Panel */}
       <div className="md:hidden">
