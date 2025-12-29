@@ -43,6 +43,7 @@ export interface Board {
 export interface KanbanState {
   boards: Board[];
   activeBoard: string | null;
+  defaultBoardId: string | null;
   demoMode: boolean;
   darkMode: boolean;
   searchQuery: string;
@@ -57,6 +58,8 @@ export interface KanbanState {
   // Due dates panel state
   dueDatePanelOpen: boolean;
   dueDatePanelWidth: number;
+  // Unsaved changes tracking
+  hasUnsavedChanges: boolean;
 }
 
 export interface KanbanActions {
@@ -65,6 +68,7 @@ export interface KanbanActions {
   deleteBoard: (boardId: string) => void;
   updateBoard: (boardId: string, name: string) => void;
   switchBoard: (boardId: string) => void;
+  setDefaultBoard: (boardId: string | null) => void;
   exportBoards: (boardId?: string) => string; // JSON string
   importBoards: (jsonData: string) => void;
 
@@ -116,6 +120,11 @@ export interface KanbanActions {
   setBoards: (boards: Board[]) => void;
   updateBoardFromFirebase: (boardId: string, updatedBoard: Board) => void;
   loadAllBoardsFromLocalStorage: () => Board[];
+
+  // Manual save actions
+  markAsUnsaved: () => void;
+  markAsSaved: () => void;
+  saveToFirebase: () => Promise<void>;
 }
 
 export type KanbanStore = KanbanState & KanbanActions;

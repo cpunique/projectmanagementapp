@@ -6,13 +6,23 @@ import Container from './Container';
 import BoardSwitcher from '@/components/kanban/BoardSwitcher';
 import UserMenu from '@/components/auth/UserMenu';
 import SyncStatus from '@/components/ui/SyncStatus';
+import SaveButton from '@/components/ui/SaveButton';
 
 const Header = () => {
   const darkMode = useKanbanStore((state) => state.darkMode);
   const demoMode = useKanbanStore((state) => state.demoMode);
+  const dueDatePanelOpen = useKanbanStore((state) => state.dueDatePanelOpen);
   const toggleDarkMode = useKanbanStore((state) => state.toggleDarkMode);
   const toggleDemoMode = useKanbanStore((state) => state.toggleDemoMode);
+  const toggleDueDatePanel = useKanbanStore((state) => state.toggleDueDatePanel);
   const activeBoard = useKanbanStore((state) => state.activeBoard);
+  const boards = useKanbanStore((state) => state.boards);
+
+  // Calculate badge count for due dates
+  const board = boards.find((b) => b.id === activeBoard);
+  const cardsWithDueDates = board
+    ? board.columns.flatMap((col) => col.cards.filter((card) => card.dueDate)).length
+    : 0;
 
   return (
     <header className="sticky top-0 z-40 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-sm">
@@ -35,6 +45,9 @@ const Header = () => {
 
           {/* Controls */}
           <div className="flex items-center gap-3">
+            {/* Save Button */}
+            <SaveButton />
+
             {/* Sync Status */}
             <SyncStatus />
 
@@ -50,6 +63,23 @@ const Header = () => {
             >
               Demo
             </Button>
+
+            {/* Due Dates Panel Toggle - Desktop only */}
+            <button
+              onClick={toggleDueDatePanel}
+              className="hidden md:flex relative p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+              title={dueDatePanelOpen ? 'Hide due dates' : 'Show due dates'}
+              aria-label={dueDatePanelOpen ? 'Hide due dates panel' : 'Show due dates panel'}
+              aria-expanded={dueDatePanelOpen}
+            >
+              📅
+              {/* Badge for due date count */}
+              {cardsWithDueDates > 0 && (
+                <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-red-500 text-white text-xs font-bold flex items-center justify-center">
+                  {cardsWithDueDates > 9 ? '9+' : cardsWithDueDates}
+                </span>
+              )}
+            </button>
 
             {/* Dark Mode Toggle */}
             <button
