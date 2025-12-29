@@ -104,12 +104,14 @@ export const useKanbanStore = create<KanbanStore>()(
     (set, get) => ({
       boards: [createDefaultBoard()],
       activeBoard: DEFAULT_BOARD_ID,
+      defaultBoardId: null,
       demoMode: false,
       darkMode: true,
       searchQuery: '',
       filters: {},
       dueDatePanelOpen: true,
       dueDatePanelWidth: 320,
+      hasUnsavedChanges: false,
 
       // Board actions
       addBoard: (name: string) => {
@@ -135,6 +137,7 @@ export const useKanbanStore = create<KanbanStore>()(
         set((state) => ({
           boards: [...state.boards, newBoard],
           activeBoard: newBoard.id,
+          hasUnsavedChanges: true,
         }));
       },
 
@@ -148,6 +151,7 @@ export const useKanbanStore = create<KanbanStore>()(
           return {
             boards,
             activeBoard: newActiveBoard,
+            hasUnsavedChanges: true,
           };
         });
       },
@@ -159,11 +163,17 @@ export const useKanbanStore = create<KanbanStore>()(
               ? { ...b, name, updatedAt: new Date().toISOString() }
               : b
           ),
+          hasUnsavedChanges: true,
         }));
       },
 
       switchBoard: (boardId: string) => {
         set({ activeBoard: boardId });
+      },
+
+      setDefaultBoard: (boardId: string | null) => {
+        // Don't mark as unsaved - default board is saved immediately in BoardSwitcher
+        set({ defaultBoardId: boardId });
       },
 
       exportBoards: (boardId?: string) => {
@@ -208,6 +218,7 @@ export const useKanbanStore = create<KanbanStore>()(
                 ? { ...b, columns: [...b.columns, newColumn] }
                 : b
             ),
+            hasUnsavedChanges: true,
           };
         });
       },
@@ -222,6 +233,7 @@ export const useKanbanStore = create<KanbanStore>()(
                 }
               : b
           ),
+          hasUnsavedChanges: true,
         }));
       },
 
@@ -237,6 +249,7 @@ export const useKanbanStore = create<KanbanStore>()(
                 }
               : b
           ),
+          hasUnsavedChanges: true,
         }));
       },
 
@@ -255,6 +268,7 @@ export const useKanbanStore = create<KanbanStore>()(
                 }
               : b
           ),
+          hasUnsavedChanges: true,
         }));
       },
 
@@ -287,6 +301,7 @@ export const useKanbanStore = create<KanbanStore>()(
                 }
               : b
           ),
+          hasUnsavedChanges: true,
         }));
       },
 
@@ -303,6 +318,7 @@ export const useKanbanStore = create<KanbanStore>()(
                 }
               : b
           ),
+          hasUnsavedChanges: true,
         }));
       },
 
@@ -327,6 +343,7 @@ export const useKanbanStore = create<KanbanStore>()(
                 }
               : b
           ),
+          hasUnsavedChanges: true,
         }));
       },
 
@@ -398,6 +415,7 @@ export const useKanbanStore = create<KanbanStore>()(
                   }
                 : b
             ),
+            hasUnsavedChanges: true,
           };
         });
       },
@@ -424,6 +442,7 @@ export const useKanbanStore = create<KanbanStore>()(
                 }
               : b
           ),
+          hasUnsavedChanges: true,
         }));
       },
 
@@ -456,6 +475,7 @@ export const useKanbanStore = create<KanbanStore>()(
                 }
               : b
           ),
+          hasUnsavedChanges: true,
         }));
       },
 
@@ -485,6 +505,7 @@ export const useKanbanStore = create<KanbanStore>()(
                 }
               : b
           ),
+          hasUnsavedChanges: true,
         }));
       },
 
@@ -516,6 +537,7 @@ export const useKanbanStore = create<KanbanStore>()(
                 }
               : b
           ),
+          hasUnsavedChanges: true,
         }));
       },
 
@@ -537,6 +559,7 @@ export const useKanbanStore = create<KanbanStore>()(
           if (newDemoMode) {
             // Entering demo mode - save current user boards in state and show demo board
             const demoBoard = createDemoBoard();
+            console.log('[Store] Entering demo mode - showing demo board');
             return {
               demoMode: newDemoMode,
               boards: [demoBoard],
@@ -545,15 +568,18 @@ export const useKanbanStore = create<KanbanStore>()(
             };
           } else {
             // Exiting demo mode - restore saved user boards
+            // BUT DO NOT change activeBoard - Firebase sync has already set the correct board
             const restoredBoards = state._userBoardsBackup;
             if (restoredBoards && restoredBoards.length > 0) {
+              console.log('[Store] Exiting demo mode - restoring user boards (keeping current activeBoard)');
               return {
                 demoMode: newDemoMode,
                 boards: restoredBoards,
-                activeBoard: restoredBoards[0].id,
+                // activeBoard: KEEP CURRENT - Firebase has already set it to default board
                 _userBoardsBackup: undefined,
               };
             } else {
+              console.log('[Store] Exiting demo mode - no backup found, creating default board');
               return {
                 demoMode: newDemoMode,
                 boards: [createDefaultBoard()],
@@ -607,10 +633,24 @@ export const useKanbanStore = create<KanbanStore>()(
         }
         return get().boards;
       },
+
+      // Manual save actions
+      markAsUnsaved: () => set({ hasUnsavedChanges: true }),
+      markAsSaved: () => set({ hasUnsavedChanges: false }),
+      saveToFirebase: async () => {
+        // This is a placeholder - actual implementation is in SaveButton
+        // which has access to the authenticated user
+        set({ hasUnsavedChanges: false });
+      },
     }),
     {
       name: 'kanban-store',
       version: 1,
+      // Exclude activeBoard from localStorage - Firebase is the source of truth for authenticated users
+      partialize: (state) => {
+        const { activeBoard, ...rest } = state;
+        return rest;
+      },
       migrate: (persistedState: any, version: number) => {
         // Apply migrations for all versions
         if (version === 1) {

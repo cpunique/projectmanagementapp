@@ -6,6 +6,7 @@ import Container from './Container';
 import BoardSwitcher from '@/components/kanban/BoardSwitcher';
 import UserMenu from '@/components/auth/UserMenu';
 import SyncStatus from '@/components/ui/SyncStatus';
+import SaveButton from '@/components/ui/SaveButton';
 
 const Header = () => {
   const darkMode = useKanbanStore((state) => state.darkMode);
@@ -44,6 +45,9 @@ const Header = () => {
 
           {/* Controls */}
           <div className="flex items-center gap-3">
+            {/* Save Button */}
+            <SaveButton />
+
             {/* Sync Status */}
             <SyncStatus />
 

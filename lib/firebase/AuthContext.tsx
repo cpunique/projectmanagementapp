@@ -30,19 +30,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    try {
-      const auth = getAuth();
-      const unsubscribe = onAuthStateChanged(auth, (user) => {
-        setUser(user);
-        setLoading(false);
-      });
+    const auth = getAuth();
 
-      return () => unsubscribe();
-    } catch (error) {
-      console.error('Failed to initialize auth listener:', error);
-      setError('Firebase is not properly configured');
+    // Set up auth state listener
+    console.log('[Auth] Setting up auth state listener...');
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      console.log('[Auth] Auth state changed:', user?.email || 'no user');
+      if (user) {
+        console.log('[Auth] ✅ User authenticated:', user.email);
+        console.log('[Auth] User ID:', user.uid);
+      }
+      setUser(user);
       setLoading(false);
-    }
+    });
+
+    return () => unsubscribe();
   }, []);
 
   const signIn = async (email: string, password: string) => {
@@ -74,8 +76,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const auth = getAuth();
       const provider = new GoogleAuthProvider();
-      await signInWithPopup(auth, provider);
-    } catch (err) {
+
+      // Force account selection - allows user to choose which Google account
+      provider.setCustomParameters({
+        prompt: 'select_account'
+      });
+
+      console.log('[Auth] Starting Google Sign-In with popup...');
+      const result = await signInWithPopup(auth, provider);
+      console.log('[Auth] ✅ Google Sign-In successful:', result.user.email);
+      console.log('[Auth] User ID:', result.user.uid);
+    } catch (err: any) {
+      console.error('[Auth] ❌ Google Sign-In error:', err);
+      console.error('[Auth] Error code:', err.code);
+      console.error('[Auth] Error message:', err.message);
+
       const errorMessage = err instanceof Error ? err.message : 'Failed to sign in with Google';
       setError(errorMessage);
       throw err;
