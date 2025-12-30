@@ -560,7 +560,8 @@ export const useKanbanStore = create<KanbanStore>()(
           if (newDemoMode) {
             // Entering demo mode - save current user boards in state and show demo board
             const demoBoard = createDemoBoard();
-            console.log('[Store] Entering demo mode - showing demo board');
+            console.log('[Store] Entering demo mode - showing demo board with ID:', demoBoard.id);
+            console.log('[Store] Demo board columns:', demoBoard.columns.length);
             return {
               demoMode: newDemoMode,
               boards: [demoBoard],
@@ -667,7 +668,7 @@ export const useKanbanStore = create<KanbanStore>()(
             // Ensure activeBoard is set (activeBoard is excluded from localStorage)
             // Use the first board ID or default board ID
             activeBoard: persistedState.activeBoard || migratedBoards[0]?.id || DEFAULT_BOARD_ID,
-            // Ensure dueDatePanelOpen is preserved (defaults to true if missing)
+            // Preserve dueDatePanelOpen (landing page will set to false when shown)
             dueDatePanelOpen: persistedState.dueDatePanelOpen !== undefined ? persistedState.dueDatePanelOpen : true,
           };
         }
