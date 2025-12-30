@@ -310,6 +310,39 @@ export async function setUserDefaultBoard(userId: string, boardId: string | null
 }
 
 /**
+ * Get user's UI preferences (dueDatePanelOpen, etc.)
+ */
+export async function getUserUIPreferences(userId: string): Promise<{ dueDatePanelOpen?: boolean }> {
+  try {
+    const userRef = doc(getUsersCollection(), userId);
+    const userSnap = await getDoc(userRef);
+
+    if (!userSnap.exists()) return {};
+
+    const data = userSnap.data();
+    return {
+      dueDatePanelOpen: data.dueDatePanelOpen !== undefined ? data.dueDatePanelOpen : true,
+    };
+  } catch (error) {
+    console.error('Failed to get user UI preferences:', error);
+    return { dueDatePanelOpen: true };
+  }
+}
+
+/**
+ * Set user's UI preferences (dueDatePanelOpen, etc.)
+ */
+export async function setUserUIPreferences(userId: string, preferences: { dueDatePanelOpen?: boolean }) {
+  try {
+    const userRef = doc(getUsersCollection(), userId);
+    await setDoc(userRef, { ...preferences }, { merge: true });
+  } catch (error) {
+    console.error('Failed to set user UI preferences:', error);
+    throw error;
+  }
+}
+
+/**
  * Repair corrupted board IDs in Firestore
  * This fixes boards that were saved with 'default-board' ID
  */

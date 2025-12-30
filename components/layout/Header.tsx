@@ -1,6 +1,9 @@
 'use client';
 
+import { useEffect } from 'react';
 import { useKanbanStore } from '@/lib/store';
+import { useAuth } from '@/lib/firebase/AuthContext';
+import { setUserUIPreferences } from '@/lib/firebase/firestore';
 import Button from '@/components/ui/Button';
 import Container from './Container';
 import BoardSwitcher from '@/components/kanban/BoardSwitcher';
@@ -9,6 +12,7 @@ import SyncStatus from '@/components/ui/SyncStatus';
 import SaveButton from '@/components/ui/SaveButton';
 
 const Header = () => {
+  const { user } = useAuth();
   const darkMode = useKanbanStore((state) => state.darkMode);
   const demoMode = useKanbanStore((state) => state.demoMode);
   const dueDatePanelOpen = useKanbanStore((state) => state.dueDatePanelOpen);
@@ -17,6 +21,18 @@ const Header = () => {
   const toggleDueDatePanel = useKanbanStore((state) => state.toggleDueDatePanel);
   const activeBoard = useKanbanStore((state) => state.activeBoard);
   const boards = useKanbanStore((state) => state.boards);
+
+  // Save UI preferences to Firebase when dueDatePanelOpen changes
+  useEffect(() => {
+    if (user) {
+      // Debounce to avoid too many writes
+      const timer = setTimeout(() => {
+        setUserUIPreferences(user.uid, { dueDatePanelOpen });
+      }, 1000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [dueDatePanelOpen, user]);
 
   // Calculate badge count for due dates
   const board = boards.find((b) => b.id === activeBoard);

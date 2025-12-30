@@ -11,6 +11,8 @@ import {
   setUserDefaultBoard,
   repairBoardIds,
   recoverCorruptedBoards,
+  getUserUIPreferences,
+  setUserUIPreferences,
 } from './firestore';
 import type { Board } from '@/types';
 
@@ -80,6 +82,16 @@ export async function initializeFirebaseSync(user: User) {
       } else {
         console.log(`[Sync] No default board set, using "${userBoards[0].name}"`);
         store.switchBoard(userBoards[0].id);
+      }
+
+      // Load UI preferences
+      const uiPreferences = await getUserUIPreferences(user.uid);
+      if (uiPreferences.dueDatePanelOpen !== undefined) {
+        console.log(`[Sync] Loading UI preference - dueDatePanelOpen: ${uiPreferences.dueDatePanelOpen}`);
+        // Only update if different from current state
+        if (store.dueDatePanelOpen !== uiPreferences.dueDatePanelOpen) {
+          store.toggleDueDatePanel();
+        }
       }
 
       // Disable demo mode if enabled

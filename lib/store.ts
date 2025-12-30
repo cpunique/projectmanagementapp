@@ -655,11 +655,14 @@ export const useKanbanStore = create<KanbanStore>()(
         // Apply migrations for all versions
         if (version === 1) {
           // Ensure all boards have default columns
+          // Preserve UI state (dueDatePanelOpen, darkMode, etc.)
           return {
             ...persistedState,
             boards: persistedState.boards?.map((board: Board) =>
               ensureDefaultColumns(board)
             ) || [createDefaultBoard()],
+            // Ensure dueDatePanelOpen is preserved (defaults to true if missing)
+            dueDatePanelOpen: persistedState.dueDatePanelOpen !== undefined ? persistedState.dueDatePanelOpen : true,
           };
         }
         return persistedState;
