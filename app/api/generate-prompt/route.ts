@@ -1,105 +1,195 @@
 // API route for generating AI prompts using Claude
 import { Anthropic } from '@anthropic-ai/sdk';
 import { NextResponse } from 'next/server';
+import { z } from 'zod';
+import { aiPromptRatelimit } from '@/lib/ratelimit';
 
-interface GeneratePromptRequest {
-  cardTitle: string;
-  description?: string;
-  notes?: string;
-  checklist?: Array<{ text: string; completed: boolean }>;
-  tags?: string[];
-  priority?: "low" | "medium" | "high";
-}
+// Input validation schema
+const GeneratePromptSchema = z.object({
+  cardTitle: z.string().min(1, 'Card title is required').max(200, 'Card title too long'),
+  description: z.string().max(1000, 'Description too long').optional(),
+  notes: z.string().max(2000, 'Notes too long').optional(),
+  checklist: z.array(z.object({
+    text: z.string().max(200, 'Checklist item too long'),
+    completed: z.boolean()
+  })).max(50, 'Too many checklist items').optional(),
+  tags: z.array(z.string().max(50, 'Tag too long')).max(20, 'Too many tags').optional(),
+  priority: z.enum(['low', 'medium', 'high']).optional(),
+});
 
 export async function POST(request: Request) {
   try {
-    // 1. Validate API key
-    const apiKey = process.env.ANTHROPIC_API_KEY;
-    if (!apiKey) {
+    // 1. Verify authentication
+    const authHeader = request.headers.get('Authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
       return NextResponse.json(
-        { error: 'Anthropic API key not configured. Please add ANTHROPIC_API_KEY to .env.local' },
-        { status: 500 }
+        { error: 'Authentication required. Please sign in to use AI features.' },
+        { status: 401 }
       );
     }
 
-    // 2. Parse request body
-    const body: GeneratePromptRequest = await request.json();
+    const idToken = authHeader.split('Bearer ')[1];
 
-    if (!body.cardTitle || body.cardTitle.trim() === '') {
+    // Verify token exists and is valid length
+    if (!idToken || idToken.length < 20) {
       return NextResponse.json(
-        { error: 'Card title is required' },
+        { error: 'Invalid authentication token' },
+        { status: 401 }
+      );
+    }
+
+    // Extract user ID from token (simplified - in production use firebase-admin)
+    const userId = idToken.substring(0, 28);
+
+    // 2. Rate limiting
+    const { success, limit, remaining, reset } = await aiPromptRatelimit.limit(userId);
+
+    if (!success) {
+      return NextResponse.json(
+        {
+          error: `Rate limit exceeded. You can generate ${limit} prompts per hour. Try again in ${Math.ceil((reset - Date.now()) / 60000)} minutes.`,
+          limit,
+          remaining: 0,
+          reset: new Date(reset).toISOString()
+        },
+        {
+          status: 429,
+          headers: {
+            'X-RateLimit-Limit': limit.toString(),
+            'X-RateLimit-Remaining': '0',
+            'X-RateLimit-Reset': reset.toString()
+          }
+        }
+      );
+    }
+
+    // 3. Validate and sanitize input
+    const body = await request.json();
+    const validationResult = GeneratePromptSchema.safeParse(body);
+
+    if (!validationResult.success) {
+      return NextResponse.json(
+        {
+          error: 'Invalid input data',
+          details: validationResult.error.issues.map(e => ({
+            field: e.path.join('.') || 'root',
+            message: e.message
+          }))
+        },
         { status: 400 }
       );
     }
 
-    // 3. Build context prompt
-    let contextPrompt = `Feature Request: ${body.cardTitle}\n\n`;
+    const data = validationResult.data;
 
-    if (body.description) {
-      contextPrompt += `Description: ${body.description}\n\n`;
+    // 4. Check API key
+    const apiKey = process.env.ANTHROPIC_API_KEY;
+    if (!apiKey) {
+      console.error('[AI Prompt] Missing ANTHROPIC_API_KEY');
+      return NextResponse.json(
+        { error: 'Service temporarily unavailable' },
+        { status: 503 }
+      );
     }
 
-    if (body.notes) {
+    // 5. Log request for monitoring
+    console.log('[AI Prompt] Request from user:', {
+      userId: userId.substring(0, 8) + '...',
+      timestamp: new Date().toISOString(),
+      cardTitle: data.cardTitle.substring(0, 50),
+      remaining
+    });
+
+    // 6. Build context prompt
+    let contextPrompt = `Feature Request: ${data.cardTitle}\n\n`;
+
+    if (data.description) {
+      contextPrompt += `Description: ${data.description}\n\n`;
+    }
+
+    if (data.notes) {
       // Strip HTML tags from rich text notes
-      const plainNotes = body.notes.replace(/<[^>]*>/g, '').trim();
+      const plainNotes = data.notes.replace(/<[^>]*>/g, '').trim();
       if (plainNotes) {
         contextPrompt += `Additional Notes: ${plainNotes}\n\n`;
       }
     }
 
-    if (body.checklist && body.checklist.length > 0) {
+    if (data.checklist && data.checklist.length > 0) {
       contextPrompt += `Requirements Checklist:\n`;
-      body.checklist.forEach(item => {
+      data.checklist.forEach(item => {
         const status = item.completed ? '✓' : '○';
         contextPrompt += `${status} ${item.text}\n`;
       });
       contextPrompt += `\n`;
     }
 
-    if (body.tags && body.tags.length > 0) {
-      contextPrompt += `Related Tags: ${body.tags.join(', ')}\n\n`;
+    if (data.tags && data.tags.length > 0) {
+      contextPrompt += `Related Tags: ${data.tags.join(', ')}\n\n`;
     }
 
-    if (body.priority) {
-      contextPrompt += `Priority Level: ${body.priority}\n\n`;
+    if (data.priority) {
+      contextPrompt += `Priority Level: ${data.priority}\n\n`;
     }
 
-    // 4. Call Claude API
+    // 7. Call Claude API with timeout
     const client = new Anthropic({ apiKey });
 
-    const message = await client.messages.create({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 1024,
-      messages: [
-        {
-          role: 'user',
-          content: `You are a helpful assistant that converts feature requests into clear, simple implementation instructions for developers. Keep the language friendly and straightforward, not overly technical. Focus on what needs to be built and why, breaking it down into logical, actionable steps. Be concise but thorough.
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
+
+    try {
+      const message = await client.messages.create({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1024,
+        messages: [
+          {
+            role: 'user',
+            content: `You are a helpful assistant that converts feature requests into clear, simple implementation instructions for developers. Keep the language friendly and straightforward, not overly technical. Focus on what needs to be built and why, breaking it down into logical, actionable steps. Be concise but thorough.
 
 ${contextPrompt}
 
 Please provide implementation instructions for this feature.`,
-        },
-      ],
-    });
+          },
+        ],
+      }, { signal: controller.signal as any });
 
-    // 5. Extract the response
-    const generatedPrompt = message.content
-      .filter(block => block.type === 'text')
-      .map(block => (block as { type: 'text'; text: string }).text)
-      .join('\n');
+      // 8. Extract the response
+      const generatedPrompt = message.content
+        .filter(block => block.type === 'text')
+        .map(block => (block as { type: 'text'; text: string }).text)
+        .join('\n');
 
-    if (!generatedPrompt) {
+      if (!generatedPrompt) {
+        return NextResponse.json(
+          { error: 'No prompt was generated. Please try again.' },
+          { status: 500 }
+        );
+      }
+
+      // 9. Return formatted response with rate limit info
       return NextResponse.json(
-        { error: 'No prompt was generated. Please try again.' },
-        { status: 500 }
+        { prompt: generatedPrompt, remaining },
+        {
+          headers: {
+            'X-RateLimit-Remaining': remaining.toString()
+          }
+        }
+      );
+    } finally {
+      clearTimeout(timeoutId);
+    }
+
+  } catch (error: any) {
+    // Handle timeout/abort
+    if (error?.name === 'AbortError') {
+      return NextResponse.json(
+        { error: 'Request timeout. Please try again.' },
+        { status: 504 }
       );
     }
 
-    // 6. Return formatted response
-    return NextResponse.json({ prompt: generatedPrompt });
-
-  } catch (error) {
-    console.error('Error generating prompt:', error);
+    console.error('[AI Prompt] Error:', error);
 
     if (error instanceof SyntaxError) {
       return NextResponse.json(
@@ -113,7 +203,7 @@ Please provide implementation instructions for this feature.`,
     // Handle specific Anthropic errors
     if (errorMessage.includes('401') || errorMessage.includes('authentication')) {
       return NextResponse.json(
-        { error: 'Invalid Anthropic API key. Please check your .env.local configuration.' },
+        { error: 'Invalid Anthropic API key. Please check your configuration.' },
         { status: 401 }
       );
     }

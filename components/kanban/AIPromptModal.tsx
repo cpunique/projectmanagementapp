@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useKanbanStore } from '@/lib/store';
+import { useAuth } from '@/lib/firebase/AuthContext';
 import { type Card } from '@/types';
 import Modal from '@/components/ui/Modal';
 import Button from '@/components/ui/Button';
@@ -19,6 +20,7 @@ type Step = 1 | 2 | 3;
 
 const AIPromptModal = ({ isOpen, onClose, card, boardId }: AIPromptModalProps) => {
   const { updateCard } = useKanbanStore();
+  const { user } = useAuth();
   const [step, setStep] = useState<Step>(card.aiPrompt ? 3 : 1);
   const [includeDescription, setIncludeDescription] = useState(!!card.description);
   const [includeNotes, setIncludeNotes] = useState(!!card.notes);
@@ -37,6 +39,12 @@ const AIPromptModal = ({ isOpen, onClose, card, boardId }: AIPromptModalProps) =
     setError(null);
 
     try {
+      // Get auth token
+      const idToken = await user?.getIdToken();
+      if (!idToken) {
+        throw new Error('Authentication required. Please sign in to use AI features.');
+      }
+
       const payload = {
         cardTitle: card.title,
         ...(includeDescription && card.description && { description: card.description }),
@@ -48,7 +56,10 @@ const AIPromptModal = ({ isOpen, onClose, card, boardId }: AIPromptModalProps) =
 
       const response = await fetch('/api/generate-prompt', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${idToken}`
+        },
         body: JSON.stringify(payload),
       });
 

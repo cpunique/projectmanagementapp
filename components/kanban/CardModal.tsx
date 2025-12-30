@@ -73,6 +73,13 @@ const CardModal = ({ isOpen, onClose, card, boardId }: CardModalProps) => {
 
   const handleSave = () => {
     if (card && title.trim()) {
+      // Validate notes length
+      const MAX_NOTES_LENGTH = 10000; // 10KB
+      if (notes.length > MAX_NOTES_LENGTH) {
+        alert(`Notes cannot exceed ${MAX_NOTES_LENGTH} characters. Current: ${notes.length}`);
+        return;
+      }
+
       // If color is empty string (user selected "Default"), save as undefined so it adapts to theme changes
       const colorToSave = color === '' ? undefined : color;
 

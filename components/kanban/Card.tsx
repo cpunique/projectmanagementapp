@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { motion } from 'framer-motion';
+import DOMPurify from 'dompurify';
 import { useKanbanStore } from '@/lib/store';
 import { type Card as CardType } from '@/types';
 import { PRIORITY_LABELS, DESCOPED_COLUMN_KEYWORDS } from '@/lib/constants';
@@ -21,10 +22,11 @@ interface CardProps {
 }
 
 const Card = ({ card, boardId, columnId, onDragStart, onDragEnd, isDragging }: CardProps) => {
-  const { deleteCard, boards } = useKanbanStore();
+  const { deleteCard, boards, demoMode } = useKanbanStore();
   const [isHovering, setIsHovering] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isAIModalOpen, setIsAIModalOpen] = useState(false);
+  const [showDemoLockModal, setShowDemoLockModal] = useState(false);
   const [showNotesTooltip, setShowNotesTooltip] = useState(false);
   const [tooltipPosition, setTooltipPosition] = useState({ top: 0, left: 0 });
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
@@ -144,18 +146,25 @@ const Card = ({ card, boardId, columnId, onDragStart, onDragEnd, isDragging }: C
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                setIsAIModalOpen(true);
+                if (demoMode) {
+                  setShowDemoLockModal(true);
+                } else {
+                  setIsAIModalOpen(true);
+                }
               }}
-              className={`p-1 rounded transition-colors duration-150 pointer-events-auto ${
-                card.aiPrompt
+              className={`p-1 rounded transition-colors duration-150 pointer-events-auto relative ${
+                demoMode
+                  ? 'opacity-60 cursor-not-allowed text-gray-400 dark:text-gray-600'
+                  : card.aiPrompt
                   ? 'text-purple-600 dark:text-purple-400 hover:bg-purple-100 dark:hover:bg-purple-900/30 hover:text-purple-700 dark:hover:text-purple-300'
                   : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-purple-600 dark:text-gray-400 dark:hover:text-purple-400'
               }`}
-              title={card.aiPrompt ? "View AI prompt" : "Generate AI prompt"}
+              title={demoMode ? "Sign up to use AI features" : (card.aiPrompt ? "View AI prompt" : "Generate AI prompt")}
             >
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
               </svg>
+              {demoMode && <span className="absolute -top-1 -right-1 w-2 h-2 bg-yellow-400 rounded-full border border-white" />}
             </button>
 
             {/* Edit Button */}
@@ -319,6 +328,45 @@ const Card = ({ card, boardId, columnId, onDragStart, onDragEnd, isDragging }: C
         document.body
       )}
 
+      {/* Demo Lock Modal - Rendered via Portal */}
+      {showDemoLockModal && typeof window !== 'undefined' && createPortal(
+        <div className="fixed inset-0 bg-black/50 z-[9998] flex items-center justify-center">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full mx-4 p-6"
+          >
+            <div className="text-center">
+              <div className="text-5xl mb-4">⚡</div>
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+                AI Features Available with Sign Up
+              </h3>
+              <p className="text-gray-600 dark:text-gray-400 text-sm mb-6">
+                Generate AI-powered implementation prompts for your tasks. Sign up to unlock this feature!
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowDemoLockModal(false)}
+                  className="flex-1 px-4 py-2 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors font-medium"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    setShowDemoLockModal(false);
+                    // TODO: Navigate to sign up or open auth modal
+                  }}
+                  className="flex-1 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium"
+                >
+                  Sign Up Free
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        </div>,
+        document.body
+      )}
+
       {/* Notes Tooltip - Rendered via Portal */}
       {showNotesTooltip && hasNotes(card.notes) && typeof window !== 'undefined' && createPortal(
         <div
@@ -331,7 +379,13 @@ const Card = ({ card, boardId, columnId, onDragStart, onDragEnd, isDragging }: C
           <div className="bg-gray-900 dark:bg-gray-700 text-white text-xs rounded-lg p-4 shadow-xl w-72 max-h-96 overflow-y-auto">
             <div
               className="prose prose-sm prose-invert max-w-none break-words whitespace-normal leading-relaxed [&>*]:break-words [&_p]:m-0 [&_p]:mb-2 [&_p:last-child]:mb-0 [&_ul]:m-0 [&_ul]:mb-2 [&_ol]:m-0 [&_ol]:mb-2 [&_h1]:text-base [&_h1]:mb-2 [&_h2]:text-sm [&_h2]:mb-2 [&_h3]:text-xs [&_h3]:mb-1"
-              dangerouslySetInnerHTML={{ __html: card.notes || '' }}
+              dangerouslySetInnerHTML={{
+                __html: DOMPurify.sanitize(card.notes || '', {
+                  ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'u', 'h1', 'h2', 'h3', 'ul', 'ol', 'li', 'blockquote'],
+                  ALLOWED_ATTR: [],
+                  KEEP_CONTENT: true
+                })
+              }}
             />
             {/* Arrow pointing left */}
             <div className="absolute top-3 right-full">

@@ -4,6 +4,7 @@ import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
 import Link from '@tiptap/extension-link';
+import DOMPurify from 'dompurify';
 import { cn } from '@/lib/utils';
 import { useEffect, useState } from 'react';
 
@@ -37,7 +38,12 @@ const RichTextEditor = ({
       ],
       content: value,
       onUpdate: ({ editor }) => {
-        onChange?.(editor.getHTML());
+        const html = editor.getHTML();
+        const sanitized = DOMPurify.sanitize(html, {
+          ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'u', 'h1', 'h2', 'h3', 'ul', 'ol', 'li', 'blockquote'],
+          ALLOWED_ATTR: []
+        });
+        onChange?.(sanitized);
       },
       editable,
       immediatelyRender: false,

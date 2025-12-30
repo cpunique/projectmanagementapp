@@ -1,6 +1,6 @@
 import type { NextConfig } from "next";
 
-// Build configuration with fixes for TypeScript and ESLint
+// Build configuration with security headers and fixes for TypeScript and ESLint
 const nextConfig: NextConfig = {
   // Using webpack bundler instead of Turbopack
   eslint: {
@@ -8,7 +8,52 @@ const nextConfig: NextConfig = {
     // ESLint errors are pre-existing and not blocking functionality
     ignoreDuringBuilds: true,
   },
+
+  // Security headers
+  async headers() {
+    return [
+      {
+        source: '/:path*',
+        headers: [
+          {
+            key: 'Content-Security-Policy',
+            value: [
+              "default-src 'self'",
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval'", // TipTap requires unsafe-eval
+              "style-src 'self' 'unsafe-inline'",
+              "img-src 'self' data: https:",
+              "font-src 'self' data:",
+              "connect-src 'self' https://*.googleapis.com https://api.anthropic.com https://*.upstash.io",
+              "frame-ancestors 'none'",
+            ].join('; ')
+          },
+          {
+            key: 'X-Frame-Options',
+            value: 'DENY'
+          },
+          {
+            key: 'X-Content-Type-Options',
+            value: 'nosniff'
+          },
+          {
+            key: 'Referrer-Policy',
+            value: 'strict-origin-when-cross-origin'
+          },
+          {
+            key: 'Permissions-Policy',
+            value: 'camera=(), microphone=(), geolocation=()'
+          }
+        ]
+      }
+    ];
+  },
+
+  // Request body size limits
+  experimental: {
+    serverActions: {
+      bodySizeLimit: '2mb'
+    }
+  }
 };
 
 export default nextConfig;
-// Force Vercel to pick up latest code

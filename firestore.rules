@@ -11,22 +11,32 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    // Check if user owns the board (for write operations using request.resource)
-    function isOwnerWrite(boardId) {
-      return isAuthenticated() && request.resource.data.ownerId == request.auth.uid;
+    // Check if user is the owner (for read/update operations)
+    function isOwner(boardId) {
+      return isAuthenticated() && request.auth.uid == resource.data.ownerId;
     }
 
-    // Check if user owns the board (for read/update operations using resource)
-    function isOwnerRead(boardId) {
-      return isAuthenticated() && resource.data.ownerId == request.auth.uid;
+    // Validate board data structure and constraints
+    function isValidBoardData() {
+      let data = request.resource.data;
+      return data.keys().hasAll(['id', 'name', 'columns', 'ownerId', 'sharedWith']) &&
+             data.name is string &&
+             data.name.size() > 0 &&
+             data.name.size() <= 100 &&
+             data.columns is list &&
+             data.columns.size() <= 50 &&
+             data.sharedWith is list &&
+             data.ownerId is string;
     }
 
-    // Check if user has access to board (owner or shared) - for read/update
-    function canAccessBoard(boardId) {
-      return isAuthenticated() && (
-        request.auth.uid == resource.data.ownerId ||
-        request.auth.uid in resource.data.sharedWith
-      );
+    // Check document size is reasonable (< 1MB)
+    function isValidBoardSize() {
+      return request.resource.size() < 1000000;
+    }
+
+    // Ensure ownerId never changes during updates
+    function ownershipUnchanged() {
+      return request.resource.data.ownerId == resource.data.ownerId;
     }
 
     // ============================================
@@ -48,24 +58,30 @@ service cloud.firestore {
     }
 
     // ============================================
-    // Boards Collection Rules
+    // Boards Collection Rules - OWNER-ONLY ACCESS
     // ============================================
 
     match /boards/{boardId} {
 
-      // Read: Can read if user is owner or has access
-      allow read: if isAuthenticated() && canAccessBoard(boardId);
+      // Read: Only owner can read
+      allow read: if isAuthenticated() && isOwner(boardId);
 
-      // Create: Can create if authenticated and setting self as owner
+      // Create: Can create if setting self as owner and no sharing initially
       allow create: if isAuthenticated() &&
                       request.resource.data.ownerId == request.auth.uid &&
-                      request.resource.data.sharedWith is list;
+                      request.resource.data.sharedWith == [] &&
+                      isValidBoardData() &&
+                      isValidBoardSize();
 
-      // Update: Can update if owner or has access
-      allow update: if isAuthenticated() && canAccessBoard(boardId);
+      // Update: Only owner can update, and ownerId cannot change
+      allow update: if isAuthenticated() &&
+                      isOwner(boardId) &&
+                      ownershipUnchanged() &&
+                      isValidBoardData() &&
+                      isValidBoardSize();
 
-      // Delete: Can delete only if owner
-      allow delete: if isAuthenticated() && isOwnerRead(boardId);
+      // Delete: Only owner can delete
+      allow delete: if isAuthenticated() && isOwner(boardId);
 
       // ============================================
       // Nested Collections (future use)
