@@ -3,7 +3,7 @@
 export default function FeaturesList() {
   const features = [
     { icon: '🎯', title: 'Drag & Drop', desc: 'Intuitive card management' },
-    { icon: '⚡', title: 'AI Instructions', desc: 'Auto-generate task specs' },
+    { icon: '⚡', title: 'Instant AI Context', desc: 'Generate prompts for your AI' },
     { icon: '☁️', title: 'Cloud Sync', desc: 'Access anywhere' },
     { icon: '🚀', title: 'Lightning Fast', desc: 'Built for speed' },
   ];
