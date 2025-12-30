@@ -23,13 +23,14 @@ const nextConfig: NextConfig = {
               "style-src 'self' 'unsafe-inline'",
               "img-src 'self' data: https:",
               "font-src 'self' data:",
-              "connect-src 'self' https://*.googleapis.com https://api.anthropic.com https://*.upstash.io",
+              "connect-src 'self' https://*.googleapis.com https://*.accounts.google.com https://api.anthropic.com https://*.upstash.io",
+              "frame-src 'self' https://accounts.google.com", // Allow Google OAuth popup
               "frame-ancestors 'none'",
             ].join('; ')
           },
           {
             key: 'X-Frame-Options',
-            value: 'DENY'
+            value: 'SAMEORIGIN'
           },
           {
             key: 'X-Content-Type-Options',
