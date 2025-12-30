@@ -19,18 +19,16 @@ export async function cloneBoard(sourceBoard: Board, newBoardName: string, userI
 
     console.log('[BoardClone] Cloning board:', sourceBoard.name, '-> New ID:', newBoardId, 'New name:', newBoardName);
 
-    // Create the cloned board data
+    // Create the cloned board data (client-side representation)
     const clonedBoard: Board = {
       id: newBoardId,
       name: newBoardName,
       columns: JSON.parse(JSON.stringify(sourceBoard.columns)), // Deep copy columns
-      ownerId: userId,
-      sharedWith: [],
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
 
-    // Save to Firestore
+    // Save to Firestore (with additional fields not in Board interface)
     const db = getDb();
     const boardRef = doc(db, 'boards', newBoardId);
 
