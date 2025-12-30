@@ -3,9 +3,9 @@
 export default function FeaturesList() {
   const features = [
     { icon: '🎯', title: 'Drag & Drop', desc: 'Intuitive card management' },
-    { icon: '🌙', title: 'Dark Mode', desc: 'Easy on your eyes' },
+    { icon: '⚡', title: 'AI Instructions', desc: 'Auto-generate task specs' },
     { icon: '☁️', title: 'Cloud Sync', desc: 'Access anywhere' },
-    { icon: '⚡', title: 'Lightning Fast', desc: 'Built for speed' },
+    { icon: '🚀', title: 'Lightning Fast', desc: 'Built for speed' },
   ];
 
   return (
