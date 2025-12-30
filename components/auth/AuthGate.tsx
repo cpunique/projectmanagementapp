@@ -1,8 +1,7 @@
 'use client';
 
-import { useState } from 'react';
 import { useAuth } from '@/lib/firebase/AuthContext';
-import LoginModal from './LoginModal';
+import LandingPage from '@/components/landing/LandingPage';
 
 interface AuthGateProps {
   children: React.ReactNode;
@@ -10,7 +9,6 @@ interface AuthGateProps {
 
 export default function AuthGate({ children }: AuthGateProps) {
   const { user, loading } = useAuth();
-  const [loginModalOpen, setLoginModalOpen] = useState(!user);
 
   if (loading) {
     return (
@@ -24,11 +22,7 @@ export default function AuthGate({ children }: AuthGateProps) {
   }
 
   if (!user) {
-    return (
-      <>
-        <LoginModal isOpen={loginModalOpen} onClose={() => setLoginModalOpen(false)} />
-      </>
-    );
+    return <LandingPage />;
   }
 
   return <>{children}</>;
