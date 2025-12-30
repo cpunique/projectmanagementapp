@@ -37,14 +37,22 @@ export function MigrateLocalStorage() {
         try {
           const parsed = JSON.parse(storedData);
           localBoards = parsed.state?.boards || [];
+          console.log('[MigrateLocalStorage] Found localStorage data with boards:', localBoards.length);
+          localBoards.forEach((b: any) => {
+            console.log('[MigrateLocalStorage] Board:', { id: b.id, name: b.name, hasOwnerId: !!b.ownerId });
+          });
         } catch (error) {
-          console.error('Failed to parse localStorage:', error);
+          console.error('[MigrateLocalStorage] Failed to parse localStorage:', error);
         }
+      } else {
+        console.log('[MigrateLocalStorage] No localStorage data found');
       }
 
       // Only show migration if there are local boards AND they don't have ownerId set
       // (meaning they haven't been migrated yet)
       const unmigrationBoards = localBoards.filter((b: any) => !b.ownerId);
+
+      console.log('[MigrateLocalStorage] Boards needing migration:', unmigrationBoards.length);
 
       if (unmigrationBoards.length > 0) {
         // Show migration prompt for unmigrated boards
@@ -63,6 +71,7 @@ export function MigrateLocalStorage() {
         });
       }
     } else if (!loading && !user) {
+      console.log('[MigrateLocalStorage] User not authenticated');
       setMigrationState({
         status: 'checking',
         message: '',
