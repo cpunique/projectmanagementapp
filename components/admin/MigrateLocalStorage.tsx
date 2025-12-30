@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/firebase/AuthContext';
 import { useKanbanStore } from '@/lib/store';
-import { createBoard } from '@/lib/firebase/firestore';
+import { createBoard, getUserBoards } from '@/lib/firebase/firestore';
 
 type MigrationStatus = 'checking' | 'migrating' | 'success' | 'error';
 
@@ -91,9 +91,28 @@ export function MigrateLocalStorage() {
     }));
 
     try {
-      let migrated = 0;
+      // Load ALL boards from localStorage to ensure we migrate everything
+      const storedData = localStorage.getItem('kanban-store');
+      let allBoardsToMigrate = boards;
 
-      for (const board of boards) {
+      if (storedData) {
+        try {
+          const parsed = JSON.parse(storedData);
+          const storedBoards = parsed.state?.boards || [];
+          // Use all boards from localStorage if available (in case some weren't loaded in Zustand)
+          if (storedBoards.length > 0) {
+            allBoardsToMigrate = storedBoards;
+            console.log(`[Migration] Found ${storedBoards.length} board(s) in localStorage`);
+          }
+        } catch (error) {
+          console.error('Failed to read localStorage for migration:', error);
+        }
+      }
+
+      let migrated = 0;
+      const totalToMigrate = allBoardsToMigrate.filter((b: any) => b.id !== 'default-board').length;
+
+      for (const board of allBoardsToMigrate) {
         // Security: skip demo board migration
         if (board.id === 'default-board') {
           console.warn(`[Migration] Skipping demo board "${board.name}"`);
@@ -106,7 +125,7 @@ export function MigrateLocalStorage() {
           setMigrationState((prev) => ({
             ...prev,
             boardsMigrated: migrated,
-            message: `Migrated ${migrated} of ${boards.length} board(s)...`,
+            message: `Migrated ${migrated} of ${totalToMigrate} board(s)...`,
           }));
         } catch (error) {
           console.error(`Failed to migrate board ${board.name}:`, error);
@@ -116,8 +135,8 @@ export function MigrateLocalStorage() {
 
       setMigrationState({
         status: 'success',
-        message: `Successfully migrated all ${boards.length} board(s) to the cloud!`,
-        boardsToMigrate: boards.length,
+        message: `Successfully migrated all ${totalToMigrate} board(s) to the cloud!`,
+        boardsToMigrate: totalToMigrate,
         boardsMigrated: migrated,
       });
 
@@ -134,6 +153,22 @@ export function MigrateLocalStorage() {
         } catch (error) {
           console.error('Failed to update localStorage:', error);
         }
+      }
+
+      // Reload boards from Firebase to show all migrated boards
+      console.log('[Migration] Reloading boards from Firebase...');
+      try {
+        const migratedBoards = await getUserBoards(user.uid);
+        console.log(`[Migration] Loaded ${migratedBoards.length} boards from Firebase`);
+        if (migratedBoards.length > 0) {
+          // Update the store with the newly migrated boards
+          const store = useKanbanStore.getState();
+          store.setBoards(migratedBoards);
+          store.switchBoard(migratedBoards[0].id);
+          console.log('[Migration] Store updated with migrated boards');
+        }
+      } catch (error) {
+        console.error('[Migration] Failed to reload boards from Firebase:', error);
       }
 
       // Auto-dismiss after 5 seconds

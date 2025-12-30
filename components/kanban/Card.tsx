@@ -22,7 +22,7 @@ interface CardProps {
 }
 
 const Card = ({ card, boardId, columnId, onDragStart, onDragEnd, isDragging }: CardProps) => {
-  const { deleteCard, boards, demoMode } = useKanbanStore();
+  const { deleteCard, boards } = useKanbanStore();
   const [isHovering, setIsHovering] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isAIModalOpen, setIsAIModalOpen] = useState(false);
@@ -31,6 +31,9 @@ const Card = ({ card, boardId, columnId, onDragStart, onDragEnd, isDragging }: C
   const [tooltipPosition, setTooltipPosition] = useState({ top: 0, left: 0 });
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
   const notesIconRef = useRef<HTMLDivElement>(null);
+
+  // Check if this card is on the demo board (default-board)
+  const isDemoBoard = boardId === 'default-board';
 
   // Detect actual theme from DOM instead of store (since store's darkMode is broken)
   const [actualDarkMode, setActualDarkMode] = useState(() => {
@@ -146,25 +149,25 @@ const Card = ({ card, boardId, columnId, onDragStart, onDragEnd, isDragging }: C
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                if (demoMode) {
+                if (isDemoBoard) {
                   setShowDemoLockModal(true);
                 } else {
                   setIsAIModalOpen(true);
                 }
               }}
               className={`p-1 rounded transition-colors duration-150 pointer-events-auto relative ${
-                demoMode
+                isDemoBoard
                   ? 'opacity-60 cursor-not-allowed text-gray-400 dark:text-gray-600'
                   : card.aiPrompt
                   ? 'text-purple-600 dark:text-purple-400 hover:bg-purple-100 dark:hover:bg-purple-900/30 hover:text-purple-700 dark:hover:text-purple-300'
                   : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-purple-600 dark:text-gray-400 dark:hover:text-purple-400'
               }`}
-              title={demoMode ? "Sign up to use AI features" : (card.aiPrompt ? "View AI prompt" : "Generate AI prompt")}
+              title={isDemoBoard ? "Sign up to use AI features" : (card.aiPrompt ? "View AI prompt" : "Generate AI prompt")}
             >
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
               </svg>
-              {demoMode && <span className="absolute -top-1 -right-1 w-2 h-2 bg-yellow-400 rounded-full border border-white" />}
+              {isDemoBoard && <span className="absolute -top-1 -right-1 w-2 h-2 bg-yellow-400 rounded-full border border-white" />}
             </button>
 
             {/* Edit Button */}
