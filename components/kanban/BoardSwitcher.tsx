@@ -57,6 +57,12 @@ const BoardSwitcher = () => {
       return;
     }
 
+    // Security: prevent setting demo board as default
+    if (boardId === 'default-board') {
+      console.warn('[BoardSwitcher] Demo board cannot be set as default');
+      return;
+    }
+
     const boardName = boards.find((b) => b.id === boardId)?.name || 'Unknown Board';
     const newDefaultId = defaultBoardId === boardId ? null : boardId;
 

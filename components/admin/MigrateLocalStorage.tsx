@@ -94,6 +94,12 @@ export function MigrateLocalStorage() {
       let migrated = 0;
 
       for (const board of boards) {
+        // Security: skip demo board migration
+        if (board.id === 'default-board') {
+          console.warn(`[Migration] Skipping demo board "${board.name}"`);
+          continue;
+        }
+
         try {
           await createBoard(user.uid, board);
           migrated++;

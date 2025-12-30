@@ -243,6 +243,13 @@ export function subscribeToStoreChanges(user: User) {
           // Only sync the boards that actually changed
           for (const board of changedBoards) {
             const boardWithOwner = board as any;
+
+            // Security: skip demo board
+            if (board.id === 'default-board') {
+              console.warn(`[Sync] Skipping demo board sync`);
+              continue;
+            }
+
             if (boardWithOwner.ownerId) {
               try {
                 await updateBoard(board.id, board);
@@ -254,6 +261,8 @@ export function subscribeToStoreChanges(user: User) {
                   console.error(`Failed to sync board ${board.id} to Firebase:`, error);
                 }
               }
+            } else {
+              console.warn(`[Sync] Board ${board.id} has no ownerId, skipping Firebase sync`);
             }
           }
 

@@ -22,13 +22,13 @@ export function useFirebaseSync() {
     // Initialize Firebase sync
     initializeFirebaseSync(user);
 
-    // AUTO-SYNC DISABLED: Using manual save button instead to avoid Firebase quota issues
     // Subscribe to store changes for real-time sync
-    // const unsubscribeFromStore = subscribeToStoreChanges(user);
+    // Note: Auto-sync is now enabled but with guards to skip demo board and use debouncing
+    const unsubscribeFromStore = subscribeToStoreChanges(user);
 
     // Cleanup function
     return () => {
-      // unsubscribeFromStore?.();
+      unsubscribeFromStore?.();
       cleanupFirebaseSync();
     };
   }, [user, loading]);

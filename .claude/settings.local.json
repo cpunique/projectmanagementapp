@@ -38,7 +38,8 @@
       "Bash(grep:*)",
       "Bash(tasklist:*)",
       "Bash(powershell -Command \"Get-Process node -ErrorAction SilentlyContinue | Stop-Process -Force; Start-Sleep -Seconds 2; Get-Process node -ErrorAction SilentlyContinue | Measure-Object | Select-Object -ExpandProperty Count\")",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(git pull:*)"
     ],
     "deny": [],
     "ask": []

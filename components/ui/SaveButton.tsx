@@ -60,10 +60,30 @@ const SaveButton = () => {
       const currentBoard = boards.find((b) => b.id === activeBoard);
       if (currentBoard) {
         const boardWithOwner = currentBoard as any;
+
+        // Security: prevent saving demo board to Firebase
+        if (activeBoard === 'default-board') {
+          console.warn('[SaveButton] Demo board detected - not saving to Firebase');
+          markAsSaved();
+          setSaveState('saved');
+          setErrorMessage('Demo board - changes saved locally only');
+
+          setTimeout(() => {
+            setIsVisible(false);
+            setTimeout(() => {
+              setSaveState('idle');
+              setErrorMessage(null);
+            }, 300);
+          }, 2000);
+          return;
+        }
+
         if (boardWithOwner.ownerId) {
           console.log('[SaveButton] Saving active board:', currentBoard.name);
           await updateBoard(currentBoard.id, currentBoard);
           console.log('[SaveButton] Active board saved to Firebase');
+        } else {
+          console.warn('[SaveButton] Board has no ownerId - not saving to Firebase');
         }
       }
 
