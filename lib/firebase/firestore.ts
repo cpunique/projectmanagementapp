@@ -1,3 +1,4 @@
+// Force rebuild - fixed AI locking and board loading
 import {
   collection,
   doc,
