@@ -657,11 +657,16 @@ export const useKanbanStore = create<KanbanStore>()(
         if (version === 1) {
           // Ensure all boards have default columns
           // Preserve UI state (dueDatePanelOpen, darkMode, etc.)
+          const migratedBoards = persistedState.boards?.map((board: Board) =>
+            ensureDefaultColumns(board)
+          ) || [createDefaultBoard()];
+
           return {
             ...persistedState,
-            boards: persistedState.boards?.map((board: Board) =>
-              ensureDefaultColumns(board)
-            ) || [createDefaultBoard()],
+            boards: migratedBoards,
+            // Ensure activeBoard is set (activeBoard is excluded from localStorage)
+            // Use the first board ID or default board ID
+            activeBoard: persistedState.activeBoard || migratedBoards[0]?.id || DEFAULT_BOARD_ID,
             // Ensure dueDatePanelOpen is preserved (defaults to true if missing)
             dueDatePanelOpen: persistedState.dueDatePanelOpen !== undefined ? persistedState.dueDatePanelOpen : true,
           };

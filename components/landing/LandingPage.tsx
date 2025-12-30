@@ -17,7 +17,7 @@ export default function LandingPage() {
       console.log('[LandingPage] Enabling demo mode');
       toggleDemoMode();
     }
-  }, [demoMode, toggleDemoMode]);
+  }, []);
 
   // Auto-transition to full board after successful auth
   useEffect(() => {
