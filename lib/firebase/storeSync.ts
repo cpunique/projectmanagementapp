@@ -10,6 +10,7 @@ import {
   getUserDefaultBoard,
   setUserDefaultBoard,
   repairBoardIds,
+  recoverCorruptedBoards,
 } from './firestore';
 import type { Board } from '@/types';
 
@@ -31,8 +32,21 @@ export async function initializeFirebaseSync(user: User) {
     // Set flag to prevent sync loop during initialization
     isSyncingFromFirebase = true;
 
-    // First, repair any corrupted board IDs
-    console.log('[Sync] Checking for corrupted board IDs...');
+    // First, attempt aggressive recovery if boards were corrupted with 'default-board' ID
+    console.log('[Sync] Checking for corrupted boards...');
+    try {
+      const recoveredBoards = await recoverCorruptedBoards(user.uid);
+      if (recoveredBoards.length > 0) {
+        console.log('[Sync] ✅ Recovered', recoveredBoards.length, 'corrupted board(s)');
+        // Give Firestore a moment to process the recovery
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+    } catch (error) {
+      console.warn('[Sync] Aggressive recovery skipped or failed:', error);
+    }
+
+    // Then, repair any remaining corrupted board IDs
+    console.log('[Sync] Checking for remaining board ID mismatches...');
     try {
       const repairedBoards = await repairBoardIds(user.uid);
       if (repairedBoards.length > 0) {

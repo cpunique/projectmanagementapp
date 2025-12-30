@@ -352,3 +352,105 @@ export async function repairBoardIds(userId: string): Promise<string[]> {
     throw error;
   }
 }
+
+/**
+ * Aggressive data recovery for corrupted Firebase boards
+ * Detects when boards were saved with 'default-board' ID and recovers from localStorage
+ * This is needed when all boards got written to the same Firestore document, overwriting each other
+ */
+export async function recoverCorruptedBoards(userId: string): Promise<string[]> {
+  try {
+    console.log('[Recovery] Starting aggressive board recovery for user:', userId);
+
+    // Step 1: Check if the 'default-board' document exists (indicates corruption)
+    const defaultBoardRef = doc(getBoardsCollection(), 'default-board');
+    const defaultBoardSnap = await getDoc(defaultBoardRef);
+
+    if (!defaultBoardSnap.exists()) {
+      console.log('[Recovery] No default-board document found - no recovery needed');
+      return [];
+    }
+
+    const corruptedData = defaultBoardSnap.data();
+    console.log('[Recovery] ⚠️ CORRUPTION DETECTED: Found default-board document with board:', corruptedData.name);
+
+    // Step 2: Read all boards from localStorage (which should be intact)
+    const localStorageData = localStorage.getItem('kanban-store');
+    let localBoards: any[] = [];
+
+    if (localStorageData) {
+      try {
+        const parsed = JSON.parse(localStorageData);
+        localBoards = parsed.state?.boards || [];
+        console.log('[Recovery] Read', localBoards.length, 'board(s) from localStorage');
+      } catch (error) {
+        console.error('[Recovery] Failed to parse localStorage:', error);
+        return [];
+      }
+    }
+
+    if (localBoards.length === 0) {
+      console.warn('[Recovery] No boards in localStorage to recover');
+      return [];
+    }
+
+    // Step 3: Try to delete the corrupted 'default-board' document
+    // If deletion fails due to permissions, we'll skip recovery for now
+    console.log('[Recovery] Attempting to delete corrupted default-board document...');
+    try {
+      await deleteDoc(defaultBoardRef);
+      console.log('[Recovery] ✅ Deleted corrupted document');
+    } catch (deleteError: any) {
+      console.warn('[Recovery] Could not delete corrupted document (permissions):', deleteError?.code, '- will skip recovery for now');
+      // Don't fail the entire recovery if we can't delete - the migration will handle it
+      return [];
+    }
+
+    // Step 4: Generate unique IDs and create new documents for each board
+    const { nanoid } = await import('nanoid');
+    const recoveredBoardIds: string[] = [];
+
+    for (const localBoard of localBoards) {
+      // Skip if it was marked as demo board
+      if (localBoard.id === 'default-board') {
+        console.log('[Recovery] Skipping demo board:', localBoard.name);
+        continue;
+      }
+
+      try {
+        // Generate a unique ID (use existing ID if not default-board, otherwise create new)
+        const newBoardId = localBoard.id && localBoard.id !== 'default-board'
+          ? localBoard.id
+          : nanoid();
+
+        console.log('[Recovery] Creating board with ID:', newBoardId, 'Name:', localBoard.name);
+
+        // Prepare board data with correct structure
+        const boardData = {
+          id: newBoardId,
+          name: localBoard.name,
+          columns: localBoard.columns || [],
+          ownerId: userId,
+          sharedWith: [],
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        };
+
+        // Create new Firestore document
+        const newBoardRef = doc(getBoardsCollection(), newBoardId);
+        await setDoc(newBoardRef, boardData);
+
+        recoveredBoardIds.push(newBoardId);
+        console.log('[Recovery] ✅ Recovered board:', localBoard.name, 'with ID:', newBoardId);
+      } catch (error) {
+        console.error('[Recovery] Failed to recover board:', localBoard.name, error);
+      }
+    }
+
+    console.log('[Recovery] Complete! Recovered', recoveredBoardIds.length, 'board(s)');
+    return recoveredBoardIds;
+  } catch (error) {
+    console.error('[Recovery] Critical recovery error:', error);
+    throw error;
+  }
+}

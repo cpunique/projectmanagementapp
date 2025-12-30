@@ -39,6 +39,11 @@ service cloud.firestore {
       return request.resource.data.ownerId == resource.data.ownerId;
     }
 
+    // Allow deletion of 'default-board' specifically (corrupted board recovery)
+    function isDefaultBoardCorrupted(boardId) {
+      return boardId == 'default-board' && isAuthenticated();
+    }
+
     // ============================================
     // Users Collection Rules
     // ============================================
@@ -80,8 +85,8 @@ service cloud.firestore {
                       isValidBoardData() &&
                       isValidBoardSize();
 
-      // Delete: Only owner can delete
-      allow delete: if isAuthenticated() && isOwner(boardId);
+      // Delete: Only owner can delete, or allow special case for corrupted 'default-board'
+      allow delete: if (isAuthenticated() && isOwner(boardId)) || isDefaultBoardCorrupted(boardId);
 
       // ============================================
       // Nested Collections (future use)
