@@ -10,13 +10,18 @@ export default function LandingPage() {
   const { user } = useAuth();
   const demoMode = useKanbanStore((state) => state.demoMode);
   const toggleDemoMode = useKanbanStore((state) => state.toggleDemoMode);
+  const setDueDatePanelOpen = useKanbanStore((state) => state.setDueDatePanelOpen);
 
-  // Auto-enable demo mode when on landing page
+  // Auto-enable demo mode and close due date panel when on landing page
   useEffect(() => {
+    // Ensure demo mode is enabled
     if (!demoMode) {
       console.log('[LandingPage] Enabling demo mode');
       toggleDemoMode();
     }
+    // Ensure due date panel is closed on landing page
+    console.log('[LandingPage] Closing due date panel');
+    setDueDatePanelOpen(false);
   }, []);
 
   // Auto-transition to full board after successful auth

@@ -182,10 +182,10 @@ export function cleanupFirebaseSync() {
   activeSubscriptions.clear();
 
   // Reset UI preferences to defaults when user logs out
-  // This ensures the landing page always shows with dueDatePanelOpen: true (default)
+  // This ensures the landing page always shows with dueDatePanelOpen: false (landing page default)
   const store = useKanbanStore.getState();
-  store.setDueDatePanelOpen(true);
-  console.log('[Sync] Reset dueDatePanelOpen to true on logout');
+  store.setDueDatePanelOpen(false);
+  console.log('[Sync] Reset dueDatePanelOpen to false on logout');
 }
 
 /**
