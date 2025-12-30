@@ -19,11 +19,11 @@ const nextConfig: NextConfig = {
             key: 'Content-Security-Policy',
             value: [
               "default-src 'self'",
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval'", // TipTap requires unsafe-eval
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://apis.google.com", // TipTap requires unsafe-eval, Google OAuth requires apis.google.com
               "style-src 'self' 'unsafe-inline'",
               "img-src 'self' data: https:",
               "font-src 'self' data:",
-              "connect-src 'self' https://*.googleapis.com https://*.accounts.google.com https://api.anthropic.com https://*.upstash.io",
+              "connect-src 'self' https://*.googleapis.com https://accounts.google.com https://*.accounts.google.com https://api.anthropic.com https://*.upstash.io",
               "frame-src 'self' https://accounts.google.com", // Allow Google OAuth popup
               "frame-ancestors 'none'",
             ].join('; ')

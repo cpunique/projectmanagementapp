@@ -74,13 +74,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signInWithGoogle = async () => {
     setError(null);
     try {
+      console.log('[Auth] Getting auth instance...');
       const auth = getAuth();
+      console.log('[Auth] Auth instance obtained');
+
+      console.log('[Auth] Creating GoogleAuthProvider...');
       const provider = new GoogleAuthProvider();
+      console.log('[Auth] GoogleAuthProvider created');
 
       // Force account selection - allows user to choose which Google account
       provider.setCustomParameters({
         prompt: 'select_account'
       });
+      console.log('[Auth] Custom parameters set');
 
       console.log('[Auth] Starting Google Sign-In with popup...');
       const result = await signInWithPopup(auth, provider);
@@ -90,6 +96,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.error('[Auth] ❌ Google Sign-In error:', err);
       console.error('[Auth] Error code:', err.code);
       console.error('[Auth] Error message:', err.message);
+      console.error('[Auth] Full error:', JSON.stringify(err, null, 2));
 
       const errorMessage = err instanceof Error ? err.message : 'Failed to sign in with Google';
       setError(errorMessage);
