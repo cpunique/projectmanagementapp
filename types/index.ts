@@ -109,6 +109,7 @@ export interface KanbanActions {
 
   // Due dates panel actions
   toggleDueDatePanel: () => void;
+  setDueDatePanelOpen: (isOpen: boolean) => void;
   setDueDatePanelWidth: (width: number) => void;
 
   // History actions

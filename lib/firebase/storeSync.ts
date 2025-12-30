@@ -88,10 +88,8 @@ export async function initializeFirebaseSync(user: User) {
       const uiPreferences = await getUserUIPreferences(user.uid);
       if (uiPreferences.dueDatePanelOpen !== undefined) {
         console.log(`[Sync] Loading UI preference - dueDatePanelOpen: ${uiPreferences.dueDatePanelOpen}`);
-        // Only update if different from current state
-        if (store.dueDatePanelOpen !== uiPreferences.dueDatePanelOpen) {
-          store.toggleDueDatePanel();
-        }
+        // Set to the saved preference value directly
+        store.setDueDatePanelOpen(uiPreferences.dueDatePanelOpen);
       }
 
       // Disable demo mode if enabled

@@ -543,6 +543,7 @@ export const useKanbanStore = create<KanbanStore>()(
 
       // Due dates panel actions
       toggleDueDatePanel: () => set((state) => ({ dueDatePanelOpen: !state.dueDatePanelOpen })),
+      setDueDatePanelOpen: (isOpen: boolean) => set({ dueDatePanelOpen: isOpen }),
       setDueDatePanelWidth: (width: number) => {
         const MIN_WIDTH = 280;
         const MAX_WIDTH = 600;
