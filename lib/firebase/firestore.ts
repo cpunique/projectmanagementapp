@@ -149,6 +149,11 @@ export async function getUserBoards(userId: string): Promise<Board[]> {
 
     ownedSnapshot.docs.forEach((doc) => {
       const data = doc.data();
+      console.log('[getUserBoards] Board from Firebase:', {
+        docId: doc.id,
+        dataId: data.id,
+        name: data.name,
+      });
       boardMap.set(doc.id, {
         ...data,
         createdAt: convertTimestamp(data.createdAt),
