@@ -24,7 +24,7 @@ export function BoardWithPanel({ children }: BoardWithPanelProps) {
         {children}
       </div>
 
-      {/* Due Date Panel */}
+      {/* Due Date Panel - Desktop (animations handled within component) */}
       <div className="hidden md:flex">
         <DueDatePanel />
       </div>

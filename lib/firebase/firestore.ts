@@ -18,6 +18,9 @@ import type { Board } from '@/types';
 // Lazy get boards collection
 const getBoardsCollection = () => collection(getDb(), 'boards');
 
+// Lazy get users collection
+const getUsersCollection = () => collection(getDb(), 'users');
+
 /**
  * Create a new board in Firestore
  */
@@ -71,14 +74,33 @@ export async function getBoard(boardId: string): Promise<Board | null> {
 }
 
 /**
- * Update a board
+ * Update a board with exponential backoff retry for quota errors
  */
-export async function updateBoard(boardId: string, updates: Partial<Board>) {
+export async function updateBoard(
+  boardId: string,
+  updates: Partial<Board>,
+  retryCount = 0,
+  maxRetries = 3
+) {
   const boardRef = doc(getBoardsCollection(), boardId);
-  await updateDoc(boardRef, {
-    ...updates,
-    updatedAt: serverTimestamp(),
-  });
+
+  try {
+    await updateDoc(boardRef, {
+      ...updates,
+      updatedAt: serverTimestamp(),
+    });
+  } catch (error: any) {
+    // Handle quota exceeded errors with exponential backoff
+    if (error?.code === 'resource-exhausted' && retryCount < maxRetries) {
+      const delayMs = Math.pow(2, retryCount) * 1000; // 1s, 2s, 4s
+      console.log(`Quota exceeded. Retrying in ${delayMs}ms... (attempt ${retryCount + 1}/${maxRetries})`);
+
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
+      return updateBoard(boardId, updates, retryCount + 1, maxRetries);
+    }
+
+    throw error;
+  }
 }
 
 /**
@@ -239,4 +261,35 @@ export function subscribeToUserBoards(
     });
     callback(boards);
   });
+}
+
+/**
+ * Get user's default board preference from Firestore
+ */
+export async function getUserDefaultBoard(userId: string): Promise<string | null> {
+  try {
+    const userRef = doc(getUsersCollection(), userId);
+    const userSnap = await getDoc(userRef);
+
+    if (!userSnap.exists()) return null;
+
+    const data = userSnap.data();
+    return data.defaultBoardId || null;
+  } catch (error) {
+    console.error('Failed to get user default board:', error);
+    return null;
+  }
+}
+
+/**
+ * Set user's default board preference in Firestore
+ */
+export async function setUserDefaultBoard(userId: string, boardId: string | null) {
+  try {
+    const userRef = doc(getUsersCollection(), userId);
+    await setDoc(userRef, { defaultBoardId: boardId }, { merge: true });
+  } catch (error) {
+    console.error('Failed to set user default board:', error);
+    throw error;
+  }
 }

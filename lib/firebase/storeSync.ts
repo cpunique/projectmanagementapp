@@ -7,11 +7,16 @@ import {
   createBoard,
   updateBoard,
   deleteBoard as deleteFirestoreBoard,
+  getUserDefaultBoard,
+  setUserDefaultBoard,
 } from './firestore';
 import type { Board } from '@/types';
 
 // Track active subscriptions to prevent memory leaks
 const activeSubscriptions = new Map<string, () => void>();
+
+// Flag to prevent syncing TO Firebase when changes come FROM Firebase
+let isSyncingFromFirebase = false;
 
 /**
  * Initialize Firebase sync for a user
@@ -19,23 +24,46 @@ const activeSubscriptions = new Map<string, () => void>();
  */
 export async function initializeFirebaseSync(user: User) {
   try {
-    console.log('=== Starting Firebase Sync ===');
+    console.log('[Sync] Initializing Firebase sync');
     const store = useKanbanStore.getState();
-    console.log('Store state:', { demoMode: store.demoMode, boardCount: store.boards.length });
+
+    // Set flag to prevent sync loop during initialization
+    isSyncingFromFirebase = true;
 
     // Load all boards for the user from Firebase
-    console.log('Calling getUserBoards for userId:', user.uid);
     const userBoards = await getUserBoards(user.uid);
-    console.log('Got userBoards:', userBoards.length);
+    console.log(`[Sync] Loaded ${userBoards.length} board(s) from Firebase`);
 
     if (userBoards.length > 0) {
       // User has boards in Firebase - use those
       store.setBoards(userBoards);
-      store.switchBoard(userBoards[0].id);
+
+      // Load default board preference
+      const defaultBoardId = await getUserDefaultBoard(user.uid);
+      const defaultBoard = userBoards.find(b => b.id === defaultBoardId);
+
+      if (defaultBoardId && defaultBoard) {
+        console.log(`[Sync] Loading default board: "${defaultBoard.name}"`);
+        store.setDefaultBoard(defaultBoardId);
+        store.switchBoard(defaultBoardId);
+      } else if (defaultBoardId && !defaultBoard) {
+        console.warn(`[Sync] Default board ID "${defaultBoardId}" not found, clearing preference`);
+        await setUserDefaultBoard(user.uid, null);
+        store.setDefaultBoard(null);
+        store.switchBoard(userBoards[0].id);
+      } else {
+        console.log(`[Sync] No default board set, using "${userBoards[0].name}"`);
+        store.switchBoard(userBoards[0].id);
+      }
+
       // Disable demo mode if enabled
       if (store.demoMode) {
         store.toggleDemoMode();
       }
+
+      // Mark as saved since we just loaded from Firebase (no unsaved changes)
+      store.markAsSaved();
+      console.log('[Sync] Initialization complete');
     } else {
       // No boards in Firebase yet
       // Check if we have backed up user boards from demo mode
@@ -90,23 +118,21 @@ export async function initializeFirebaseSync(user: User) {
       if (store.demoMode) {
         store.toggleDemoMode();
       }
+
+      // Mark as saved after migration
+      store.markAsSaved();
+      console.log('[Sync] Migration complete - marked as saved');
     }
 
-    // Subscribe to each board for real-time updates (only boards with ownerId)
-    const finalBoards = store.boards;
-    for (const board of finalBoards) {
-      // Only subscribe to boards that have been migrated to Firebase (have ownerId)
-      const boardWithOwner = board as any;
-      if (boardWithOwner.ownerId) {
-        subscribeToBoard(board.id, (updatedBoard) => {
-          if (updatedBoard) {
-            store.updateBoardFromFirebase(board.id, updatedBoard);
-          }
-        });
-      }
-    }
+    // Real-time listeners disabled to prevent sync loop
+    // Boards are loaded on login and auto-saved on changes
+    // This prevents Firebase updates from syncing back to Firebase
+
+    // Reset flag after initialization completes
+    isSyncingFromFirebase = false;
   } catch (error) {
     console.error('Failed to initialize Firebase sync:', error);
+    isSyncingFromFirebase = false;
   }
 }
 
@@ -166,31 +192,80 @@ async function syncActionToFirebase(userId: string) {
  */
 export function subscribeToStoreChanges(user: User) {
   let syncTimeout: NodeJS.Timeout;
-  let lastBoardsJson = '';
+  let lastBoardsMap = new Map<string, string>();
+  let lastDefaultBoardId: string | null = null;
 
   return useKanbanStore.subscribe(
     (state) => {
-      const currentBoardsJson = JSON.stringify(state.boards);
+      console.log('[Sync] Store changed, isSyncingFromFirebase:', isSyncingFromFirebase, 'boards:', state.boards.length);
 
-      // Only trigger if boards have actually changed
-      if (currentBoardsJson !== lastBoardsJson) {
-        lastBoardsJson = currentBoardsJson;
+      // Skip sync if changes are coming FROM Firebase (not user actions)
+      if (isSyncingFromFirebase) {
+        console.log('[Sync] Skipping sync - changes from Firebase');
+        // Still update our tracking map to stay in sync
+        state.boards.forEach((board) => {
+          lastBoardsMap.set(board.id, JSON.stringify(board));
+        });
+        lastDefaultBoardId = state.defaultBoardId;
+        return;
+      }
 
+      // Track which boards have changed by comparing individual board JSON
+      const changedBoards: Board[] = [];
+
+      state.boards.forEach((board) => {
+        const currentBoardJson = JSON.stringify(board);
+        const lastBoardJson = lastBoardsMap.get(board.id);
+
+        if (currentBoardJson !== lastBoardJson) {
+          lastBoardsMap.set(board.id, currentBoardJson);
+          changedBoards.push(board);
+        }
+      });
+
+      // Check if default board changed
+      const defaultBoardChanged = state.defaultBoardId !== lastDefaultBoardId;
+      if (defaultBoardChanged) {
+        lastDefaultBoardId = state.defaultBoardId;
+      }
+
+      console.log('[Sync] Changes detected - boards:', changedBoards.length, 'defaultBoard:', defaultBoardChanged);
+
+      // Only sync if there are actual changes
+      if (changedBoards.length > 0 || defaultBoardChanged) {
         // Debounce the sync to avoid too many Firebase calls
         clearTimeout(syncTimeout);
         syncTimeout = setTimeout(async () => {
-          // Sync all boards to Firebase (only boards with ownerId)
-          for (const board of state.boards) {
+          if (changedBoards.length > 0) {
+            console.log(`Syncing ${changedBoards.length} changed board(s) to Firebase...`);
+          }
+
+          // Only sync the boards that actually changed
+          for (const board of changedBoards) {
             const boardWithOwner = board as any;
             if (boardWithOwner.ownerId) {
               try {
                 await updateBoard(board.id, board);
-              } catch (error) {
-                console.error(`Failed to sync board ${board.id} to Firebase:`, error);
+              } catch (error: any) {
+                // Handle quota exceeded errors gracefully
+                if (error?.code === 'resource-exhausted') {
+                  console.warn(`Firebase quota exceeded for board ${board.id}. Changes are saved locally and will sync later.`);
+                } else {
+                  console.error(`Failed to sync board ${board.id} to Firebase:`, error);
+                }
               }
             }
           }
-        }, 1000); // Wait 1 second after last change before syncing
+
+          // Sync default board preference if changed
+          if (defaultBoardChanged) {
+            try {
+              await setUserDefaultBoard(user.uid, state.defaultBoardId);
+            } catch (error) {
+              console.error('Failed to sync default board preference:', error);
+            }
+          }
+        }, 2000); // Increased to 2 seconds to reduce write frequency
       }
     }
   );
