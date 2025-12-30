@@ -24,7 +24,7 @@ const nextConfig: NextConfig = {
               "img-src 'self' data: https:",
               "font-src 'self' data:",
               "connect-src 'self' https://*.googleapis.com https://accounts.google.com https://*.accounts.google.com https://api.anthropic.com https://*.upstash.io",
-              "frame-src 'self' https://accounts.google.com", // Allow Google OAuth popup
+              "frame-src 'self' https://accounts.google.com https://*.firebaseapp.com", // Allow Google OAuth popup and Firebase
               "frame-ancestors 'none'",
             ].join('; ')
           },
