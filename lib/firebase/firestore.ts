@@ -123,12 +123,6 @@ export async function getUserBoards(userId: string): Promise<Board[]> {
     const ownedSnapshot = await getDocs(ownedQuery);
     console.log('getUserBoards: Owned snapshot count:', ownedSnapshot.docs.length);
 
-    // Query for boards shared with the user
-    const sharedQuery = query(getBoardsCollection(), where('sharedWith', 'array-contains', userId));
-    console.log('getUserBoards: Running shared query...');
-    const sharedSnapshot = await getDocs(sharedQuery);
-    console.log('getUserBoards: Shared snapshot count:', sharedSnapshot.docs.length);
-
     // Combine and deduplicate results
     const boardMap = new Map<string, Board>();
 
@@ -161,14 +155,29 @@ export async function getUserBoards(userId: string): Promise<Board[]> {
       } as Board);
     });
 
-    sharedSnapshot.docs.forEach((doc) => {
-      const data = doc.data();
-      boardMap.set(doc.id, {
-        ...data,
-        createdAt: convertTimestamp(data.createdAt),
-        updatedAt: convertTimestamp(data.updatedAt),
-      } as Board);
-    });
+    // Note: Shared boards query disabled until board sharing is fully implemented
+    // The Firestore rules currently don't allow querying by sharedWith array
+    // Once sharing is implemented, update the rules and uncomment below:
+    /*
+    try {
+      const sharedQuery = query(getBoardsCollection(), where('sharedWith', 'array-contains', userId));
+      console.log('getUserBoards: Running shared query...');
+      const sharedSnapshot = await getDocs(sharedQuery);
+      console.log('getUserBoards: Shared snapshot count:', sharedSnapshot.docs.length);
+
+      sharedSnapshot.docs.forEach((doc) => {
+        const data = doc.data();
+        boardMap.set(doc.id, {
+          ...data,
+          createdAt: convertTimestamp(data.createdAt),
+          updatedAt: convertTimestamp(data.updatedAt),
+        } as Board);
+      });
+    } catch (sharedError) {
+      console.warn('getUserBoards: Shared query not available (board sharing not implemented):',
+        sharedError instanceof Error ? sharedError.message : String(sharedError));
+    }
+    */
 
     return Array.from(boardMap.values());
   } catch (error) {
