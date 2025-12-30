@@ -11,12 +11,13 @@ export default function LandingPage() {
   const demoMode = useKanbanStore((state) => state.demoMode);
   const toggleDemoMode = useKanbanStore((state) => state.toggleDemoMode);
 
-  // Auto-enable demo mode on mount
+  // Auto-enable demo mode when on landing page
   useEffect(() => {
     if (!demoMode) {
+      console.log('[LandingPage] Enabling demo mode');
       toggleDemoMode();
     }
-  }, []);
+  }, [demoMode, toggleDemoMode]);
 
   // Auto-transition to full board after successful auth
   useEffect(() => {
