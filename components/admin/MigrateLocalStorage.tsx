@@ -37,22 +37,14 @@ export function MigrateLocalStorage() {
         try {
           const parsed = JSON.parse(storedData);
           localBoards = parsed.state?.boards || [];
-          console.log('[MigrateLocalStorage] Found localStorage data with boards:', localBoards.length);
-          localBoards.forEach((b: any) => {
-            console.log('[MigrateLocalStorage] Board:', { id: b.id, name: b.name, hasOwnerId: !!b.ownerId });
-          });
         } catch (error) {
           console.error('[MigrateLocalStorage] Failed to parse localStorage:', error);
         }
-      } else {
-        console.log('[MigrateLocalStorage] No localStorage data found');
       }
 
       // Only show migration if there are local boards AND they don't have ownerId set
       // (meaning they haven't been migrated yet)
       const unmigrationBoards = localBoards.filter((b: any) => !b.ownerId);
-
-      console.log('[MigrateLocalStorage] Boards needing migration:', unmigrationBoards.length);
 
       if (unmigrationBoards.length > 0) {
         // Show migration prompt for unmigrated boards
@@ -71,7 +63,6 @@ export function MigrateLocalStorage() {
         });
       }
     } else if (!loading && !user) {
-      console.log('[MigrateLocalStorage] User not authenticated');
       setMigrationState({
         status: 'checking',
         message: '',
@@ -111,7 +102,6 @@ export function MigrateLocalStorage() {
           // Use all boards from localStorage if available (in case some weren't loaded in Zustand)
           if (storedBoards.length > 0) {
             allBoardsToMigrate = storedBoards;
-            console.log(`[Migration] Found ${storedBoards.length} board(s) in localStorage`);
           }
         } catch (error) {
           console.error('Failed to read localStorage for migration:', error);
@@ -124,7 +114,6 @@ export function MigrateLocalStorage() {
       for (const board of allBoardsToMigrate) {
         // Security: skip demo board migration
         if (board.id === 'default-board') {
-          console.warn(`[Migration] Skipping demo board "${board.name}"`);
           continue;
         }
 
@@ -165,16 +154,13 @@ export function MigrateLocalStorage() {
       }
 
       // Reload boards from Firebase to show all migrated boards
-      console.log('[Migration] Reloading boards from Firebase...');
       try {
         const migratedBoards = await getUserBoards(user.uid);
-        console.log(`[Migration] Loaded ${migratedBoards.length} boards from Firebase`);
         if (migratedBoards.length > 0) {
           // Update the store with the newly migrated boards
           const store = useKanbanStore.getState();
           store.setBoards(migratedBoards);
           store.switchBoard(migratedBoards[0].id);
-          console.log('[Migration] Store updated with migrated boards');
         }
       } catch (error) {
         console.error('[Migration] Failed to reload boards from Firebase:', error);

@@ -28,14 +28,12 @@ let isSyncingFromFirebase = false;
  */
 export async function initializeFirebaseSync(user: User) {
   try {
-    console.log('[Sync] Initializing Firebase sync');
     const store = useKanbanStore.getState();
 
     // Set flag to prevent sync loop during initialization
     isSyncingFromFirebase = true;
 
     // First, attempt aggressive recovery if boards were corrupted with 'default-board' ID
-    console.log('[Sync] Checking for corrupted boards...');
     try {
       const recoveredBoards = await recoverCorruptedBoards(user.uid);
       if (recoveredBoards.length > 0) {
@@ -48,7 +46,6 @@ export async function initializeFirebaseSync(user: User) {
     }
 
     // Then, repair any remaining corrupted board IDs
-    console.log('[Sync] Checking for remaining board ID mismatches...');
     try {
       const repairedBoards = await repairBoardIds(user.uid);
       if (repairedBoards.length > 0) {
@@ -60,7 +57,6 @@ export async function initializeFirebaseSync(user: User) {
 
     // Load all boards for the user from Firebase
     const userBoards = await getUserBoards(user.uid);
-    console.log(`[Sync] Loaded ${userBoards.length} board(s) from Firebase`);
 
     if (userBoards.length > 0) {
       // User has boards in Firebase - use those
@@ -71,7 +67,6 @@ export async function initializeFirebaseSync(user: User) {
       const defaultBoard = userBoards.find(b => b.id === defaultBoardId);
 
       if (defaultBoardId && defaultBoard) {
-        console.log(`[Sync] Loading default board: "${defaultBoard.name}"`);
         store.setDefaultBoard(defaultBoardId);
         store.switchBoard(defaultBoardId);
       } else if (defaultBoardId && !defaultBoard) {
@@ -80,14 +75,12 @@ export async function initializeFirebaseSync(user: User) {
         store.setDefaultBoard(null);
         store.switchBoard(userBoards[0].id);
       } else {
-        console.log(`[Sync] No default board set, using "${userBoards[0].name}"`);
         store.switchBoard(userBoards[0].id);
       }
 
       // Load UI preferences
       const uiPreferences = await getUserUIPreferences(user.uid);
       if (uiPreferences.dueDatePanelOpen !== undefined) {
-        console.log(`[Sync] Loading UI preference - dueDatePanelOpen: ${uiPreferences.dueDatePanelOpen}`);
         // Set to the saved preference value directly
         store.setDueDatePanelOpen(uiPreferences.dueDatePanelOpen);
       }
@@ -99,7 +92,6 @@ export async function initializeFirebaseSync(user: User) {
 
       // Mark as saved since we just loaded from Firebase (no unsaved changes)
       store.markAsSaved();
-      console.log('[Sync] Initialization complete');
     } else {
       // No boards in Firebase yet
       // Check if we have backed up user boards from demo mode
@@ -107,13 +99,11 @@ export async function initializeFirebaseSync(user: User) {
       if (currentState._userBoardsBackup && currentState._userBoardsBackup.length > 0) {
         // Restore from backup and migrate to Firebase
         const backupBoards = currentState._userBoardsBackup;
-        console.log('Found backed up boards, restoring:', backupBoards.map((b: any) => b.name));
         store.setBoards(backupBoards);
 
         // Migrate to Firebase
         for (const board of backupBoards) {
           try {
-            console.log('Migrating board to Firebase:', board.name);
             await createBoard(user.uid, board);
           } catch (error) {
             console.error(`Failed to migrate board ${board.name}:`, error);
@@ -121,14 +111,11 @@ export async function initializeFirebaseSync(user: User) {
         }
 
         // Wait a moment for Firestore to propagate writes
-        console.log('Waiting for Firestore propagation...');
         await new Promise(resolve => setTimeout(resolve, 1000));
 
         // Reload from Firebase to get proper timestamps
-        console.log('Reloading boards from Firebase');
         const migratedBoards = await getUserBoards(user.uid);
         if (migratedBoards.length > 0) {
-          console.log('Successfully loaded migrated boards from Firebase:', migratedBoards.map((b: any) => b.name));
           store.setBoards(migratedBoards);
           store.switchBoard(migratedBoards[0].id);
         } else {
@@ -157,7 +144,6 @@ export async function initializeFirebaseSync(user: User) {
 
       // Mark as saved after migration
       store.markAsSaved();
-      console.log('[Sync] Migration complete - marked as saved');
     }
 
     // Real-time listeners disabled to prevent sync loop
@@ -185,7 +171,6 @@ export function cleanupFirebaseSync() {
   // This ensures the landing page always shows with dueDatePanelOpen: false (landing page default)
   const store = useKanbanStore.getState();
   store.setDueDatePanelOpen(false);
-  console.log('[Sync] Reset dueDatePanelOpen to false on logout');
 }
 
 /**
@@ -239,11 +224,8 @@ export function subscribeToStoreChanges(user: User) {
 
   return useKanbanStore.subscribe(
     (state) => {
-      console.log('[Sync] Store changed, isSyncingFromFirebase:', isSyncingFromFirebase, 'boards:', state.boards.length);
-
       // Skip sync if changes are coming FROM Firebase (not user actions)
       if (isSyncingFromFirebase) {
-        console.log('[Sync] Skipping sync - changes from Firebase');
         // Still update our tracking map to stay in sync
         state.boards.forEach((board) => {
           lastBoardsMap.set(board.id, JSON.stringify(board));
@@ -271,24 +253,17 @@ export function subscribeToStoreChanges(user: User) {
         lastDefaultBoardId = state.defaultBoardId;
       }
 
-      console.log('[Sync] Changes detected - boards:', changedBoards.length, 'defaultBoard:', defaultBoardChanged);
-
       // Only sync if there are actual changes
       if (changedBoards.length > 0 || defaultBoardChanged) {
         // Debounce the sync to avoid too many Firebase calls
         clearTimeout(syncTimeout);
         syncTimeout = setTimeout(async () => {
-          if (changedBoards.length > 0) {
-            console.log(`Syncing ${changedBoards.length} changed board(s) to Firebase...`);
-          }
-
           // Only sync the boards that actually changed
           for (const board of changedBoards) {
             const boardWithOwner = board as any;
 
             // Security: skip demo board
             if (board.id === 'default-board') {
-              console.warn(`[Sync] Skipping demo board sync`);
               continue;
             }
 
@@ -304,7 +279,7 @@ export function subscribeToStoreChanges(user: User) {
                 }
               }
             } else {
-              console.warn(`[Sync] Board ${board.id} has no ownerId, skipping Firebase sync`);
+              console.warn(`Board ${board.id} has no ownerId, skipping Firebase sync`);
             }
           }
 

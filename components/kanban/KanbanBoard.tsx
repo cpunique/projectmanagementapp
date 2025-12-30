@@ -56,8 +56,6 @@ const KanbanBoard = () => {
 
     if (!cardId || !fromColumnId) return;
 
-    console.log('📦 Drop detected: card', cardId, 'to column', toColumnId);
-
     if (fromColumnId === toColumnId) {
       // Same column - reorder
       const column = board.columns.find((c) => c.id === toColumnId);

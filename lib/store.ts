@@ -560,8 +560,6 @@ export const useKanbanStore = create<KanbanStore>()(
           if (newDemoMode) {
             // Entering demo mode - save current user boards in state and show demo board
             const demoBoard = createDemoBoard();
-            console.log('[Store] Entering demo mode - showing demo board with ID:', demoBoard.id);
-            console.log('[Store] Demo board columns:', demoBoard.columns.length);
             return {
               demoMode: newDemoMode,
               boards: [demoBoard],
@@ -573,7 +571,6 @@ export const useKanbanStore = create<KanbanStore>()(
             // BUT DO NOT change activeBoard - Firebase sync has already set the correct board
             const restoredBoards = state._userBoardsBackup;
             if (restoredBoards && restoredBoards.length > 0) {
-              console.log('[Store] Exiting demo mode - restoring user boards (keeping current activeBoard)');
               return {
                 demoMode: newDemoMode,
                 boards: restoredBoards,
@@ -581,7 +578,6 @@ export const useKanbanStore = create<KanbanStore>()(
                 _userBoardsBackup: undefined,
               };
             } else {
-              console.log('[Store] Exiting demo mode - no backup found, creating default board');
               return {
                 demoMode: newDemoMode,
                 boards: [createDefaultBoard()],
@@ -591,6 +587,43 @@ export const useKanbanStore = create<KanbanStore>()(
             }
           }
         }),
+
+      setDemoMode: (enabled: boolean) =>
+        set((state) => {
+          // Idempotent: if already in desired state, do nothing
+          if (state.demoMode === enabled) {
+            return state;
+          }
+
+          if (enabled) {
+            // Entering demo mode
+            const demoBoard = createDemoBoard();
+            return {
+              demoMode: true,
+              boards: [demoBoard],
+              activeBoard: demoBoard.id,
+              _userBoardsBackup: state.boards,
+            };
+          } else {
+            // Exiting demo mode
+            const restoredBoards = state._userBoardsBackup;
+            if (restoredBoards && restoredBoards.length > 0) {
+              return {
+                demoMode: false,
+                boards: restoredBoards,
+                _userBoardsBackup: undefined,
+              };
+            } else {
+              return {
+                demoMode: false,
+                boards: [createDefaultBoard()],
+                activeBoard: DEFAULT_BOARD_ID,
+                _userBoardsBackup: undefined,
+              };
+            }
+          }
+        }),
+
       setSearchQuery: (query: string) => set({ searchQuery: query }),
       setFilters: (filters) => set({ filters }),
       clearFilters: () => set({ filters: {} }),

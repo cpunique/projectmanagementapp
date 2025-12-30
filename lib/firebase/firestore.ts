@@ -43,9 +43,7 @@ export async function createBoard(
   };
 
   try {
-    console.log('Creating board:', board.name, 'with ID:', board.id);
     await setDoc(boardRef, boardData);
-    console.log('Successfully created board:', board.name);
   } catch (error) {
     console.error('Error creating board:', {
       boardId: board.id,
@@ -94,7 +92,6 @@ export async function updateBoard(
     // Handle quota exceeded errors with exponential backoff
     if (error?.code === 'resource-exhausted' && retryCount < maxRetries) {
       const delayMs = Math.pow(2, retryCount) * 1000; // 1s, 2s, 4s
-      console.log(`Quota exceeded. Retrying in ${delayMs}ms... (attempt ${retryCount + 1}/${maxRetries})`);
 
       await new Promise((resolve) => setTimeout(resolve, delayMs));
       return updateBoard(boardId, updates, retryCount + 1, maxRetries);
@@ -117,12 +114,9 @@ export async function deleteBoard(boardId: string) {
  */
 export async function getUserBoards(userId: string): Promise<Board[]> {
   try {
-    console.log('getUserBoards: Querying for userId:', userId);
     // Query for boards owned by the user
     const ownedQuery = query(getBoardsCollection(), where('ownerId', '==', userId));
-    console.log('getUserBoards: Running owned query...');
     const ownedSnapshot = await getDocs(ownedQuery);
-    console.log('getUserBoards: Owned snapshot count:', ownedSnapshot.docs.length);
 
     // Combine and deduplicate results
     const boardMap = new Map<string, Board>();
@@ -149,11 +143,6 @@ export async function getUserBoards(userId: string): Promise<Board[]> {
 
     ownedSnapshot.docs.forEach((doc) => {
       const data = doc.data();
-      console.log('[getUserBoards] Board from Firebase:', {
-        docId: doc.id,
-        dataId: data.id,
-        name: data.name,
-      });
       boardMap.set(doc.id, {
         ...data,
         createdAt: convertTimestamp(data.createdAt),
@@ -348,8 +337,6 @@ export async function setUserUIPreferences(userId: string, preferences: { dueDat
  */
 export async function repairBoardIds(userId: string): Promise<string[]> {
   try {
-    console.log('[Repair] Starting board ID repair for user:', userId);
-
     const ownedQuery = query(getBoardsCollection(), where('ownerId', '==', userId));
     const snapshot = await getDocs(ownedQuery);
 
@@ -360,12 +347,8 @@ export async function repairBoardIds(userId: string): Promise<string[]> {
       const docId = boardDoc.id;
       const dataId = data.id;
 
-      console.log('[Repair] Checking board:', { docId: docId.substring(0, 10), dataId: String(dataId).substring(0, 10), name: data.name });
-
       // If the board data ID is 'default-board' or doesn't match document ID, fix it
       if (dataId === 'default-board' || dataId !== docId) {
-        console.log('[Repair] ⚠️ Board ID corruption! Board:', data.name, 'Data ID:', dataId, 'Doc ID:', docId);
-
         // Update the board data with the document ID to match
         const boardRef = doc(getBoardsCollection(), docId);
         await updateDoc(boardRef, {
@@ -374,11 +357,9 @@ export async function repairBoardIds(userId: string): Promise<string[]> {
         });
 
         repairedBoardIds.push(data.name);
-        console.log('[Repair] ✅ Fixed board:', data.name, 'Updated ID:', docId);
       }
     }
 
-    console.log('[Repair] Complete! Repaired ' + repairedBoardIds.length + ' boards:', repairedBoardIds);
     return repairedBoardIds;
   } catch (error) {
     console.error('[Repair] Failed to repair boards:', error);
@@ -393,19 +374,13 @@ export async function repairBoardIds(userId: string): Promise<string[]> {
  */
 export async function recoverCorruptedBoards(userId: string): Promise<string[]> {
   try {
-    console.log('[Recovery] Starting aggressive board recovery for user:', userId);
-
     // Step 1: Check if the 'default-board' document exists (indicates corruption)
     const defaultBoardRef = doc(getBoardsCollection(), 'default-board');
     const defaultBoardSnap = await getDoc(defaultBoardRef);
 
     if (!defaultBoardSnap.exists()) {
-      console.log('[Recovery] No default-board document found - no recovery needed');
       return [];
     }
-
-    const corruptedData = defaultBoardSnap.data();
-    console.log('[Recovery] ⚠️ CORRUPTION DETECTED: Found default-board document with board:', corruptedData.name);
 
     // Step 2: Read all boards from localStorage (which should be intact)
     const localStorageData = localStorage.getItem('kanban-store');
@@ -415,7 +390,6 @@ export async function recoverCorruptedBoards(userId: string): Promise<string[]> 
       try {
         const parsed = JSON.parse(localStorageData);
         localBoards = parsed.state?.boards || [];
-        console.log('[Recovery] Read', localBoards.length, 'board(s) from localStorage');
       } catch (error) {
         console.error('[Recovery] Failed to parse localStorage:', error);
         return [];
@@ -429,10 +403,8 @@ export async function recoverCorruptedBoards(userId: string): Promise<string[]> 
 
     // Step 3: Try to delete the corrupted 'default-board' document
     // If deletion fails due to permissions, we'll skip recovery for now
-    console.log('[Recovery] Attempting to delete corrupted default-board document...');
     try {
       await deleteDoc(defaultBoardRef);
-      console.log('[Recovery] ✅ Deleted corrupted document');
     } catch (deleteError: any) {
       console.warn('[Recovery] Could not delete corrupted document (permissions):', deleteError?.code, '- will skip recovery for now');
       // Don't fail the entire recovery if we can't delete - the migration will handle it
@@ -446,7 +418,6 @@ export async function recoverCorruptedBoards(userId: string): Promise<string[]> 
     for (const localBoard of localBoards) {
       // Skip if it was marked as demo board
       if (localBoard.id === 'default-board') {
-        console.log('[Recovery] Skipping demo board:', localBoard.name);
         continue;
       }
 
@@ -455,8 +426,6 @@ export async function recoverCorruptedBoards(userId: string): Promise<string[]> 
         const newBoardId = localBoard.id && localBoard.id !== 'default-board'
           ? localBoard.id
           : nanoid();
-
-        console.log('[Recovery] Creating board with ID:', newBoardId, 'Name:', localBoard.name);
 
         // Prepare board data with correct structure
         const boardData = {
@@ -474,13 +443,11 @@ export async function recoverCorruptedBoards(userId: string): Promise<string[]> 
         await setDoc(newBoardRef, boardData);
 
         recoveredBoardIds.push(newBoardId);
-        console.log('[Recovery] ✅ Recovered board:', localBoard.name, 'with ID:', newBoardId);
       } catch (error) {
         console.error('[Recovery] Failed to recover board:', localBoard.name, error);
       }
     }
 
-    console.log('[Recovery] Complete! Recovered', recoveredBoardIds.length, 'board(s)');
     return recoveredBoardIds;
   } catch (error) {
     console.error('[Recovery] Critical recovery error:', error);

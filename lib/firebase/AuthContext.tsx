@@ -33,13 +33,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const auth = getAuth();
 
     // Set up auth state listener
-    console.log('[Auth] Setting up auth state listener...');
     const unsubscribe = onAuthStateChanged(auth, (user) => {
-      console.log('[Auth] Auth state changed:', user?.email || 'no user');
-      if (user) {
-        console.log('[Auth] ✅ User authenticated:', user.email);
-        console.log('[Auth] User ID:', user.uid);
-      }
       setUser(user);
       setLoading(false);
     });
@@ -74,24 +68,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signInWithGoogle = async () => {
     setError(null);
     try {
-      console.log('[Auth] Getting auth instance...');
       const auth = getAuth();
-      console.log('[Auth] Auth instance obtained');
-
-      console.log('[Auth] Creating GoogleAuthProvider...');
       const provider = new GoogleAuthProvider();
-      console.log('[Auth] GoogleAuthProvider created');
 
       // Force account selection - allows user to choose which Google account
       provider.setCustomParameters({
         prompt: 'select_account'
       });
-      console.log('[Auth] Custom parameters set');
 
-      console.log('[Auth] Starting Google Sign-In with popup...');
       const result = await signInWithPopup(auth, provider);
-      console.log('[Auth] ✅ Google Sign-In successful:', result.user.email);
-      console.log('[Auth] User ID:', result.user.uid);
     } catch (err: any) {
       console.error('[Auth] ❌ Google Sign-In error:', err);
       console.error('[Auth] Error code:', err.code);

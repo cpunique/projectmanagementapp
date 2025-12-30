@@ -69,8 +69,6 @@ const BoardSwitcher = () => {
     const boardName = boards.find((b) => b.id === boardId)?.name || 'Unknown Board';
     const newDefaultId = defaultBoardId === boardId ? null : boardId;
 
-    console.log(`[BoardSwitcher] ${newDefaultId ? `Setting "${boardName}" as default` : `Removing default from "${boardName}"`}`);
-
     // Set guard flag
     setIsSavingDefaultBoard(true);
 

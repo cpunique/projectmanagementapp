@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import { useKanbanStore } from '@/lib/store';
 import { useAuth } from '@/lib/firebase/AuthContext';
 import MarketingPanel from './MarketingPanel';
@@ -8,24 +8,13 @@ import DemoPreview from './DemoPreview';
 
 export default function LandingPage() {
   const { user } = useAuth();
-  const initRef = useRef(false);
 
   // Auto-enable demo mode and close due date panel when on landing page
   useEffect(() => {
-    // Only initialize once to avoid React Strict Mode double-mount issues
-    if (initRef.current) return;
-    initRef.current = true;
-
     const store = useKanbanStore.getState();
 
-    // Ensure demo mode is enabled
-    if (!store.demoMode) {
-      console.log('[LandingPage] Enabling demo mode');
-      store.toggleDemoMode();
-    }
-
-    // Ensure due date panel is closed on landing page
-    console.log('[LandingPage] Closing due date panel');
+    // Idempotent - safe to call multiple times
+    store.setDemoMode(true);
     store.setDueDatePanelOpen(false);
   }, []);
 
@@ -33,7 +22,7 @@ export default function LandingPage() {
   useEffect(() => {
     const store = useKanbanStore.getState();
     if (user && store.demoMode) {
-      store.toggleDemoMode();
+      store.setDemoMode(false);
     }
   }, [user]);
 

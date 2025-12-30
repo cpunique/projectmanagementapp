@@ -17,8 +17,6 @@ export async function cloneBoard(sourceBoard: Board, newBoardName: string, userI
     // Generate a new unique ID for the cloned board
     const newBoardId = nanoid();
 
-    console.log('[BoardClone] Cloning board:', sourceBoard.name, '-> New ID:', newBoardId, 'New name:', newBoardName);
-
     // Create the cloned board data (client-side representation)
     const clonedBoard: Board = {
       id: newBoardId,
@@ -43,8 +41,6 @@ export async function cloneBoard(sourceBoard: Board, newBoardName: string, userI
     };
 
     await setDoc(boardRef, boardData);
-
-    console.log('[BoardClone] ✅ Successfully cloned board:', newBoardName, 'with ID:', newBoardId);
 
     return clonedBoard;
   } catch (error) {

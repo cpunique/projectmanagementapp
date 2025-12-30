@@ -38,7 +38,6 @@ const SaveButton = () => {
 
     // If quota is already exceeded, skip Firebase save entirely
     if (quotaExceeded) {
-      console.log('[SaveButton] Quota exceeded - saving locally only');
       markAsSaved();
       setSaveState('saved');
       setErrorMessage('Saved locally (Firebase quota exceeded)');
@@ -54,8 +53,6 @@ const SaveButton = () => {
     }
 
     try {
-      console.log('[SaveButton] Starting save...');
-
       // Only save the currently active board to avoid quota issues
       const currentBoard = boards.find((b) => b.id === activeBoard);
       if (currentBoard) {
@@ -63,7 +60,6 @@ const SaveButton = () => {
 
         // Security: prevent saving demo board to Firebase
         if (activeBoard === 'default-board') {
-          console.warn('[SaveButton] Demo board detected - not saving to Firebase');
           markAsSaved();
           setSaveState('saved');
           setErrorMessage('Demo board - changes saved locally only');
@@ -79,9 +75,7 @@ const SaveButton = () => {
         }
 
         if (boardWithOwner.ownerId) {
-          console.log('[SaveButton] Saving active board:', currentBoard.name);
           await updateBoard(currentBoard.id, currentBoard);
-          console.log('[SaveButton] Active board saved to Firebase');
         } else {
           console.warn('[SaveButton] Board has no ownerId - not saving to Firebase');
         }

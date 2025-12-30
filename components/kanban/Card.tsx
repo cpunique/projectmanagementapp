@@ -35,16 +35,6 @@ const Card = ({ card, boardId, columnId, onDragStart, onDragEnd, isDragging }: C
   // Check if this card is on the demo board (default-board)
   const isDemoBoard = boardId === 'default-board';
 
-  // Debug logging
-  if (card.id === 'develop-security-features' || card.title?.includes('Develop Security')) {
-    console.log('[Card AI Debug]', {
-      cardTitle: card.title,
-      boardId,
-      isDemoBoard,
-      cardId: card.id
-    });
-  }
-
   // Detect actual theme from DOM instead of store (since store's darkMode is broken)
   const [actualDarkMode, setActualDarkMode] = useState(() => {
     if (typeof window !== 'undefined') {
