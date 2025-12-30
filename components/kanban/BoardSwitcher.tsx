@@ -9,6 +9,7 @@ import Dropdown from '@/components/ui/Dropdown';
 import Button from '@/components/ui/Button';
 import Modal from '@/components/ui/Modal';
 import Input from '@/components/ui/Input';
+import CloneBoardModal from '@/components/kanban/CloneBoardModal';
 
 const BoardSwitcher = () => {
   const { user } = useAuth();
@@ -26,6 +27,8 @@ const BoardSwitcher = () => {
   const [isRenamingBoardId, setIsRenamingBoardId] = useState<string | null>(null);
   const [renameBoardValue, setRenameBoardValue] = useState('');
   const [isSavingDefaultBoard, setIsSavingDefaultBoard] = useState(false);
+  const [isCloneModalOpen, setIsCloneModalOpen] = useState(false);
+  const [boardToClone, setBoardToClone] = useState<string | null>(null);
 
   const currentBoard = boards.find((b) => b.id === activeBoard);
 
@@ -154,36 +157,54 @@ const BoardSwitcher = () => {
 
                 <div className="flex items-center gap-1.5">
                   {!isRenamingBoardId && (
-                    <button
-                      onMouseDown={(e) => {
-                        e.stopPropagation();
-                        e.preventDefault();
-                      }}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        e.preventDefault();
-                        handleSetDefaultBoard(board.id);
-                      }}
-                      onDoubleClick={(e) => {
-                        e.stopPropagation();
-                        e.preventDefault();
-                      }}
-                      disabled={isSavingDefaultBoard}
-                      className={cn(
-                        'p-1 text-base transition-all duration-200 ease-in-out',
-                        defaultBoardId === board.id
-                          ? 'text-purple-600 dark:text-purple-400 scale-110 drop-shadow-sm'
-                          : 'text-gray-300 dark:text-gray-600 hover:text-purple-400 dark:hover:text-purple-500 hover:scale-105',
-                        isSavingDefaultBoard && 'opacity-50 cursor-not-allowed'
-                      )}
-                      title={
-                        defaultBoardId === board.id
-                          ? 'Remove as default'
-                          : 'Make default'
-                      }
-                    >
-                      {defaultBoardId === board.id ? '★' : '☆'}
-                    </button>
+                    <>
+                      <button
+                        onMouseDown={(e) => {
+                          e.stopPropagation();
+                          e.preventDefault();
+                        }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          e.preventDefault();
+                          setBoardToClone(board.id);
+                          setIsCloneModalOpen(true);
+                        }}
+                        className="text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 p-1 rounded text-sm"
+                        title="Clone board"
+                      >
+                        ⎘
+                      </button>
+                      <button
+                        onMouseDown={(e) => {
+                          e.stopPropagation();
+                          e.preventDefault();
+                        }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          e.preventDefault();
+                          handleSetDefaultBoard(board.id);
+                        }}
+                        onDoubleClick={(e) => {
+                          e.stopPropagation();
+                          e.preventDefault();
+                        }}
+                        disabled={isSavingDefaultBoard}
+                        className={cn(
+                          'p-1 text-base transition-all duration-200 ease-in-out',
+                          defaultBoardId === board.id
+                            ? 'text-purple-600 dark:text-purple-400 scale-110 drop-shadow-sm'
+                            : 'text-gray-300 dark:text-gray-600 hover:text-purple-400 dark:hover:text-purple-500 hover:scale-105',
+                          isSavingDefaultBoard && 'opacity-50 cursor-not-allowed'
+                        )}
+                        title={
+                          defaultBoardId === board.id
+                            ? 'Remove as default'
+                            : 'Make default'
+                        }
+                      >
+                        {defaultBoardId === board.id ? '★' : '☆'}
+                      </button>
+                    </>
                   )}
                   {boards.length > 1 && !isRenamingBoardId && (
                     <button
@@ -256,6 +277,18 @@ const BoardSwitcher = () => {
           </div>
         </div>
       </Modal>
+
+      {/* Clone Board Modal */}
+      {boardToClone && boards.find((b) => b.id === boardToClone) && (
+        <CloneBoardModal
+          isOpen={isCloneModalOpen}
+          onClose={() => {
+            setIsCloneModalOpen(false);
+            setBoardToClone(null);
+          }}
+          sourceBoard={boards.find((b) => b.id === boardToClone)!}
+        />
+      )}
     </>
   );
 };

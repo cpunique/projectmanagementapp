@@ -10,11 +10,11 @@ interface CloneBoardModalProps {
   isOpen: boolean;
   sourceBoard: Board;
   onClose: () => void;
-  onSuccess: (newBoard: Board) => void;
 }
 
-export function CloneBoardModal({ isOpen, sourceBoard, onClose, onSuccess }: CloneBoardModalProps) {
+export default function CloneBoardModal({ isOpen, sourceBoard, onClose }: CloneBoardModalProps) {
   const { user } = useAuth();
+  const switchBoard = useKanbanStore((state) => state.switchBoard);
   const [newBoardName, setNewBoardName] = useState(`${sourceBoard.name} (Copy)`);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -35,8 +35,19 @@ export function CloneBoardModal({ isOpen, sourceBoard, onClose, onSuccess }: Clo
 
     try {
       const clonedBoard = await cloneBoard(sourceBoard, newBoardName.trim(), user.uid);
-      onSuccess(clonedBoard);
+
+      // Add the cloned board to local state (with full board data)
+      // Note: The board is already created in Firestore by cloneBoard()
+      // We add it to local state with the returned data
+      const state = useKanbanStore.getState();
+      state.setBoards([...state.boards, clonedBoard]);
+
+      // Switch to the new board
+      switchBoard(clonedBoard.id);
+
+      // Reset and close
       setNewBoardName(`${sourceBoard.name} (Copy)`);
+      onClose();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to clone board');
     } finally {
