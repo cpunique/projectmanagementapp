@@ -308,3 +308,47 @@ export async function setUserDefaultBoard(userId: string, boardId: string | null
     throw error;
   }
 }
+
+/**
+ * Repair corrupted board IDs in Firestore
+ * This fixes boards that were saved with wrong IDs
+ */
+export async function repairBoardIds(userId: string): Promise<string[]> {
+  try {
+    console.log('[Repair] Starting board ID repair for user:', userId);
+
+    const ownedQuery = query(getBoardsCollection(), where('ownerId', '==', userId));
+    const snapshot = await getDocs(ownedQuery);
+
+    const repairedBoardIds: string[] = [];
+
+    for (const boardDoc of snapshot.docs) {
+      const data = boardDoc.data();
+      const docId = boardDoc.id;
+      const dataId = data.id;
+
+      console.log('[Repair] Checking board:', { docId, dataId, name: data.name });
+
+      // If the data.id doesn't match the document ID, fix it
+      if (dataId !== docId) {
+        console.log('[Repair] Board ID mismatch! Fixing:', data.name);
+
+        // Update the board data with correct ID
+        const boardRef = doc(getBoardsCollection(), docId);
+        await updateDoc(boardRef, {
+          id: docId,
+          updatedAt: serverTimestamp(),
+        });
+
+        repairedBoardIds.push(data.name);
+        console.log('[Repair] Fixed board:', data.name, 'New ID:', docId);
+      }
+    }
+
+    console.log('[Repair] Complete! Repaired boards:', repairedBoardIds);
+    return repairedBoardIds;
+  } catch (error) {
+    console.error('[Repair] Failed to repair boards:', error);
+    throw error;
+  }
+}

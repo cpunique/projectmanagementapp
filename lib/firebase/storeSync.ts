@@ -9,6 +9,7 @@ import {
   deleteBoard as deleteFirestoreBoard,
   getUserDefaultBoard,
   setUserDefaultBoard,
+  repairBoardIds,
 } from './firestore';
 import type { Board } from '@/types';
 
@@ -29,6 +30,17 @@ export async function initializeFirebaseSync(user: User) {
 
     // Set flag to prevent sync loop during initialization
     isSyncingFromFirebase = true;
+
+    // First, repair any corrupted board IDs
+    console.log('[Sync] Checking for corrupted board IDs...');
+    try {
+      const repairedBoards = await repairBoardIds(user.uid);
+      if (repairedBoards.length > 0) {
+        console.log('[Sync] Repaired boards:', repairedBoards);
+      }
+    } catch (error) {
+      console.warn('[Sync] Board repair skipped or failed:', error);
+    }
 
     // Load all boards for the user from Firebase
     const userBoards = await getUserBoards(user.uid);
