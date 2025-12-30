@@ -311,7 +311,7 @@ export async function setUserDefaultBoard(userId: string, boardId: string | null
 
 /**
  * Repair corrupted board IDs in Firestore
- * This fixes boards that were saved with wrong IDs
+ * This fixes boards that were saved with 'default-board' ID
  */
 export async function repairBoardIds(userId: string): Promise<string[]> {
   try {
@@ -327,13 +327,13 @@ export async function repairBoardIds(userId: string): Promise<string[]> {
       const docId = boardDoc.id;
       const dataId = data.id;
 
-      console.log('[Repair] Checking board:', { docId, dataId, name: data.name });
+      console.log('[Repair] Checking board:', { docId: docId.substring(0, 10), dataId: String(dataId).substring(0, 10), name: data.name });
 
-      // If the data.id doesn't match the document ID, fix it
-      if (dataId !== docId) {
-        console.log('[Repair] Board ID mismatch! Fixing:', data.name);
+      // If the board data ID is 'default-board' or doesn't match document ID, fix it
+      if (dataId === 'default-board' || dataId !== docId) {
+        console.log('[Repair] ⚠️ Board ID corruption! Board:', data.name, 'Data ID:', dataId, 'Doc ID:', docId);
 
-        // Update the board data with correct ID
+        // Update the board data with the document ID to match
         const boardRef = doc(getBoardsCollection(), docId);
         await updateDoc(boardRef, {
           id: docId,
@@ -341,11 +341,11 @@ export async function repairBoardIds(userId: string): Promise<string[]> {
         });
 
         repairedBoardIds.push(data.name);
-        console.log('[Repair] Fixed board:', data.name, 'New ID:', docId);
+        console.log('[Repair] ✅ Fixed board:', data.name, 'Updated ID:', docId);
       }
     }
 
-    console.log('[Repair] Complete! Repaired boards:', repairedBoardIds);
+    console.log('[Repair] Complete! Repaired ' + repairedBoardIds.length + ' boards:', repairedBoardIds);
     return repairedBoardIds;
   } catch (error) {
     console.error('[Repair] Failed to repair boards:', error);
