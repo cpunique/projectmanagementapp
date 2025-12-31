@@ -164,6 +164,8 @@ Please provide implementation instructions for this feature.`;
     });
 
     try {
+      console.log('[AI Prompt] About to call Anthropic API');
+
       const message = await client.messages.create({
         model,
         max_tokens: 1024,
@@ -175,10 +177,11 @@ Please provide implementation instructions for this feature.`;
         ],
       });
 
-      console.log('[AI Prompt] API response received:', {
+      console.log('[AI Prompt] API response received successfully:', {
         contentCount: message.content.length,
         stopReason: message.stop_reason,
-        tokensUsed: message.usage?.input_tokens || 0,
+        inputTokens: message.usage?.input_tokens || 0,
+        outputTokens: message.usage?.output_tokens || 0,
       });
 
       // 8. Extract the response
@@ -188,11 +191,14 @@ Please provide implementation instructions for this feature.`;
         .join('\n');
 
       if (!generatedPrompt) {
+        console.error('[AI Prompt] No text content in API response');
         return NextResponse.json(
           { error: 'No prompt was generated. Please try again.' },
           { status: 500 }
         );
       }
+
+      console.log('[AI Prompt] Successfully generated prompt, returning to client');
 
       // 9. Return formatted response with rate limit info
       return NextResponse.json(
@@ -204,9 +210,17 @@ Please provide implementation instructions for this feature.`;
         }
       );
     } catch (apiError: any) {
+      console.error('[AI Prompt] API call failed with error:', {
+        name: apiError?.name,
+        message: apiError?.message,
+        status: apiError?.status,
+        code: apiError?.code,
+        error: apiError?.error,
+      });
+
       // Handle timeout/abort
       if (apiError?.name === 'AbortError') {
-        console.error('[AI Prompt] Request timeout');
+        console.error('[AI Prompt] Request was aborted/timed out');
         return NextResponse.json(
           { error: 'Request timeout. Please try again.' },
           { status: 504 }
