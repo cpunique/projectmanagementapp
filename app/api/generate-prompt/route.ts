@@ -65,9 +65,20 @@ export async function POST(request: Request) {
 
     // 3. Validate and sanitize input
     const body = await request.json();
+
+    console.log('[AI Prompt] Request body:', {
+      cardTitle: body.cardTitle?.substring(0, 50),
+      hasDescription: !!body.description,
+      hasNotes: !!body.notes,
+      checklistCount: body.checklist?.length || 0,
+      tagsCount: body.tags?.length || 0,
+      priority: body.priority,
+    });
+
     const validationResult = GeneratePromptSchema.safeParse(body);
 
     if (!validationResult.success) {
+      console.error('[AI Prompt] Validation failed:', validationResult.error.issues);
       return NextResponse.json(
         {
           error: 'Invalid input data',
@@ -138,10 +149,17 @@ export async function POST(request: Request) {
     // Use environment variable for model name with fallback to Sonnet (cheaper, higher rate limits)
     const model = process.env.NEXT_PUBLIC_CLAUDE_MODEL || 'claude-sonnet-4-20250514';
 
+    const userMessage = `You are a helpful assistant that converts feature requests into clear, simple implementation instructions for developers. Keep the language friendly and straightforward, not overly technical. Focus on what needs to be built and why, breaking it down into logical, actionable steps. Be concise but thorough.
+
+${contextPrompt}
+
+Please provide implementation instructions for this feature.`;
+
     console.log('[AI Prompt] Calling Anthropic API:', {
       model,
       hasApiKey: !!apiKey,
       apiKeyPrefix: apiKey?.substring(0, 20),
+      messageLength: userMessage.length,
       timestamp: new Date().toISOString()
     });
 
@@ -152,13 +170,15 @@ export async function POST(request: Request) {
         messages: [
           {
             role: 'user',
-            content: `You are a helpful assistant that converts feature requests into clear, simple implementation instructions for developers. Keep the language friendly and straightforward, not overly technical. Focus on what needs to be built and why, breaking it down into logical, actionable steps. Be concise but thorough.
-
-${contextPrompt}
-
-Please provide implementation instructions for this feature.`,
+            content: userMessage,
           },
         ],
+      });
+
+      console.log('[AI Prompt] API response received:', {
+        contentCount: message.content.length,
+        stopReason: message.stop_reason,
+        tokensUsed: message.usage?.input_tokens || 0,
       });
 
       // 8. Extract the response
