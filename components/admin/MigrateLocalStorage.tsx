@@ -16,7 +16,7 @@ interface MigrationState {
 
 export function MigrateLocalStorage() {
   const { user, loading } = useAuth();
-  const { boards } = useKanbanStore();
+  const { boards, activeBoard } = useKanbanStore();
   const [migrationState, setMigrationState] = useState<MigrationState>({
     status: 'checking',
     message: '',
@@ -196,7 +196,13 @@ export function MigrateLocalStorage() {
         // Update the store with the newly migrated boards
         const store = useKanbanStore.getState();
         store.setBoards(firestoreBoards);
-        store.switchBoard(firestoreBoards[0].id);
+
+        // Preserve the board user was working on, or switch to first board if not found
+        if (activeBoard && firestoreBoards.find(b => b.id === activeBoard)) {
+          store.switchBoard(activeBoard);
+        } else if (firestoreBoards.length > 0) {
+          store.switchBoard(firestoreBoards[0].id);
+        }
       } else {
         // Boards not fully persisted in Firebase yet, don't clear localStorage
         setMigrationState({

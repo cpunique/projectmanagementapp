@@ -74,6 +74,7 @@ export async function getBoard(boardId: string): Promise<Board | null> {
 
 /**
  * Update a board with exponential backoff retry for quota errors
+ * Sanitizes undefined values since Firebase rejects them
  */
 export async function updateBoard(
   boardId: string,
@@ -83,9 +84,14 @@ export async function updateBoard(
 ) {
   const boardRef = doc(getBoardsCollection(), boardId);
 
+  // Sanitize updates to remove undefined values (Firebase rejects them)
+  const sanitizedUpdates = Object.fromEntries(
+    Object.entries(updates).filter(([, value]) => value !== undefined)
+  );
+
   try {
     await updateDoc(boardRef, {
-      ...updates,
+      ...sanitizedUpdates,
       updatedAt: serverTimestamp(),
     });
   } catch (error: any) {
