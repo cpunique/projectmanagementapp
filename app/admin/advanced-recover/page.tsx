@@ -2,101 +2,49 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/firebase/AuthContext';
-import {
-  getAllBoardDocumentsUnfiltered,
-  findBoardByNameUnfiltered,
-  migrateBoardToUser,
-} from '@/lib/firebase/advancedRecovery';
+import { getAllBoardDocumentsUnfiltered } from '@/lib/firebase/advancedRecovery';
+import { useKanbanStore } from '@/lib/store';
+import Link from 'next/link';
 
 export default function AdvancedRecoveryPage() {
   const { user, loading } = useAuth();
-  const [results, setResults] = useState<string>('');
-  const [boards, setBoards] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const store = useKanbanStore();
+  const [allBoards, setAllBoards] = useState<any[]>([]);
+  const [loadingBoards, setLoadingBoards] = useState(false);
+  const [message, setMessage] = useState('');
 
+  // Load all boards on mount
   useEffect(() => {
-    if (!loading && !user) {
-      setResults('Please log in to access advanced recovery');
+    if (!loading && user) {
+      handleLoadBoards();
+    } else if (!loading && !user) {
+      setMessage('Please log in to access advanced recovery');
     }
   }, [user, loading]);
 
-  const handleGetAllBoards = async () => {
+  const handleLoadBoards = async () => {
     if (!user) return;
-    setIsLoading(true);
+    setLoadingBoards(true);
+    setMessage('');
     try {
-      const allBoards = await getAllBoardDocumentsUnfiltered(user.uid);
-      setBoards(allBoards);
-      if (allBoards.length === 0) {
-        setResults(`No boards found in your account.\n\nNote: This shows only boards owned by you. If the 4th board exists from a previous build, it may be stored under a different account or was lost in the corruption event.`);
-      } else {
-        setResults(
-          `Found ${allBoards.length} board(s) owned by you:\n\n` +
-            allBoards
-              .map((b, i) => {
-                const boardData = b.data as any;
-                return `${i + 1}. ${boardData.name}
-   Doc ID: ${b.docId}
-   Columns: ${(boardData.columns || []).length}`;
-              })
-              .join('\n\n')
-        );
+      const boards = await getAllBoardDocumentsUnfiltered(user.uid);
+      setAllBoards(boards);
+      if (boards.length === 0) {
+        setMessage('✅ All boards are synced and available in your account!');
       }
     } catch (error) {
-      setResults(`Error: ${error}`);
+      setMessage(`Error loading boards: ${error}`);
     } finally {
-      setIsLoading(false);
+      setLoadingBoards(false);
     }
   };
 
-  const handleSearchByName = async () => {
-    if (!user) return;
-    setIsLoading(true);
-    try {
-      const found = await findBoardByNameUnfiltered(user.uid, 'My Kanban Board');
-      if (found.length > 0) {
-        setBoards(found);
-        setResults(
-          `Found ${found.length} board(s) named "My Kanban Board":\n\n` +
-            found
-              .map((b, i) => {
-                const boardData = b.data as any;
-                return `${i + 1}. ${boardData.name}
-   Doc ID: ${b.docId}
-   Columns: ${(boardData.columns || []).length}
-   Status: ✅ Ready to use`;
-              })
-              .join('\n\n')
-        );
-      } else {
-        setResults('No boards named "My Kanban Board" found in your account.\n\nThe 4th board appears to be lost. You can recreate it from the current 3 boards or use Firebase Console to check if it exists under a different account.');
-        setBoards([]);
-      }
-    } catch (error) {
-      setResults(`Error: ${error}`);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleMigrateBoard = async (boardDocId: string) => {
-    if (!user) {
-      setResults('Error: Not authenticated');
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      await migrateBoardToUser(boardDocId, user.uid);
-      setResults(`✅ Successfully migrated board "${boardDocId}" to your account!\n\nRefresh the page to see the migrated board.`);
-
-      // Refresh the board list
-      const allBoards = await getAllBoardDocumentsUnfiltered(user.uid);
-      setBoards(allBoards);
-    } catch (error) {
-      setResults(`Error migrating board: ${error}`);
-    } finally {
-      setIsLoading(false);
-    }
+  const handleRestoreBoard = (board: any) => {
+    const boardData = board.data as any;
+    // Update the store to switch to this board
+    store.switchBoard(boardData.id);
+    // Redirect to main app
+    window.location.href = '/';
   };
 
   return (
@@ -104,8 +52,8 @@ export default function AdvancedRecoveryPage() {
       <div className="max-w-4xl mx-auto">
         <div className="mb-8 flex items-center justify-between">
           <div>
-            <h1 className="text-4xl font-bold text-white">Advanced Board Recovery</h1>
-            <p className="text-gray-400 mt-2">Find and recover boards from previous builds</p>
+            <h1 className="text-4xl font-bold text-white">Board Recovery</h1>
+            <p className="text-gray-400 mt-2">View and restore all your synced boards</p>
           </div>
           <a
             href="/"
@@ -115,61 +63,57 @@ export default function AdvancedRecoveryPage() {
           </a>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-          <button
-            onClick={handleGetAllBoards}
-            disabled={isLoading}
-            className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold disabled:opacity-50"
-          >
-            Get All Boards in Firestore
-          </button>
-          <button
-            onClick={handleSearchByName}
-            disabled={isLoading}
-            className="px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold disabled:opacity-50"
-          >
-            Search for "My Kanban Board"
-          </button>
-        </div>
+        {message && (
+          <div className="mb-6 p-4 bg-blue-900/20 border border-blue-600 rounded-lg text-blue-200">
+            {message}
+          </div>
+        )}
 
-        <div className="bg-gray-800 rounded-lg p-6 min-h-64 mb-8">
-          <h2 className="text-lg font-semibold text-white mb-4">Results:</h2>
-          <pre className="text-gray-300 font-mono text-sm whitespace-pre-wrap break-words">
-            {isLoading ? 'Loading...' : results || 'Click a button to start recovery'}
-          </pre>
-        </div>
-
-        {boards.length > 0 && (
-          <div className="bg-gray-800 rounded-lg p-6">
-            <h2 className="text-lg font-semibold text-white mb-4">Migrate Boards to Your Account</h2>
-            <div className="space-y-2">
-              {boards.map((board) => {
+        {loadingBoards ? (
+          <div className="p-8 text-center text-gray-400">
+            <p className="mb-2">Loading your boards...</p>
+          </div>
+        ) : allBoards.length > 0 ? (
+          <div className="space-y-4">
+            <h2 className="text-2xl font-semibold text-white">Your Synced Boards ({allBoards.length})</h2>
+            <div className="grid gap-3">
+              {allBoards.map((board) => {
                 const boardData = board.data as any;
-                const isYours = boardData.ownerId === user?.uid;
+                const columnCount = (boardData.columns || []).length;
 
                 return (
                   <div
                     key={board.docId}
-                    className="flex items-center justify-between bg-gray-700 p-4 rounded-lg"
+                    className="flex items-center justify-between bg-gray-800 hover:bg-gray-750 p-4 rounded-lg border border-gray-700 transition-colors"
                   >
-                    <div className="text-white">
-                      <p className="font-semibold">{boardData.name}</p>
-                      <p className="text-sm text-gray-400">ID: {board.docId}</p>
+                    <div className="flex-1">
+                      <p className="text-lg font-semibold text-white">{boardData.name}</p>
+                      <p className="text-sm text-gray-400">
+                        {columnCount} column{columnCount !== 1 ? 's' : ''} • ID: {boardData.id}
+                      </p>
                     </div>
-                    {!isYours && (
-                      <button
-                        onClick={() => handleMigrateBoard(board.docId)}
-                        disabled={isLoading}
-                        className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded font-semibold disabled:opacity-50"
-                      >
-                        Migrate to Me
-                      </button>
-                    )}
-                    {isYours && <span className="text-green-400 font-semibold">✅ Already Yours</span>}
+                    <button
+                      onClick={() => handleRestoreBoard(board)}
+                      disabled={loadingBoards}
+                      className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded font-semibold transition-colors disabled:opacity-50 whitespace-nowrap ml-4"
+                    >
+                      Open Board
+                    </button>
                   </div>
                 );
               })}
             </div>
+          </div>
+        ) : (
+          <div className="p-8 text-center bg-gray-800 rounded-lg border border-gray-700">
+            <p className="text-gray-300">No boards found in your account</p>
+            <p className="text-sm text-gray-400 mt-2">
+              Make sure you have migrated your local boards from the home page, or check the{' '}
+              <Link href="/admin/recover" className="text-blue-400 hover:text-blue-300 underline">
+                basic recovery page
+              </Link>
+              .
+            </p>
           </div>
         )}
       </div>
