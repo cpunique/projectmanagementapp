@@ -253,9 +253,16 @@ Please provide implementation instructions for this feature.`;
       );
     }
 
+    // Return error with debug headers
     return NextResponse.json(
       { error: 'Failed to generate prompt. Please try again.' },
-      { status: 500 }
+      {
+        status: 500,
+        headers: {
+          'X-Error-Message': errorMessage.substring(0, 100),
+          'X-Error-Type': error?.constructor?.name || 'Unknown',
+        }
+      }
     );
   }
 }
