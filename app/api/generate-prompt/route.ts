@@ -182,16 +182,15 @@ Please provide implementation instructions for this feature.`;
         }),
       });
 
+      const message = await response.json();
+
       if (!response.ok) {
-        const errorData = await response.json();
         console.error('[AI Prompt] API error response:', {
           status: response.status,
-          error: errorData,
+          error: message,
         });
-        throw new Error(`API returned ${response.status}: ${errorData.error?.message || 'Unknown error'}`);
+        throw new Error(`API returned ${response.status}: ${message.error?.message || 'Unknown error'}`);
       }
-
-      const message = await response.json();
 
       console.log('[AI Prompt] API response received successfully:', {
         contentCount: message.content.length,
