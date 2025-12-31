@@ -1,5 +1,9 @@
 import { NextResponse } from 'next/server';
 
+export async function GET() {
+  return NextResponse.json({ message: 'Use POST', version: '59030c1' });
+}
+
 export async function POST() {
   try {
     console.log('[Test Prompt] Starting test');
