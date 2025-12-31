@@ -140,7 +140,7 @@ export async function POST(request: Request) {
 
     try {
       const message = await client.messages.create({
-        model: 'claude-3-5-sonnet-20241022',
+        model: 'claude-opus-4-1-20250805',
         max_tokens: 1024,
         messages: [
           {
@@ -189,7 +189,15 @@ Please provide implementation instructions for this feature.`,
       );
     }
 
-    console.error('[AI Prompt] Error:', error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    const errorStack = error instanceof Error ? error.stack : '';
+
+    console.error('[AI Prompt] Error Details:', {
+      message: errorMessage,
+      stack: errorStack,
+      type: error?.constructor?.name,
+      fullError: error,
+    });
 
     if (error instanceof SyntaxError) {
       return NextResponse.json(
@@ -197,8 +205,6 @@ Please provide implementation instructions for this feature.`,
         { status: 400 }
       );
     }
-
-    const errorMessage = error instanceof Error ? error.message : 'Internal server error';
 
     // Handle specific Anthropic errors
     if (errorMessage.includes('401') || errorMessage.includes('authentication')) {
