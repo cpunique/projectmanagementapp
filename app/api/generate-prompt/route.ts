@@ -1,4 +1,5 @@
 // API route for generating AI prompts using Claude
+// Version: 2 - Using direct fetch instead of SDK
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { aiPromptRatelimit } from '@/lib/ratelimit';
