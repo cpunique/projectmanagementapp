@@ -381,10 +381,21 @@ export async function repairBoardIds(userId: string): Promise<string[]> {
 export async function recoverCorruptedBoards(userId: string): Promise<string[]> {
   try {
     // Step 1: Check if the 'default-board' document exists (indicates corruption)
+    // Wrapped in try-catch since this may fail due to Firestore security rules
     const defaultBoardRef = doc(getBoardsCollection(), 'default-board');
-    const defaultBoardSnap = await getDoc(defaultBoardRef);
+    let defaultBoardExists = false;
+    try {
+      const defaultBoardSnap = await getDoc(defaultBoardRef);
+      defaultBoardExists = defaultBoardSnap.exists();
+    } catch (permissionError: any) {
+      // Firestore rules prevent reading this document - skip recovery
+      if (permissionError?.code === 'permission-denied') {
+        return [];
+      }
+      throw permissionError;
+    }
 
-    if (!defaultBoardSnap.exists()) {
+    if (!defaultBoardExists) {
       return [];
     }
 
