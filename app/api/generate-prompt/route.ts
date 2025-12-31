@@ -275,7 +275,11 @@ Please provide implementation instructions for this feature.`;
 
     // Return error with debug headers
     return NextResponse.json(
-      { error: 'Failed to generate prompt. Please try again.' },
+      {
+        error: 'Failed to generate prompt. Please try again.',
+        debugMessage: errorMessage,
+        debugType: error?.constructor?.name,
+      },
       {
         status: 500,
         headers: {
