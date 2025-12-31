@@ -142,6 +142,13 @@ export async function POST(request: Request) {
       // Use environment variable for model name with fallback to latest Opus
       const model = process.env.NEXT_PUBLIC_CLAUDE_MODEL || 'claude-opus-4-1-20250805';
 
+      console.log('[AI Prompt] Calling Anthropic API:', {
+        model,
+        hasApiKey: !!apiKey,
+        apiKeyPrefix: apiKey?.substring(0, 20),
+        timestamp: new Date().toISOString()
+      });
+
       const message = await client.messages.create({
         model,
         max_tokens: 1024,
@@ -199,6 +206,9 @@ Please provide implementation instructions for this feature.`,
       message: errorMessage,
       stack: errorStack,
       type: error?.constructor?.name,
+      status: error?.status,
+      code: error?.code,
+      headers: error?.headers,
       fullError: error,
     });
 
