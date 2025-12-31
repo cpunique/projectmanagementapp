@@ -23,6 +23,33 @@ const getBoardsCollection = () => collection(getDb(), 'boards');
 const getUsersCollection = () => collection(getDb(), 'users');
 
 /**
+ * Deep sanitization to remove undefined values recursively
+ * Firebase rejects undefined values even in nested objects
+ */
+function deepSanitize(obj: any): any {
+  if (obj === null || obj === undefined) {
+    return undefined;
+  }
+
+  if (Array.isArray(obj)) {
+    return obj.map((item) => deepSanitize(item)).filter((item) => item !== undefined);
+  }
+
+  if (typeof obj === 'object') {
+    const sanitized: any = {};
+    for (const [key, value] of Object.entries(obj)) {
+      const cleaned = deepSanitize(value);
+      if (cleaned !== undefined) {
+        sanitized[key] = cleaned;
+      }
+    }
+    return sanitized;
+  }
+
+  return obj;
+}
+
+/**
  * Create a new board in Firestore
  */
 export async function createBoard(
@@ -84,10 +111,8 @@ export async function updateBoard(
 ) {
   const boardRef = doc(getBoardsCollection(), boardId);
 
-  // Sanitize updates to remove undefined values (Firebase rejects them)
-  const sanitizedUpdates = Object.fromEntries(
-    Object.entries(updates).filter(([, value]) => value !== undefined)
-  );
+  // Deep sanitization to remove all undefined values including nested ones
+  const sanitizedUpdates = deepSanitize(updates);
 
   try {
     await updateDoc(boardRef, {
