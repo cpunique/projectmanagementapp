@@ -132,23 +132,20 @@ export async function POST(request: Request) {
       contextPrompt += `Priority Level: ${data.priority}\n\n`;
     }
 
-    // 7. Call Claude API with timeout
+    // 7. Call Claude API
     const client = new Anthropic({ apiKey });
 
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
+    // Use environment variable for model name with fallback to Sonnet (cheaper, higher rate limits)
+    const model = process.env.NEXT_PUBLIC_CLAUDE_MODEL || 'claude-sonnet-4-20250514';
+
+    console.log('[AI Prompt] Calling Anthropic API:', {
+      model,
+      hasApiKey: !!apiKey,
+      apiKeyPrefix: apiKey?.substring(0, 20),
+      timestamp: new Date().toISOString()
+    });
 
     try {
-      // Use environment variable for model name with fallback to Sonnet (cheaper, higher rate limits)
-      const model = process.env.NEXT_PUBLIC_CLAUDE_MODEL || 'claude-sonnet-4-20250514';
-
-      console.log('[AI Prompt] Calling Anthropic API:', {
-        model,
-        hasApiKey: !!apiKey,
-        apiKeyPrefix: apiKey?.substring(0, 20),
-        timestamp: new Date().toISOString()
-      });
-
       const message = await client.messages.create({
         model,
         max_tokens: 1024,
@@ -162,7 +159,7 @@ ${contextPrompt}
 Please provide implementation instructions for this feature.`,
           },
         ],
-      }, { signal: controller.signal as any });
+      });
 
       // 8. Extract the response
       const generatedPrompt = message.content
@@ -186,19 +183,19 @@ Please provide implementation instructions for this feature.`,
           }
         }
       );
-    } finally {
-      clearTimeout(timeoutId);
+    } catch (apiError: any) {
+      // Handle timeout/abort
+      if (apiError?.name === 'AbortError') {
+        console.error('[AI Prompt] Request timeout');
+        return NextResponse.json(
+          { error: 'Request timeout. Please try again.' },
+          { status: 504 }
+        );
+      }
+      throw apiError;
     }
 
   } catch (error: any) {
-    // Handle timeout/abort
-    if (error?.name === 'AbortError') {
-      return NextResponse.json(
-        { error: 'Request timeout. Please try again.' },
-        { status: 504 }
-      );
-    }
-
     const errorMessage = error instanceof Error ? error.message : String(error);
     const errorStack = error instanceof Error ? error.stack : '';
 
