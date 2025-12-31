@@ -118,13 +118,18 @@ export function MigrateLocalStorage() {
 
       let migrated = 0;
       const totalToMigrate = allBoardsToMigrate.filter((b: any) => b.id !== 'default-board').length;
+      const boardsToCreate = [];
 
       for (const board of allBoardsToMigrate) {
         // Security: skip demo board migration
         if (board.id === 'default-board') {
           continue;
         }
+        boardsToCreate.push(board);
+      }
 
+      // Create all boards in Firebase
+      for (const board of boardsToCreate) {
         try {
           await createBoard(user.uid, board);
           migrated++;
@@ -139,39 +144,68 @@ export function MigrateLocalStorage() {
         }
       }
 
-      setMigrationState({
-        status: 'success',
-        message: `Successfully migrated all ${totalToMigrate} board(s) to the cloud!`,
-        boardsToMigrate: totalToMigrate,
-        boardsMigrated: migrated,
-      });
+      // Wait for Firestore propagation before proceeding
+      await new Promise(resolve => setTimeout(resolve, 1000));
 
-      // Mark migration as complete in localStorage to prevent duplicate migrations
-      const storeData = localStorage.getItem('kanban-store');
-      if (storeData) {
+      // Verify all boards are in Firebase before clearing localStorage
+      let verificationAttempts = 0;
+      let firestoreBoards: typeof allBoardsToMigrate = [];
+      const maxVerificationAttempts = 5;
+
+      while (verificationAttempts < maxVerificationAttempts && firestoreBoards.length < boardsToCreate.length) {
         try {
-          const parsed = JSON.parse(storeData);
-          parsed.state = {
-            ...parsed.state,
-            boards: [], // Clear local boards after successful migration
-          };
-          localStorage.setItem('kanban-store', JSON.stringify(parsed));
+          firestoreBoards = await getUserBoards(user.uid);
+          if (firestoreBoards.length >= boardsToCreate.length) {
+            break; // All boards found, proceed with migration completion
+          }
         } catch (error) {
-          console.error('Failed to update localStorage:', error);
+          console.error('[Migration] Verification attempt failed:', error);
+        }
+
+        // Wait before retrying
+        if (firestoreBoards.length < boardsToCreate.length) {
+          await new Promise(resolve => setTimeout(resolve, 500));
+          verificationAttempts++;
         }
       }
 
-      // Reload boards from Firebase to show all migrated boards
-      try {
-        const migratedBoards = await getUserBoards(user.uid);
-        if (migratedBoards.length > 0) {
-          // Update the store with the newly migrated boards
-          const store = useKanbanStore.getState();
-          store.setBoards(migratedBoards);
-          store.switchBoard(migratedBoards[0].id);
+      // Only clear localStorage if we verified boards in Firebase
+      if (firestoreBoards.length >= boardsToCreate.length) {
+        setMigrationState({
+          status: 'success',
+          message: `Successfully migrated all ${totalToMigrate} board(s) to the cloud!`,
+          boardsToMigrate: totalToMigrate,
+          boardsMigrated: migrated,
+        });
+
+        // Mark migration as complete in localStorage to prevent duplicate migrations
+        const storeData = localStorage.getItem('kanban-store');
+        if (storeData) {
+          try {
+            const parsed = JSON.parse(storeData);
+            parsed.state = {
+              ...parsed.state,
+              boards: [], // Clear local boards after successful migration
+            };
+            localStorage.setItem('kanban-store', JSON.stringify(parsed));
+          } catch (error) {
+            console.error('Failed to update localStorage:', error);
+          }
         }
-      } catch (error) {
-        console.error('[Migration] Failed to reload boards from Firebase:', error);
+
+        // Update the store with the newly migrated boards
+        const store = useKanbanStore.getState();
+        store.setBoards(firestoreBoards);
+        store.switchBoard(firestoreBoards[0].id);
+      } else {
+        // Boards not fully persisted in Firebase yet, don't clear localStorage
+        setMigrationState({
+          status: 'error',
+          message: `Migration appears incomplete - only ${firestoreBoards.length} of ${totalToMigrate} board(s) found in Firebase after migration. Please try again.`,
+          boardsToMigrate: totalToMigrate,
+          boardsMigrated: migrated,
+        });
+        throw new Error('Boards not fully persisted in Firebase');
       }
 
       // Auto-dismiss after 5 seconds

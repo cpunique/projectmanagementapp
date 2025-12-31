@@ -102,8 +102,18 @@ export default function AdvancedRecoveryPage() {
   return (
     <div className="min-h-screen bg-gray-900 p-8">
       <div className="max-w-4xl mx-auto">
-        <h1 className="text-4xl font-bold text-white mb-4">Advanced Board Recovery</h1>
-        <p className="text-gray-400 mb-8">Find and recover boards from previous builds</p>
+        <div className="mb-8 flex items-center justify-between">
+          <div>
+            <h1 className="text-4xl font-bold text-white">Advanced Board Recovery</h1>
+            <p className="text-gray-400 mt-2">Find and recover boards from previous builds</p>
+          </div>
+          <a
+            href="/"
+            className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-semibold transition-colors"
+          >
+            ← Back to Boards
+          </a>
+        </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
           <button
