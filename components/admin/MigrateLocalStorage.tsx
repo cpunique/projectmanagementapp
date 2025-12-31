@@ -42,16 +42,24 @@ export function MigrateLocalStorage() {
         }
       }
 
-      // Only show migration if there are local boards AND they don't have ownerId set
-      // (meaning they haven't been migrated yet)
-      const unmigrationBoards = localBoards.filter((b: any) => !b.ownerId);
+      // Show migration if there are local boards that need syncing to Firebase
+      // A board needs migration if:
+      // 1. It exists in localStorage (meaning it wasn't cleared after previous migration)
+      // 2. It's not the demo board
+      // 3. It either has no ownerId (very old) OR has current user's ownerId (unsyncedlocal board)
+      const boardsNeedingMigration = localBoards.filter((b: any) => {
+        if (b.id === 'default-board') return false; // Skip demo board
+        if (!b.ownerId) return true; // Old unmigrated board
+        if (b.ownerId === user.uid) return true; // Current user's board still in localStorage
+        return false;
+      });
 
-      if (unmigrationBoards.length > 0) {
-        // Show migration prompt for unmigrated boards
+      if (boardsNeedingMigration.length > 0) {
+        // Show migration prompt for boards that need syncing
         setMigrationState({
           status: 'checking',
-          message: `You have ${unmigrationBoards.length} local board(s) that can be migrated to the cloud.`,
-          boardsToMigrate: unmigrationBoards.length,
+          message: `You have ${boardsNeedingMigration.length} local board(s) that need to be synced to the cloud.`,
+          boardsToMigrate: boardsNeedingMigration.length,
           boardsMigrated: 0,
         });
       } else {

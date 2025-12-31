@@ -108,6 +108,33 @@ const Header = () => {
             >
               {darkMode ? '☀️' : '🌙'}
             </button>
+
+            {/* Admin Tools - Only show for authenticated users */}
+            {user && (
+              <div className="relative group">
+                <button
+                  className="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors text-sm"
+                  title="Admin tools"
+                  aria-label="Admin tools menu"
+                >
+                  🔧
+                </button>
+                <div className="absolute right-0 mt-0 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                  <a
+                    href="/admin/recover"
+                    className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-t-lg"
+                  >
+                    Board Recovery
+                  </a>
+                  <a
+                    href="/admin/advanced-recover"
+                    className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-b-lg"
+                  >
+                    Advanced Recovery
+                  </a>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </Container>
