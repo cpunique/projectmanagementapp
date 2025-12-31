@@ -1,5 +1,4 @@
 // API route for generating AI prompts using Claude
-import { Anthropic } from '@anthropic-ai/sdk';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { aiPromptRatelimit } from '@/lib/ratelimit';
@@ -143,10 +142,7 @@ export async function POST(request: Request) {
       contextPrompt += `Priority Level: ${data.priority}\n\n`;
     }
 
-    // 7. Call Claude API
-    const client = new Anthropic({ apiKey });
-
-    // Use environment variable for model name with fallback to Sonnet (cheaper, higher rate limits)
+    // 7. Call Claude API using direct fetch (SDK was causing issues)
     const model = process.env.NEXT_PUBLIC_CLAUDE_MODEL || 'claude-sonnet-4-20250514';
 
     const userMessage = `You are a helpful assistant that converts feature requests into clear, simple implementation instructions for developers. Keep the language friendly and straightforward, not overly technical. Focus on what needs to be built and why, breaking it down into logical, actionable steps. Be concise but thorough.
@@ -166,16 +162,35 @@ Please provide implementation instructions for this feature.`;
     try {
       console.log('[AI Prompt] About to call Anthropic API');
 
-      const message = await client.messages.create({
-        model,
-        max_tokens: 1024,
-        messages: [
-          {
-            role: 'user',
-            content: userMessage,
-          },
-        ],
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01',
+        },
+        body: JSON.stringify({
+          model,
+          max_tokens: 1024,
+          messages: [
+            {
+              role: 'user',
+              content: userMessage,
+            },
+          ],
+        }),
       });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('[AI Prompt] API error response:', {
+          status: response.status,
+          error: errorData,
+        });
+        throw new Error(`API returned ${response.status}: ${errorData.error?.message || 'Unknown error'}`);
+      }
+
+      const message = await response.json();
 
       console.log('[AI Prompt] API response received successfully:', {
         contentCount: message.content.length,
@@ -186,8 +201,8 @@ Please provide implementation instructions for this feature.`;
 
       // 8. Extract the response
       const generatedPrompt = message.content
-        .filter(block => block.type === 'text')
-        .map(block => (block as { type: 'text'; text: string }).text)
+        .filter((block: any) => block.type === 'text')
+        .map((block: any) => block.text)
         .join('\n');
 
       if (!generatedPrompt) {
@@ -215,17 +230,8 @@ Please provide implementation instructions for this feature.`;
         message: apiError?.message,
         status: apiError?.status,
         code: apiError?.code,
-        error: apiError?.error,
       });
 
-      // Handle timeout/abort
-      if (apiError?.name === 'AbortError') {
-        console.error('[AI Prompt] Request was aborted/timed out');
-        return NextResponse.json(
-          { error: 'Request timeout. Please try again.' },
-          { status: 504 }
-        );
-      }
       throw apiError;
     }
 
