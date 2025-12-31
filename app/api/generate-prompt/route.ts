@@ -209,7 +209,9 @@ Please provide implementation instructions for this feature.`,
       status: error?.status,
       code: error?.code,
       headers: error?.headers,
-      fullError: error,
+      apiKeyExists: !!process.env.ANTHROPIC_API_KEY,
+      modelUsed: process.env.NEXT_PUBLIC_CLAUDE_MODEL || 'claude-sonnet-4-20250514',
+      fullError: JSON.stringify(error, Object.getOwnPropertyNames(error)),
     });
 
     if (error instanceof SyntaxError) {
