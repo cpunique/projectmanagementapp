@@ -139,8 +139,11 @@ export async function POST(request: Request) {
     const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
 
     try {
+      // Use environment variable for model name with fallback to latest Opus
+      const model = process.env.NEXT_PUBLIC_CLAUDE_MODEL || 'claude-opus-4-1-20250805';
+
       const message = await client.messages.create({
-        model: 'claude-opus-4-1-20250805',
+        model,
         max_tokens: 1024,
         messages: [
           {
