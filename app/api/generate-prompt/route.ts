@@ -66,15 +66,6 @@ export async function POST(request: Request) {
     // 3. Validate and sanitize input
     const body = await request.json();
 
-    console.log('[AI Prompt] Request body:', {
-      cardTitle: body.cardTitle?.substring(0, 50),
-      hasDescription: !!body.description,
-      hasNotes: !!body.notes,
-      checklistCount: body.checklist?.length || 0,
-      tagsCount: body.tags?.length || 0,
-      priority: body.priority,
-    });
-
     const validationResult = GeneratePromptSchema.safeParse(body);
 
     if (!validationResult.success) {
@@ -103,15 +94,7 @@ export async function POST(request: Request) {
       );
     }
 
-    // 5. Log request for monitoring
-    console.log('[AI Prompt] Request from user:', {
-      userId: userId.substring(0, 8) + '...',
-      timestamp: new Date().toISOString(),
-      cardTitle: data.cardTitle.substring(0, 50),
-      remaining
-    });
-
-    // 6. Build context prompt
+    // 5. Build context prompt
     let contextPrompt = `Feature Request: ${data.cardTitle}\n\n`;
 
     if (data.description) {
@@ -143,7 +126,7 @@ export async function POST(request: Request) {
       contextPrompt += `Priority Level: ${data.priority}\n\n`;
     }
 
-    // 7. Call Claude API using direct fetch (SDK was causing issues)
+    // 6. Call Claude API using direct fetch
     const model = process.env.NEXT_PUBLIC_CLAUDE_MODEL || 'claude-sonnet-4-20250514';
 
     const userMessage = `You are a helpful assistant that converts feature requests into clear, simple implementation instructions for developers. Keep the language friendly and straightforward, not overly technical. Focus on what needs to be built and why, breaking it down into logical, actionable steps. Be concise but thorough.
@@ -152,16 +135,7 @@ ${contextPrompt}
 
 Please provide implementation instructions for this feature.`;
 
-    console.log('[AI Prompt] Calling Anthropic API:', {
-      model,
-      hasApiKey: !!apiKey,
-      apiKeyPrefix: apiKey?.substring(0, 20),
-      messageLength: userMessage.length,
-      timestamp: new Date().toISOString()
-    });
-
     try {
-      console.log('[AI Prompt] About to call Anthropic API');
 
       const response = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
@@ -192,14 +166,7 @@ Please provide implementation instructions for this feature.`;
         throw new Error(`API returned ${response.status}: ${message.error?.message || 'Unknown error'}`);
       }
 
-      console.log('[AI Prompt] API response received successfully:', {
-        contentCount: message.content.length,
-        stopReason: message.stop_reason,
-        inputTokens: message.usage?.input_tokens || 0,
-        outputTokens: message.usage?.output_tokens || 0,
-      });
-
-      // 8. Extract the response
+      // 7. Extract the response
       const generatedPrompt = message.content
         .filter((block: any) => block.type === 'text')
         .map((block: any) => block.text)
@@ -213,9 +180,7 @@ Please provide implementation instructions for this feature.`;
         );
       }
 
-      console.log('[AI Prompt] Successfully generated prompt, returning to client');
-
-      // 9. Return formatted response with rate limit info
+      // 8. Return formatted response with rate limit info
       return NextResponse.json(
         { prompt: generatedPrompt, remaining },
         {
