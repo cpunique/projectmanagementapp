@@ -47,6 +47,19 @@ export default function LandingPage() {
     }
   }, [demoBoardLoaded, user, customDemoBoard]);
 
+  // Clear localStorage to prevent demo changes from persisting
+  // This ensures unauthenticated users start fresh each time
+  useEffect(() => {
+    // Clear the persisted store state when on landing page
+    // This prevents demo modifications from being saved to localStorage
+    localStorage.removeItem('kanban-store');
+
+    return () => {
+      // Also clear when leaving the landing page
+      localStorage.removeItem('kanban-store');
+    };
+  }, []);
+
   // Auto-transition to full board after successful auth
   useEffect(() => {
     const store = useKanbanStore.getState();
