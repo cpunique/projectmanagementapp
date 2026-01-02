@@ -59,7 +59,11 @@ const Header = () => {
       await saveDemoConfig(board, user.uid);
 
       // Also update the personal board so it persists when logged in
-      await updateBoard(board.id, board);
+      // Only update the essential fields (columns, name) to avoid permission issues
+      await updateBoard(board.id, {
+        columns: board.columns,
+        name: board.name,
+      });
 
       alert('Demo board saved successfully! It will appear on the landing page for all users.');
       setIsDemoEditMode(false);
