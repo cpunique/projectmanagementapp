@@ -9,13 +9,6 @@ export function isAdmin(user: User | null): boolean {
 
   const adminUserId = process.env.NEXT_PUBLIC_ADMIN_USER_ID;
 
-  // Debug logging to understand the issue
-  if (typeof window !== 'undefined') {
-    console.log('[isAdmin] Checking admin status for user:', user.uid);
-    console.log('[isAdmin] Admin UID from env:', adminUserId);
-    console.log('[isAdmin] Match:', user.uid === adminUserId);
-  }
-
   // If no admin user ID is configured, no one is admin
   if (!adminUserId || adminUserId === 'your_firebase_uid_here') {
     return false;
