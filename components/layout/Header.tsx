@@ -28,8 +28,8 @@ const Header = () => {
   const [isDemoEditMode, setIsDemoEditMode] = useState(false);
   const [savingDemo, setSavingDemo] = useState(false);
   const userIsAdmin = isAdmin(user);
-  const isCurrentlyDemoBoard = activeBoard === 'default-board';
-  const canEditDemo = userIsAdmin && isCurrentlyDemoBoard;
+  // Admin can save ANY board as the demo board (not restricted to default-board)
+  const canEditDemo = userIsAdmin;
 
   // Save UI preferences to Firebase when dueDatePanelOpen changes
   useEffect(() => {
@@ -90,7 +90,7 @@ const Header = () => {
             {/* Save Button */}
             <SaveButton />
 
-            {/* Admin Demo Edit Button - Only show when admin and on demo board */}
+            {/* Admin Demo Edit Button - Only show when admin user */}
             {canEditDemo && (
               <div className="flex items-center gap-2">
                 {!isDemoEditMode ? (
@@ -98,7 +98,7 @@ const Header = () => {
                     variant="outline"
                     size="sm"
                     onClick={() => setIsDemoEditMode(true)}
-                    title="Edit demo board configuration"
+                    title="Save current board as the demo board for landing page"
                   >
                     Edit Demo
                   </Button>
@@ -109,7 +109,7 @@ const Header = () => {
                       size="sm"
                       onClick={handleSaveDemoBoard}
                       disabled={savingDemo}
-                      title="Save this board as the demo board"
+                      title="Save this board as the demo board visible to all users on landing page"
                     >
                       {savingDemo ? 'Saving...' : 'Save Demo'}
                     </Button>
