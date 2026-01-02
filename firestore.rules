@@ -114,6 +114,19 @@ service cloud.firestore {
     }
 
     // ============================================
+    // Demo Configs Collection Rules
+    // ============================================
+
+    match /demo-configs/{configId} {
+      // Anyone can read demo configs (needed for landing page to fetch demo board)
+      allow read: if true;
+
+      // Only the designated admin can write
+      allow write: if isAuthenticated() &&
+                      request.auth.uid == 'OWDbFDLVxgfW6ftSXoQBurAvAiB2';
+    }
+
+    // ============================================
     // Catch-All (Deny by default)
     // ============================================
 

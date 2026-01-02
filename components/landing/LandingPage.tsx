@@ -1,21 +1,42 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useKanbanStore } from '@/lib/store';
 import { useAuth } from '@/lib/firebase/AuthContext';
+import { getActiveDemoConfig } from '@/lib/firebase/demoConfig';
 import MarketingPanel from './MarketingPanel';
 import DemoPreview from './DemoPreview';
 
 export default function LandingPage() {
   const { user } = useAuth();
+  const [demoBoardLoaded, setDemoBoardLoaded] = useState(false);
 
-  // Auto-enable demo mode and close due date panel when on landing page
+  // Load demo board from Firestore on mount
   useEffect(() => {
-    const store = useKanbanStore.getState();
+    async function loadDemoBoard() {
+      const store = useKanbanStore.getState();
 
-    // Idempotent - safe to call multiple times
-    store.setDemoMode(true);
-    store.setDueDatePanelOpen(false);
+      try {
+        // Try to fetch custom demo board from Firestore
+        const customDemo = await getActiveDemoConfig();
+
+        if (customDemo) {
+          console.log('[LandingPage] Loaded custom demo board from Firestore');
+          store.setDemoMode(true, customDemo);
+        } else {
+          console.log('[LandingPage] No custom demo found, using hardcoded fallback');
+          store.setDemoMode(true);
+        }
+      } catch (error) {
+        console.error('[LandingPage] Failed to load demo config, using hardcoded fallback:', error);
+        store.setDemoMode(true);
+      } finally {
+        setDemoBoardLoaded(true);
+        store.setDueDatePanelOpen(false);
+      }
+    }
+
+    loadDemoBoard();
   }, []);
 
   // Auto-transition to full board after successful auth
@@ -32,7 +53,7 @@ export default function LandingPage() {
       <MarketingPanel />
 
       {/* Right Panel - Demo Board */}
-      <DemoPreview />
+      {demoBoardLoaded && <DemoPreview />}
     </div>
   );
 }

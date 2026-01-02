@@ -34,7 +34,13 @@ function createDefaultBoard(): Board {
 
 
 // Create demo board with sample cards
-function createDemoBoard(): Board {
+function createDemoBoard(customBoard?: Board): Board {
+  // If custom board provided (from Firestore), use it
+  if (customBoard) {
+    return customBoard;
+  }
+
+  // Otherwise, fall back to hardcoded demo
   const board = createDefaultBoard();
   const demoData = [...DEMO_CARDS] as any[];
 
@@ -588,7 +594,7 @@ export const useKanbanStore = create<KanbanStore>()(
           }
         }),
 
-      setDemoMode: (enabled: boolean) =>
+      setDemoMode: (enabled: boolean, customDemoBoard?: Board) =>
         set((state) => {
           // Idempotent: if already in desired state, do nothing
           if (state.demoMode === enabled) {
@@ -597,7 +603,7 @@ export const useKanbanStore = create<KanbanStore>()(
 
           if (enabled) {
             // Entering demo mode
-            const demoBoard = createDemoBoard();
+            const demoBoard = createDemoBoard(customDemoBoard);
             return {
               demoMode: true,
               boards: [demoBoard],
