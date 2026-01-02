@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useKanbanStore } from '@/lib/store';
 import { useAuth } from '@/lib/firebase/AuthContext';
-import { setUserUIPreferences } from '@/lib/firebase/firestore';
+import { setUserUIPreferences, updateBoard } from '@/lib/firebase/firestore';
 import { isAdmin } from '@/lib/admin/isAdmin';
 import { saveDemoConfig } from '@/lib/firebase/demoConfig';
 import Button from '@/components/ui/Button';
@@ -55,7 +55,12 @@ const Header = () => {
 
     setSavingDemo(true);
     try {
+      // Save to demo-configs collection (for landing page)
       await saveDemoConfig(board, user.uid);
+
+      // Also update the personal board so it persists when logged in
+      await updateBoard(board.id, board);
+
       alert('Demo board saved successfully! It will appear on the landing page for all users.');
       setIsDemoEditMode(false);
     } catch (error) {
