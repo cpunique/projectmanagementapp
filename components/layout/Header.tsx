@@ -5,7 +5,7 @@ import { useKanbanStore } from '@/lib/store';
 import { useAuth } from '@/lib/firebase/AuthContext';
 import { setUserUIPreferences } from '@/lib/firebase/firestore';
 import { isAdmin } from '@/lib/admin/isAdmin';
-import { saveDemoConfig } from '@/lib/firebase/demoConfig';
+import { saveDemoConfig, getActiveDemoConfig } from '@/lib/firebase/demoConfig';
 import Button from '@/components/ui/Button';
 import Container from './Container';
 import BoardSwitcher from '@/components/kanban/BoardSwitcher';
@@ -27,9 +27,11 @@ const Header = () => {
   // Admin demo board state
   const [isDemoEditMode, setIsDemoEditMode] = useState(false);
   const [savingDemo, setSavingDemo] = useState(false);
+  const [loadingDemo, setLoadingDemo] = useState(false);
   const userIsAdmin = isAdmin(user);
   // Admin can save ANY board as the demo board (not restricted to default-board)
   const canEditDemo = userIsAdmin;
+  const setDemoMode = useKanbanStore((state) => state.setDemoMode);
 
   // Save UI preferences to Firebase when dueDatePanelOpen changes
   useEffect(() => {
@@ -48,6 +50,27 @@ const Header = () => {
   const cardsWithDueDates = board
     ? board.columns.flatMap((col) => col.cards.filter((card) => card.dueDate)).length
     : 0;
+
+  // Handle toggling demo mode - fetch custom demo if entering demo mode
+  const handleToggleDemoMode = async () => {
+    if (demoMode) {
+      // Exiting demo mode - just toggle
+      toggleDemoMode();
+      return;
+    }
+
+    // Entering demo mode - fetch custom demo from Firestore
+    setLoadingDemo(true);
+    try {
+      const customDemo = await getActiveDemoConfig();
+      setDemoMode(true, customDemo || undefined);
+    } catch (error) {
+      console.error('Failed to load custom demo, using default:', error);
+      setDemoMode(true);
+    } finally {
+      setLoadingDemo(false);
+    }
+  };
 
   // Handle saving demo board to Firestore
   const handleSaveDemoBoard = async () => {
@@ -140,10 +163,11 @@ const Header = () => {
             <Button
               variant={demoMode ? 'primary' : 'outline'}
               size="sm"
-              onClick={toggleDemoMode}
+              onClick={handleToggleDemoMode}
+              disabled={loadingDemo}
               title={demoMode ? 'Disable demo mode' : 'Enable demo mode'}
             >
-              Demo
+              {loadingDemo ? 'Loading...' : 'Demo'}
             </Button>
 
             {/* Due Dates Panel Toggle - Desktop only (hidden on landing page) */}
