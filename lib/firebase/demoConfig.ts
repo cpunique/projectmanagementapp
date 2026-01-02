@@ -46,9 +46,12 @@ export async function saveDemoConfig(
   try {
     const configRef = doc(getDemoConfigsCollection(), 'active');
 
+    // Clean the board object to remove undefined values that Firestore doesn't support
+    const cleanedBoard = JSON.parse(JSON.stringify(board));
+
     const configData = {
       id: 'active',
-      board,
+      board: cleanedBoard,
       updatedAt: serverTimestamp(),
       updatedBy: adminUserId,
     };
