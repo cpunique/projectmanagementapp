@@ -103,7 +103,7 @@ export interface KanbanActions {
   // UI state actions
   toggleDarkMode: () => void;
   toggleDemoMode: () => void;
-  setDemoMode: (enabled: boolean) => void;
+  setDemoMode: (enabled: boolean, customDemoBoard?: Board) => void;
   setSearchQuery: (query: string) => void;
   setFilters: (filters: KanbanState["filters"]) => void;
   clearFilters: () => void;
