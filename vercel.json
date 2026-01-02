@@ -1,5 +1,6 @@
 {
   "buildCommand": "npm run build",
   "devCommand": "npm run dev",
-  "installCommand": "npm install"
+  "installCommand": "npm install",
+  "_comment": "Force redeploy 2026-01-02 - Admin demo board feature"
 }
