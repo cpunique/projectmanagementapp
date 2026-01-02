@@ -130,3 +130,10 @@ export interface KanbanActions {
 }
 
 export type KanbanStore = KanbanState & KanbanActions;
+
+export interface DemoConfig {
+  id: string;
+  board: Board;
+  updatedAt: string;
+  updatedBy: string;
+}
