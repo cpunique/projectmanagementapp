@@ -1,9 +1,11 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useKanbanStore } from '@/lib/store';
 import { useAuth } from '@/lib/firebase/AuthContext';
 import { setUserUIPreferences } from '@/lib/firebase/firestore';
+import { isAdmin } from '@/lib/admin/isAdmin';
+import { saveDemoConfig } from '@/lib/firebase/demoConfig';
 import Button from '@/components/ui/Button';
 import Container from './Container';
 import BoardSwitcher from '@/components/kanban/BoardSwitcher';
@@ -22,6 +24,13 @@ const Header = () => {
   const activeBoard = useKanbanStore((state) => state.activeBoard);
   const boards = useKanbanStore((state) => state.boards);
 
+  // Admin demo board state
+  const [isDemoEditMode, setIsDemoEditMode] = useState(false);
+  const [savingDemo, setSavingDemo] = useState(false);
+  const userIsAdmin = isAdmin(user);
+  const isCurrentlyDemoBoard = activeBoard === 'default-board';
+  const canEditDemo = userIsAdmin && isCurrentlyDemoBoard;
+
   // Save UI preferences to Firebase when dueDatePanelOpen changes
   useEffect(() => {
     if (user) {
@@ -39,6 +48,23 @@ const Header = () => {
   const cardsWithDueDates = board
     ? board.columns.flatMap((col) => col.cards.filter((card) => card.dueDate)).length
     : 0;
+
+  // Handle saving demo board to Firestore
+  const handleSaveDemoBoard = async () => {
+    if (!user || !userIsAdmin || !board) return;
+
+    setSavingDemo(true);
+    try {
+      await saveDemoConfig(board, user.uid);
+      alert('Demo board saved successfully! It will appear on the landing page for all users.');
+      setIsDemoEditMode(false);
+    } catch (error) {
+      console.error('Failed to save demo board:', error);
+      alert('Failed to save demo board. Check console for details.');
+    } finally {
+      setSavingDemo(false);
+    }
+  };
 
   return (
     <header className="sticky top-0 z-40 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-sm">
@@ -63,6 +89,43 @@ const Header = () => {
           <div className="flex items-center gap-3">
             {/* Save Button */}
             <SaveButton />
+
+            {/* Admin Demo Edit Button - Only show when admin and on demo board */}
+            {canEditDemo && (
+              <div className="flex items-center gap-2">
+                {!isDemoEditMode ? (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setIsDemoEditMode(true)}
+                    title="Edit demo board configuration"
+                  >
+                    Edit Demo
+                  </Button>
+                ) : (
+                  <>
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      onClick={handleSaveDemoBoard}
+                      disabled={savingDemo}
+                      title="Save this board as the demo board"
+                    >
+                      {savingDemo ? 'Saving...' : 'Save Demo'}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setIsDemoEditMode(false)}
+                      disabled={savingDemo}
+                      title="Cancel demo board editing"
+                    >
+                      Cancel
+                    </Button>
+                  </>
+                )}
+              </div>
+            )}
 
             {/* Sync Status */}
             <SyncStatus />
@@ -109,8 +172,8 @@ const Header = () => {
               {darkMode ? '☀️' : '🌙'}
             </button>
 
-            {/* Admin Tools - Only show for authenticated users */}
-            {user && (
+            {/* Admin Tools - Only show for admin users */}
+            {userIsAdmin && (
               <div className="relative group">
                 <button
                   className="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors text-sm"
