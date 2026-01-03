@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom';
 import { motion } from 'framer-motion';
 import DOMPurify from 'dompurify';
 import { useKanbanStore } from '@/lib/store';
+import { useAuth } from '@/lib/firebase/AuthContext';
 import { type Card as CardType } from '@/types';
 import { PRIORITY_LABELS, DESCOPED_COLUMN_KEYWORDS } from '@/lib/constants';
 import { formatDate, isOverdue, isLightColor, getDefaultCardColor } from '@/lib/utils';
@@ -23,17 +24,18 @@ interface CardProps {
 
 const Card = ({ card, boardId, columnId, onDragStart, onDragEnd, isDragging }: CardProps) => {
   const { deleteCard, boards } = useKanbanStore();
+  const { user } = useAuth();
   const [isHovering, setIsHovering] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isAIModalOpen, setIsAIModalOpen] = useState(false);
-  const [showDemoLockModal, setShowDemoLockModal] = useState(false);
+  const [showAILockModal, setShowAILockModal] = useState(false);
   const [showNotesTooltip, setShowNotesTooltip] = useState(false);
   const [tooltipPosition, setTooltipPosition] = useState({ top: 0, left: 0 });
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
   const notesIconRef = useRef<HTMLDivElement>(null);
 
-  // Check if this card is on the demo board (default-board)
-  const isDemoBoard = boardId === 'default-board';
+  // AI features locked for unauthenticated users (can still view existing prompts)
+  const isAIFeatureLocked = !user;
 
   // Detect actual theme from DOM instead of store (since store's darkMode is broken)
   const [actualDarkMode, setActualDarkMode] = useState(() => {
@@ -149,25 +151,26 @@ const Card = ({ card, boardId, columnId, onDragStart, onDragEnd, isDragging }: C
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                if (isDemoBoard) {
-                  setShowDemoLockModal(true);
+                if (isAIFeatureLocked && !card.aiPrompt) {
+                  // Can view existing prompts, but can't generate new ones
+                  setShowAILockModal(true);
                 } else {
                   setIsAIModalOpen(true);
                 }
               }}
               className={`p-1 rounded transition-colors duration-150 pointer-events-auto relative ${
-                isDemoBoard
+                isAIFeatureLocked && !card.aiPrompt
                   ? 'opacity-60 cursor-not-allowed text-gray-400 dark:text-gray-600'
                   : card.aiPrompt
                   ? 'text-purple-600 dark:text-purple-400 hover:bg-purple-100 dark:hover:bg-purple-900/30 hover:text-purple-700 dark:hover:text-purple-300'
                   : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-purple-600 dark:text-gray-400 dark:hover:text-purple-400'
               }`}
-              title={isDemoBoard ? "Sign up to use AI features" : (card.aiPrompt ? "View AI prompt" : "Generate AI prompt")}
+              title={isAIFeatureLocked && !card.aiPrompt ? "Sign up to generate AI features" : (card.aiPrompt ? "View AI prompt" : "Generate AI prompt")}
             >
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
               </svg>
-              {isDemoBoard && <span className="absolute -top-1 -right-1 w-2 h-2 bg-yellow-400 rounded-full border border-white" />}
+              {isAIFeatureLocked && !card.aiPrompt && <span className="absolute -top-1 -right-1 w-2 h-2 bg-yellow-400 rounded-full border border-white" />}
             </button>
 
             {/* Edit Button */}
@@ -331,8 +334,8 @@ const Card = ({ card, boardId, columnId, onDragStart, onDragEnd, isDragging }: C
         document.body
       )}
 
-      {/* Demo Lock Modal - Rendered via Portal */}
-      {showDemoLockModal && typeof window !== 'undefined' && createPortal(
+      {/* AI Lock Modal - Rendered via Portal */}
+      {showAILockModal && typeof window !== 'undefined' && createPortal(
         <div className="fixed inset-0 bg-black/50 z-[9998] flex items-center justify-center">
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
@@ -349,14 +352,14 @@ const Card = ({ card, boardId, columnId, onDragStart, onDragEnd, isDragging }: C
               </p>
               <div className="flex gap-3">
                 <button
-                  onClick={() => setShowDemoLockModal(false)}
+                  onClick={() => setShowAILockModal(false)}
                   className="flex-1 px-4 py-2 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors font-medium"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={() => {
-                    setShowDemoLockModal(false);
+                    setShowAILockModal(false);
                     // TODO: Navigate to sign up or open auth modal
                   }}
                   className="flex-1 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium"
