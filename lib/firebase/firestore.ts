@@ -62,6 +62,7 @@ export async function createBoard(
   const boardData = {
     id: board.id,
     name: board.name,
+    description: board.description || '',
     columns: board.columns,
     ownerId: userId,
     sharedWith: [],

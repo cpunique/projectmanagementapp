@@ -3,6 +3,7 @@
 import { useKanbanStore } from '@/lib/store';
 import Column from './Column';
 import Container from '@/components/layout/Container';
+import BoardHeader from './BoardHeader';
 import { useState } from 'react';
 import Input from '@/components/ui/Input';
 import Button from '@/components/ui/Button';
@@ -143,6 +144,7 @@ const KanbanBoard = () => {
           <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
             {board.name}
           </h2>
+          <BoardHeader boardId={board.id} />
           <p className="text-gray-600 dark:text-gray-400 mt-1">
             {board.columns.length} column{board.columns.length !== 1 ? 's' : ''} • {' '}
             {board.columns.reduce((sum, col) => sum + col.cards.length, 0)} total card

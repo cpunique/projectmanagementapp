@@ -35,6 +35,7 @@ export interface Column {
 export interface Board {
   id: string;
   name: string;
+  description?: string; // Optional board description for context
   createdAt: string;
   updatedAt: string;
   columns: Column[];
@@ -64,9 +65,10 @@ export interface KanbanState {
 
 export interface KanbanActions {
   // Board actions
-  addBoard: (name: string) => void;
+  addBoard: (name: string, description?: string) => void;
   deleteBoard: (boardId: string) => void;
   updateBoard: (boardId: string, name: string) => void;
+  updateBoardDescription: (boardId: string, description: string) => void;
   switchBoard: (boardId: string) => void;
   setDefaultBoard: (boardId: string | null) => void;
   exportBoards: (boardId?: string) => string; // JSON string

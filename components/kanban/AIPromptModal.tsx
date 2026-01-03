@@ -19,14 +19,16 @@ interface AIPromptModalProps {
 type Step = 1 | 2 | 3;
 
 const AIPromptModal = ({ isOpen, onClose, card, boardId }: AIPromptModalProps) => {
-  const { updateCard } = useKanbanStore();
+  const { updateCard, boards } = useKanbanStore();
   const { user } = useAuth();
+  const board = boards.find((b) => b.id === boardId);
   const [step, setStep] = useState<Step>(card.aiPrompt ? 3 : 1);
   const [includeDescription, setIncludeDescription] = useState(!!card.description);
   const [includeNotes, setIncludeNotes] = useState(!!card.notes);
   const [includeChecklist, setIncludeChecklist] = useState(!!(card.checklist && card.checklist.length > 0));
   const [includeTags, setIncludeTags] = useState(!!card.tags);
   const [includePriority, setIncludePriority] = useState(!!card.priority);
+  const [includeBoardContext, setIncludeBoardContext] = useState(!!board?.description);
   const [generatedPrompt, setGeneratedPrompt] = useState(card.aiPrompt || '');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -52,6 +54,8 @@ const AIPromptModal = ({ isOpen, onClose, card, boardId }: AIPromptModalProps) =
         ...(includeChecklist && card.checklist && { checklist: card.checklist }),
         ...(includeTags && card.tags && { tags: card.tags }),
         ...(includePriority && card.priority && { priority: card.priority }),
+        ...(includeBoardContext && board?.description && { boardContext: board.description }),
+        ...(board && { boardName: board.name }),
       };
 
       const response = await fetch('/api/generate-prompt', {
@@ -241,6 +245,24 @@ const AIPromptModal = ({ isOpen, onClose, card, boardId }: AIPromptModalProps) =
                             <div className="font-medium text-sm text-gray-900 dark:text-white">Priority</div>
                             <div className="text-xs text-gray-600 dark:text-gray-400 mt-1 capitalize">
                               {card.priority} priority
+                            </div>
+                          </div>
+                        </label>
+                      )}
+
+                      {/* Board Context */}
+                      {board?.description && (
+                        <label className="flex items-start gap-3 p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-lg border-2 border-gray-200 dark:border-gray-700 cursor-pointer transition-colors">
+                          <input
+                            type="checkbox"
+                            checked={includeBoardContext}
+                            onChange={(e) => setIncludeBoardContext(e.target.checked)}
+                            className="mt-1 w-4 h-4 accent-purple-600"
+                          />
+                          <div className="flex-1">
+                            <div className="font-medium text-sm text-gray-900 dark:text-white">Project Context</div>
+                            <div className="text-xs text-gray-600 dark:text-gray-400 line-clamp-2 mt-1">
+                              {board.description}
                             </div>
                           </div>
                         </label>

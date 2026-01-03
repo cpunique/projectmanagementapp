@@ -120,10 +120,11 @@ export const useKanbanStore = create<KanbanStore>()(
       hasUnsavedChanges: false,
 
       // Board actions
-      addBoard: (name: string) => {
+      addBoard: (name: string, description?: string) => {
         const newBoard: Board = {
           id: nanoid(),
           name,
+          description: description || '',
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
           columns: DEFAULT_COLUMNS.map((col) => ({
@@ -167,6 +168,17 @@ export const useKanbanStore = create<KanbanStore>()(
           boards: state.boards.map((b) =>
             b.id === boardId
               ? { ...b, name, updatedAt: new Date().toISOString() }
+              : b
+          ),
+          hasUnsavedChanges: true,
+        }));
+      },
+
+      updateBoardDescription: (boardId: string, description: string) => {
+        set((state) => ({
+          boards: state.boards.map((b) =>
+            b.id === boardId
+              ? { ...b, description, updatedAt: new Date().toISOString() }
               : b
           ),
           hasUnsavedChanges: true,
