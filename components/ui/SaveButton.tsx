@@ -20,14 +20,14 @@ const SaveButton = () => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [quotaExceeded, setQuotaExceeded] = useState(false);
 
-  // Show button when there are unsaved changes
+  // Show button when there are unsaved changes AND user is authenticated
   useEffect(() => {
-    if (hasUnsavedChanges && saveState === 'idle') {
+    if (hasUnsavedChanges && saveState === 'idle' && user) {
       setIsVisible(true);
-    } else if (!hasUnsavedChanges && saveState === 'idle') {
+    } else if ((!hasUnsavedChanges || !user) && saveState === 'idle') {
       setIsVisible(false);
     }
-  }, [hasUnsavedChanges, saveState]);
+  }, [hasUnsavedChanges, saveState, user]);
 
   // Handle save action
   const handleSave = async () => {
