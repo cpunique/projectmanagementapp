@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useAuth } from '@/lib/firebase/AuthContext';
+import LegalConsentCheckboxes from '@/components/legal/LegalConsentCheckboxes';
 
 type AuthMode = 'login' | 'signup';
 
@@ -12,12 +13,24 @@ export default function AuthForm() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
+  const [legalConsents, setLegalConsents] = useState({
+    termsAccepted: false,
+    privacyAccepted: false,
+  });
 
   const handleEmailAuth = async () => {
     setLocalError(null);
     if (!email || !password) {
       setLocalError('Please fill in all fields');
       return;
+    }
+
+    // Check legal consents for sign-up
+    if (mode === 'signup') {
+      if (!legalConsents.termsAccepted || !legalConsents.privacyAccepted) {
+        setLocalError('You must accept the Terms of Service and Privacy Policy to create an account');
+        return;
+      }
     }
 
     setLoading(true);
@@ -121,6 +134,16 @@ export default function AuthForm() {
       {displayError && (
         <div className="bg-red-50 dark:bg-red-900/20 border-2 border-red-200 dark:border-red-800 rounded-lg p-4 mb-4">
           <p className="text-red-800 dark:text-red-200 text-sm">{displayError}</p>
+        </div>
+      )}
+
+      {/* Legal Consent Checkboxes (Sign Up Only) */}
+      {mode === 'signup' && (
+        <div className="mb-4">
+          <LegalConsentCheckboxes
+            onConsentChange={setLegalConsents}
+            disabled={loading}
+          />
         </div>
       )}
 

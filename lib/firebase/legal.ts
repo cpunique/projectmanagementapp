@@ -1,0 +1,370 @@
+/**
+ * Firestore operations for legal consent tracking
+ */
+
+import {
+  doc,
+  getDoc,
+  setDoc,
+  updateDoc,
+  serverTimestamp,
+} from 'firebase/firestore';
+import { getDb } from './config';
+import type {
+  UserLegalConsent,
+  UserDocument,
+  ConsentRecord,
+  CookieConsent,
+  CreateConsentRecord,
+} from '@/types/legal';
+import { LEGAL_VERSIONS } from '@/types/legal';
+
+/**
+ * Get users collection reference
+ */
+const getUsersCollection = () => {
+  const db = getDb();
+  return doc(db, 'users', '{userId}').parent;
+};
+
+/**
+ * Get user document reference
+ */
+const getUserDoc = (userId: string) => {
+  const db = getDb();
+  return doc(db, 'users', userId);
+};
+
+/**
+ * Create a new consent record with current timestamp
+ */
+export function createConsentRecord(
+  version: string,
+  method: 'checkbox' | 'button' | 'implicit' = 'checkbox',
+  ipAddress?: string
+): ConsentRecord {
+  return {
+    version,
+    acceptedAt: new Date().toISOString(),
+    method,
+    ipAddress,
+  };
+}
+
+/**
+ * Get user's IP address (client-side approximation)
+ * In production, this should be captured server-side via API route
+ */
+async function getUserIpAddress(): Promise<string | undefined> {
+  try {
+    // This is a client-side approach - in production, use server-side API
+    const response = await fetch('https://api.ipify.org?format=json');
+    const data = await response.json();
+    return data.ip;
+  } catch (error) {
+    console.warn('Could not fetch IP address:', error);
+    return undefined;
+  }
+}
+
+/**
+ * Initialize user legal consent data on first sign-up
+ * Call this immediately after user account creation
+ */
+export async function initializeUserLegalConsent(
+  userId: string,
+  email: string,
+  acceptedToS: boolean = false,
+  acceptedPrivacy: boolean = false
+): Promise<void> {
+  const userRef = getUserDoc(userId);
+  const ipAddress = await getUserIpAddress();
+
+  const now = new Date().toISOString();
+
+  const userData: Partial<UserDocument> = {
+    uid: userId,
+    email,
+    createdAt: now,
+    updatedAt: now,
+  };
+
+  // If user accepted ToS and Privacy during signup, record it
+  if (acceptedToS) {
+    userData.tosConsent = createConsentRecord(
+      LEGAL_VERSIONS.TERMS_OF_SERVICE,
+      'checkbox',
+      ipAddress
+    );
+  }
+
+  if (acceptedPrivacy) {
+    userData.privacyConsent = createConsentRecord(
+      LEGAL_VERSIONS.PRIVACY_POLICY,
+      'checkbox',
+      ipAddress
+    );
+  }
+
+  // Initialize cookie consent with necessary cookies only
+  userData.cookieConsent = {
+    necessary: true,
+    analytics: false,
+    marketing: false,
+    lastUpdated: now,
+  };
+
+  try {
+    await setDoc(userRef, userData, { merge: true });
+  } catch (error) {
+    console.error('Failed to initialize user legal consent:', error);
+    throw error;
+  }
+}
+
+/**
+ * Record user's acceptance of Terms of Service
+ */
+export async function recordToSAcceptance(
+  userId: string,
+  method: 'checkbox' | 'button' | 'implicit' = 'checkbox'
+): Promise<void> {
+  const userRef = getUserDoc(userId);
+  const ipAddress = await getUserIpAddress();
+
+  const consent = createConsentRecord(
+    LEGAL_VERSIONS.TERMS_OF_SERVICE,
+    method,
+    ipAddress
+  );
+
+  try {
+    await updateDoc(userRef, {
+      tosConsent: consent,
+      needsTermsUpdate: false,
+      updatedAt: new Date().toISOString(),
+    });
+  } catch (error) {
+    console.error('Failed to record ToS acceptance:', error);
+    throw error;
+  }
+}
+
+/**
+ * Record user's acceptance of Privacy Policy
+ */
+export async function recordPrivacyAcceptance(
+  userId: string,
+  method: 'checkbox' | 'button' | 'implicit' = 'checkbox'
+): Promise<void> {
+  const userRef = getUserDoc(userId);
+  const ipAddress = await getUserIpAddress();
+
+  const consent = createConsentRecord(
+    LEGAL_VERSIONS.PRIVACY_POLICY,
+    method,
+    ipAddress
+  );
+
+  try {
+    await updateDoc(userRef, {
+      privacyConsent: consent,
+      updatedAt: new Date().toISOString(),
+    });
+  } catch (error) {
+    console.error('Failed to record privacy acceptance:', error);
+    throw error;
+  }
+}
+
+/**
+ * Update user's cookie consent preferences
+ */
+export async function updateCookieConsent(
+  userId: string,
+  consent: Omit<CookieConsent, 'lastUpdated'>
+): Promise<void> {
+  const userRef = getUserDoc(userId);
+
+  const cookieConsent: CookieConsent = {
+    ...consent,
+    necessary: true, // Always true
+    lastUpdated: new Date().toISOString(),
+  };
+
+  try {
+    await updateDoc(userRef, {
+      cookieConsent,
+      updatedAt: new Date().toISOString(),
+    });
+  } catch (error) {
+    console.error('Failed to update cookie consent:', error);
+    throw error;
+  }
+}
+
+/**
+ * Record user's acceptance of AI Usage Policy
+ */
+export async function recordAIUsageAcceptance(
+  userId: string,
+  method: 'checkbox' | 'button' | 'implicit' = 'checkbox'
+): Promise<void> {
+  const userRef = getUserDoc(userId);
+  const ipAddress = await getUserIpAddress();
+
+  const consent = createConsentRecord(
+    LEGAL_VERSIONS.AI_USAGE_POLICY,
+    method,
+    ipAddress
+  );
+
+  try {
+    await updateDoc(userRef, {
+      aiUsageConsent: consent,
+      updatedAt: new Date().toISOString(),
+    });
+  } catch (error) {
+    console.error('Failed to record AI usage acceptance:', error);
+    throw error;
+  }
+}
+
+/**
+ * Update GDPR-specific consents
+ */
+export async function updateGDPRConsent(
+  userId: string,
+  consents: {
+    dataProcessing: boolean;
+    marketing: boolean;
+    profiling: boolean;
+  }
+): Promise<void> {
+  const userRef = getUserDoc(userId);
+
+  try {
+    await updateDoc(userRef, {
+      gdpr: {
+        ...consents,
+        lastUpdated: new Date().toISOString(),
+      },
+      updatedAt: new Date().toISOString(),
+    });
+  } catch (error) {
+    console.error('Failed to update GDPR consent:', error);
+    throw error;
+  }
+}
+
+/**
+ * Set CCPA "Do Not Sell" preference
+ */
+export async function setCCPADoNotSell(
+  userId: string,
+  doNotSell: boolean
+): Promise<void> {
+  const userRef = getUserDoc(userId);
+
+  try {
+    await updateDoc(userRef, {
+      ccpa: {
+        doNotSell,
+        lastUpdated: new Date().toISOString(),
+      },
+      updatedAt: new Date().toISOString(),
+    });
+  } catch (error) {
+    console.error('Failed to set CCPA preference:', error);
+    throw error;
+  }
+}
+
+/**
+ * Get user's legal consent data
+ */
+export async function getUserLegalConsent(
+  userId: string
+): Promise<UserLegalConsent | null> {
+  const userRef = getUserDoc(userId);
+
+  try {
+    const userSnap = await getDoc(userRef);
+
+    if (!userSnap.exists()) {
+      return null;
+    }
+
+    const data = userSnap.data();
+    return {
+      tosConsent: data.tosConsent,
+      privacyConsent: data.privacyConsent,
+      cookieConsent: data.cookieConsent,
+      aiUsageConsent: data.aiUsageConsent,
+      gdpr: data.gdpr,
+      ccpa: data.ccpa,
+      needsTermsUpdate: data.needsTermsUpdate,
+    };
+  } catch (error) {
+    console.error('Failed to get user legal consent:', error);
+    return null;
+  }
+}
+
+/**
+ * Check if user has accepted current version of ToS
+ */
+export async function hasAcceptedCurrentToS(userId: string): Promise<boolean> {
+  const consent = await getUserLegalConsent(userId);
+  return (
+    consent?.tosConsent?.version === LEGAL_VERSIONS.TERMS_OF_SERVICE &&
+    !consent?.needsTermsUpdate
+  );
+}
+
+/**
+ * Check if user has accepted current version of Privacy Policy
+ */
+export async function hasAcceptedCurrentPrivacy(
+  userId: string
+): Promise<boolean> {
+  const consent = await getUserLegalConsent(userId);
+  return consent?.privacyConsent?.version === LEGAL_VERSIONS.PRIVACY_POLICY;
+}
+
+/**
+ * Mark that user needs to accept updated terms
+ * Call this when you update legal documents
+ */
+export async function flagUserForTermsUpdate(userId: string): Promise<void> {
+  const userRef = getUserDoc(userId);
+
+  try {
+    await updateDoc(userRef, {
+      needsTermsUpdate: true,
+      updatedAt: new Date().toISOString(),
+    });
+  } catch (error) {
+    console.error('Failed to flag user for terms update:', error);
+    throw error;
+  }
+}
+
+/**
+ * Bulk flag all users for terms update (run when you update ToS/Privacy)
+ * WARNING: This should be run server-side, not client-side
+ * Included here for reference - implement in Cloud Functions or admin SDK
+ */
+export async function flagAllUsersForTermsUpdate(): Promise<void> {
+  throw new Error(
+    'flagAllUsersForTermsUpdate must be implemented server-side with Admin SDK'
+  );
+  // Implementation would use Admin SDK to batch update all user documents
+  // const usersRef = admin.firestore().collection('users');
+  // const batch = admin.firestore().batch();
+  // const users = await usersRef.get();
+  // users.docs.forEach(doc => {
+  //   batch.update(doc.ref, { needsTermsUpdate: true });
+  // });
+  // await batch.commit();
+}
