@@ -47,7 +47,7 @@ export default function AIUsagePolicy() {
               <li><strong>Content Suggestions:</strong> AI provides contextual recommendations</li>
             </ul>
             <p className="text-gray-700 dark:text-gray-300 mt-4">
-              <strong>Powered by:</strong> OpenAI GPT-4 and related models
+              <strong>Powered by:</strong> Anthropic Claude Sonnet 4.5 (claude-sonnet-4-20250514)
             </p>
           </section>
 
@@ -61,8 +61,8 @@ export default function AIUsagePolicy() {
               </h3>
               <ol className="list-decimal list-inside text-sm text-blue-800 dark:text-blue-300 space-y-1">
                 <li>You provide input (task title, prompt, etc.)</li>
-                <li>Your input is sent to OpenAI's API for processing</li>
-                <li>OpenAI's AI model generates a response</li>
+                <li>Your input is sent to Anthropic's Claude API for processing</li>
+                <li>Anthropic's Claude model generates a response</li>
                 <li>Response is returned and displayed to you</li>
                 <li>You review and choose whether to use the output</li>
               </ol>
@@ -91,7 +91,7 @@ export default function AIUsagePolicy() {
 
           <section className="mb-8">
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
-              3. OpenAI Data Processing
+              3. Anthropic Data Processing
             </h2>
             <div className="bg-purple-50 dark:bg-purple-900/20 border-l-4 border-purple-500 p-4 mb-4">
               <h3 className="font-bold text-purple-900 dark:text-purple-200 mb-2">
@@ -101,11 +101,11 @@ export default function AIUsagePolicy() {
                 As of the last update to this policy:
               </p>
               <ul className="list-disc list-inside text-sm text-purple-800 dark:text-purple-300 space-y-2">
-                <li><strong>Training:</strong> OpenAI does NOT use API data to train models (per their API data usage policy)</li>
-                <li><strong>Retention:</strong> OpenAI retains data for 30 days for abuse monitoring, then deletes it</li>
-                <li><strong>Policies:</strong> OpenAI's policies may change; review their current policies at{' '}
-                  <a href="https://openai.com/policies" className="text-purple-600 dark:text-purple-400 hover:underline">
-                    openai.com/policies
+                <li><strong>Training:</strong> Anthropic does NOT use API data to train models - this is a core commitment</li>
+                <li><strong>Retention:</strong> Anthropic retains data for 30 days for trust & safety monitoring, then deletes it</li>
+                <li><strong>Policies:</strong> Anthropic's policies may change; review their current policies at{' '}
+                  <a href="https://www.anthropic.com/legal" className="text-purple-600 dark:text-purple-400 hover:underline">
+                    anthropic.com/legal
                   </a>
                 </li>
               </ul>
@@ -237,7 +237,7 @@ export default function AIUsagePolicy() {
             </ul>
             <p className="text-gray-700 dark:text-gray-300 mt-4">
               <strong>Note:</strong> Disabling AI does NOT delete previously generated content or
-              recall data already sent to OpenAI.
+              recall data already sent to Anthropic.
             </p>
           </section>
 

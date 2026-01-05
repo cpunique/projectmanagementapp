@@ -326,7 +326,7 @@ Users represent and warrant that:
 **Guidance for Attorney:**
 
 ### AI Services Used
-- We use third-party AI services including [OpenAI GPT-4, etc.]
+- We use third-party AI services including [Anthropic Claude, etc.]
 - User data may be sent to these providers for processing
 - Links to third-party AI provider terms and privacy policies
 
@@ -341,7 +341,7 @@ Users represent and warrant that:
 **Critical Disclosures:**
 ```
 When you use AI features:
-- Your board and task data is sent to [OpenAI/other providers]
+- Your board and task data is sent to [Anthropic/other providers]
 - [We DO / We DO NOT] use your data to train AI models
 - [PROVIDER NAME] may use data according to their policies: [LINK]
 - You can disable AI features in account settings
@@ -431,7 +431,7 @@ Brief summary including:
 ### Third-Party Integrations
 List all third-party services used:
 - **Firebase/Google Cloud:** Database, authentication, hosting
-- **OpenAI:** AI features [or other AI provider]
+- **Anthropic:** AI features [or other AI provider]
 - **Google Analytics:** Usage analytics [if used]
 - **[Other services]**
 

@@ -107,9 +107,9 @@ export default function PrivacyPolicy() {
                 When you use AI features, your data is sent to third-party AI providers:
               </p>
               <ul className="list-disc list-inside text-sm text-purple-800 dark:text-purple-300 space-y-1">
-                <li><strong>OpenAI:</strong> Board names, task descriptions, and prompts</li>
-                <li><strong>Data retention:</strong> Typically 30 days by OpenAI</li>
-                <li><strong>Training:</strong> API data is NOT used to train models (per OpenAI's current policy)</li>
+                <li><strong>Anthropic:</strong> Board names, task descriptions, and prompts</li>
+                <li><strong>Data retention:</strong> Typically 30 days by Anthropic</li>
+                <li><strong>Training:</strong> API data is NOT used to train models (per Anthropic's current policy)</li>
               </ul>
             </div>
 
@@ -128,12 +128,12 @@ export default function PrivacyPolicy() {
                 </p>
               </div>
               <div className="border-l-4 border-purple-500 pl-4">
-                <h4 className="font-semibold text-gray-900 dark:text-white">OpenAI</h4>
+                <h4 className="font-semibold text-gray-900 dark:text-white">Anthropic</h4>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
                   AI-powered features. Task descriptions and prompts.
                   <br />
-                  <a href="https://openai.com/privacy/" className="text-blue-600 dark:text-blue-400 hover:underline">
-                    OpenAI Privacy Policy
+                  <a href="https://www.anthropic.com/privacy" className="text-blue-600 dark:text-blue-400 hover:underline">
+                    Anthropic Privacy Policy
                   </a>
                 </p>
               </div>

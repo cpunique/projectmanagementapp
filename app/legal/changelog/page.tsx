@@ -25,7 +25,7 @@ const CHANGELOG: ChangelogEntry[] = [
       'Comprehensive Terms of Service with AI-specific provisions',
       'GDPR and CCPA compliant Privacy Policy',
       'Detailed Cookie Policy with cookie inventory',
-      'AI Usage Policy covering OpenAI data processing and limitations',
+      'AI Usage Policy covering Anthropic Claude data processing and limitations',
       'Consent tracking system implemented',
     ],
     breaking: true,

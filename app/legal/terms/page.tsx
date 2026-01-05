@@ -78,7 +78,7 @@ export default function TermsOfService() {
             </p>
             <ul className="list-disc list-inside text-gray-700 dark:text-gray-300 space-y-2 my-4">
               <li>Kanban board interface for task management</li>
-              <li>AI-powered task description generation using OpenAI's GPT models</li>
+              <li>AI-powered task description generation using Anthropic's GPT models</li>
               <li>Board sharing and collaboration features</li>
               <li>Cloud synchronization via Firebase</li>
               <li>Customizable boards, columns, and tasks</li>
@@ -94,10 +94,10 @@ export default function TermsOfService() {
                 Important Information About AI
               </h3>
               <p className="text-sm text-purple-800 dark:text-purple-300">
-                Our Service uses AI technology from OpenAI. By using AI features:
+                Our Service uses AI technology from Anthropic. By using AI features:
               </p>
               <ul className="list-disc list-inside text-sm text-purple-800 dark:text-purple-300 space-y-1 mt-2">
-                <li>Your board and task data may be sent to OpenAI for processing</li>
+                <li>Your board and task data may be sent to Anthropic for processing</li>
                 <li>AI-generated content may be inaccurate or inappropriate</li>
                 <li>You must review and verify all AI outputs</li>
                 <li>You are responsible for AI-generated content you use</li>

@@ -62,12 +62,12 @@
 **Task Description Generation:**
 - What it does: Generates detailed task descriptions from brief prompts
 - How to use: [Describe user workflow]
-- Powered by: OpenAI GPT-4 [or specific model]
+- Powered by: Anthropic Claude Sonnet 4.5 (claude-sonnet-4-20250514)
 
 **Board Optimization Suggestions:**
 - What it does: Analyzes board and suggests improvements
 - How to use: [Describe workflow]
-- Powered by: [AI provider]
+- Powered by: Anthropic Claude
 
 **[Other AI Features]:**
 - What it does:
@@ -111,10 +111,10 @@
 - **NOT sent:** Your email, password, usage analytics, or data from boards you don't use AI on
 
 ### AI Models Used
-- **OpenAI GPT-4:** [Specific version]
-  - Purpose: Text generation and analysis
-  - Provider: OpenAI
-  - Model capabilities: [Brief description]
+- **Anthropic Claude Sonnet 4.5:** claude-sonnet-4-20250514
+  - Purpose: Text generation and analysis for implementation instructions
+  - Provider: Anthropic
+  - Model capabilities: Advanced language understanding, code comprehension, detailed instruction generation
 
 - **[Other models if applicable]:**
   - Purpose:
@@ -151,22 +151,25 @@
 
 ### How Third Parties Process Your Data
 
-**OpenAI Data Processing:**
-[CRITICAL - Check OpenAI's current policies]
+**Anthropic Data Processing:**
+[CRITICAL - Check Anthropic's current policies]
 
-**As of [DATE], per OpenAI's API Data Usage Policy:**
-- API inputs and outputs are NOT used to train OpenAI models (except as required by law)
-- OpenAI retains API data for 30 days for abuse monitoring
+**As of [DATE], per Anthropic's Commercial Terms and Privacy Policy:**
+- API inputs and outputs are NOT used to train Anthropic's models
+- Anthropic retains API data for 30 days for trust & safety monitoring
 - After 30 days, data is deleted (except as required by law)
-- OpenAI may use data to improve services if you opt-in (we do not opt you in)
-- Full details: https://openai.com/policies/api-data-usage-policies
+- Anthropic does NOT use customer data to improve their models without explicit permission
+- Full details:
+  - Commercial Terms: https://www.anthropic.com/legal/commercial-terms
+  - Privacy Policy: https://www.anthropic.com/privacy
+  - Acceptable Use Policy: https://www.anthropic.com/legal/aup
 
 **⚠️ IMPORTANT NOTICE:**
 ```
-OpenAI's policies may change. We will update this Policy when we become
-aware of material changes, but you should review OpenAI's policies
-directly at the link above. By using AI features, you acknowledge that
-your data will be processed by OpenAI subject to their current policies.
+Anthropic's policies may change. We will update this Policy when we become
+aware of material changes, but you should review Anthropic's policies
+directly at the links above. By using AI features, you acknowledge that
+your data will be processed by Anthropic subject to their current policies.
 ```
 
 ### Data Retention
@@ -177,7 +180,7 @@ your data will be processed by OpenAI subject to their current policies.
 - Deleted when you delete content or close account
 
 **Third-party retention:**
-- OpenAI: 30 days for API data
+- Anthropic: 30 days for API data (trust & safety monitoring)
 - [Other providers]: [Retention period]
 
 ### Legal Basis for Processing (GDPR)
@@ -207,39 +210,31 @@ processed.
 
 **Guidance for Attorney:**
 
-### Training OpenAI Models
+### Training Anthropic Models
 
-**CHOOSE ONE AND BE CRYSTAL CLEAR:**
+**CRYSTAL CLEAR STATEMENT:**
 
-**Option A - Data NOT Used for Training (Most Privacy-Protective):**
+**Data NOT Used for Training (Privacy-Protective):**
 ```
 YOUR DATA IS NOT USED TO TRAIN AI MODELS
 
-As of [DATE], your data sent via OpenAI's API is NOT used to train or
-improve OpenAI's models, per OpenAI's API Data Usage Policy.
+As of [DATE], your data sent via Anthropic's API is NOT used to train or
+improve Anthropic's models. Anthropic has a clear policy against using
+customer API data for model training.
+
+Key Points:
+- Anthropic does NOT train on customer API data
+- Data is retained for 30 days for trust & safety only
+- After 30 days, data is deleted
+- No model improvement from your data without explicit permission
 
 However:
-- OpenAI's policies may change in the future
+- Anthropic's policies may change in the future
 - We will update you of material changes we become aware of
-- You should review OpenAI's policies at:
-  https://openai.com/policies/api-data-usage-policies
-- Other AI providers may have different policies
-```
-
-**Option B - Data MAY Be Used for Training (Less Common for APIs):**
-```
-YOUR DATA MAY BE USED TO TRAIN AI MODELS
-
-Your data sent to AI providers may be used to improve their AI models
-and services. This helps improve AI accuracy over time but means your
-content becomes part of training datasets.
-
-Specifics:
-- OpenAI: [Their current policy]
-- [Other providers]: [Their policies]
-
-By using AI features, you consent to this use. If you do not consent,
-do not use AI features.
+- You should review Anthropic's policies at:
+  - Commercial Terms: https://www.anthropic.com/legal/commercial-terms
+  - Privacy Policy: https://www.anthropic.com/privacy
+- Other AI providers (if we add them) may have different policies
 ```
 
 ### Training Our Internal Models
@@ -471,7 +466,7 @@ However:
 - Similar content may be generated for other users
 - We cannot guarantee exclusivity
 - Third-party AI providers may have their own claims
-- OpenAI's terms: [Summarize their IP terms]
+- Anthropic's terms: [Summarize their IP terms]
 ```
 
 **Your Representations:**
@@ -492,11 +487,11 @@ You represent that you will:
 - We are not liable for infringement (see Terms of Service)
 - You indemnify us for your use of AI outputs (see Terms of Service)
 
-### OpenAI's IP Terms
-- OpenAI assigns to you its rights in outputs (per their terms)
-- Subject to their compliance policies
+### Anthropic's IP Terms
+- Per Anthropic's Commercial Terms, outputs generated via API belong to you
+- Subject to their Acceptable Use Policy compliance
 - Subject to their terms of use
-- Review: https://openai.com/policies/terms-of-use
+- Review: https://www.anthropic.com/legal/commercial-terms
 
 ---
 
@@ -584,28 +579,28 @@ You represent that you will:
 
 **Guidance for Attorney:**
 
-### OpenAI
+### Anthropic
 
 **Relationship:**
-- We use OpenAI's API services
-- We are not affiliated with OpenAI
-- We do not control OpenAI's services
+- We use Anthropic's Claude API services
+- We are not affiliated with Anthropic
+- We do not control Anthropic's services
 
-**OpenAI's Terms:**
-- You must comply with OpenAI's Terms of Use
-- You must comply with OpenAI's Usage Policies
-- Review: https://openai.com/policies/
+**Anthropic's Terms:**
+- You must comply with Anthropic's Commercial Terms
+- You must comply with Anthropic's Acceptable Use Policy
+- Review: https://www.anthropic.com/legal
 
-**OpenAI's Policies:**
-- Terms of Use: https://openai.com/policies/terms-of-use
-- Privacy Policy: https://openai.com/privacy/
-- Usage Policies: https://openai.com/policies/usage-policies
-- API Data Usage: https://openai.com/policies/api-data-usage-policies
+**Anthropic's Policies:**
+- Commercial Terms: https://www.anthropic.com/legal/commercial-terms
+- Privacy Policy: https://www.anthropic.com/privacy
+- Acceptable Use Policy: https://www.anthropic.com/legal/aup
+- Consumer Terms: https://www.anthropic.com/legal/consumer-terms
 
-**Changes to OpenAI's Services:**
-- OpenAI may change policies, pricing, or availability
+**Changes to Anthropic's Services:**
+- Anthropic may change policies, pricing, or availability
 - We will notify you of material changes we're aware of
-- We may discontinue AI features if OpenAI services change
+- We may discontinue AI features if Anthropic services change
 - No guarantee of AI feature availability
 
 ### [Other AI Providers]
@@ -713,7 +708,7 @@ You agree to indemnify and hold us harmless from claims arising from:
 
 ### Algorithmic Transparency
 - We disclose that we use AI
-- We disclose AI providers (OpenAI)
+- We disclose AI providers (Anthropic Claude)
 - We disclose AI limitations
 - We provide opt-out mechanisms
 
@@ -800,8 +795,8 @@ Website: https://yourdomain.com/support
 ## Implementation Notes for Attorney
 
 ### Critical Areas
-- [ ] OpenAI's current terms and policies (update references)
-- [ ] Verify data training claims (CRITICAL)
+- [ ] Anthropic's current terms and policies (update references)
+- [ ] Verify data training claims (CRITICAL - Anthropic does NOT train on API data)
 - [ ] Strong accuracy disclaimers
 - [ ] No professional advice disclaimers
 - [ ] Liability limitations
@@ -826,7 +821,7 @@ Website: https://yourdomain.com/support
 
 ### Regular Review
 - [ ] Review quarterly (AI regs changing rapidly)
-- [ ] Check OpenAI policy changes
+- [ ] Check Anthropic policy changes
 - [ ] Monitor AI legislation
 - [ ] Update for new AI features
 - [ ] User feedback integration

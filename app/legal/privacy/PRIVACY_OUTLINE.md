@@ -121,7 +121,7 @@
 - OAuth tokens
 
 **AI Service Providers:**
-- Processing results from OpenAI or other AI providers
+- Processing results from Anthropic or other AI providers
 - [List specific data exchanged]
 
 ---
@@ -255,13 +255,13 @@ For EU users, we process personal data based on:
   - Privacy Policy: https://vercel.com/legal/privacy-policy
 
 **AI Services:**
-- **OpenAI** (or other AI provider)
+- **Anthropic** (or other AI provider)
   - Purpose: AI-powered features (task description generation, etc.)
   - Data shared: Board names, task descriptions, user prompts
-  - Data retention: [OpenAI's retention policy]
+  - Data retention: [Anthropic's retention policy]
   - Training: [Whether data is used for training]
-  - Privacy Policy: https://openai.com/privacy/
-  - **CRITICAL:** Disclose OpenAI's data usage policies
+  - Privacy Policy: https://www.anthropic.com/privacy
+  - **CRITICAL:** Disclose Anthropic's data usage policies
 
 **Analytics** (if applicable):
 - **Google Analytics**
@@ -325,13 +325,13 @@ For EU users, we process personal data based on:
 - User prompts and instructions
 - Context from surrounding tasks (if applicable)
 
-### AI Provider: OpenAI
+### AI Provider: Anthropic
 
 **Data Processing:**
-- Sent to OpenAI's API for processing
-- Subject to OpenAI's Terms and Privacy Policy
-- OpenAI's data usage: [Link to OpenAI's policies]
-- OpenAI's data retention: [Specify - typically 30 days for API data]
+- Sent to Anthropic's API for processing
+- Subject to Anthropic's Terms and Privacy Policy
+- Anthropic's data usage: [Link to Anthropic's policies]
+- Anthropic's data retention: [Specify - typically 30 days for API data]
 
 **Training Data:**
 **CRITICAL DISCLOSURE:**
@@ -339,10 +339,10 @@ For EU users, we process personal data based on:
 [CHOOSE ONE:]
 
 Option A (If NOT using data for training):
-"Your data sent to OpenAI via API is NOT used to train OpenAI's models
-as of [DATE], per OpenAI's API data usage policies. However, OpenAI's
-policies may change. Review OpenAI's current policies at:
-https://openai.com/policies/api-data-usage-policies"
+"Your data sent to Anthropic via API is NOT used to train Anthropic's models
+as of [DATE], per Anthropic's API data usage policies. However, Anthropic's
+policies may change. Review Anthropic's current policies at:
+https://www.anthropic.com/legal/commercial-terms"
 
 Option B (If data MAY be used for training):
 "Data sent to AI providers may be used to improve their models and
@@ -681,7 +681,7 @@ must have parental consent for data processing.
 - Legal compliance
 
 **Third Parties We Share With:**
-- Service providers (Firebase, OpenAI, etc.)
+- Service providers (Firebase, Anthropic, etc.)
 - [List categories]
 
 ### Your CCPA Rights
@@ -1000,12 +1000,12 @@ For all privacy matters, contact: privacy@yourdomain.com
 - [ ] International users
 - [ ] Accessibility (WCAG 2.1 AA)
 
-### OpenAI/AI-Specific
-- [ ] Clear disclosure of OpenAI data sharing
-- [ ] OpenAI's data usage and retention policies
+### Anthropic/AI-Specific
+- [ ] Clear disclosure of Anthropic data sharing
+- [ ] Anthropic's data usage and retention policies
 - [ ] Whether data trains models
 - [ ] User control over AI features
-- [ ] Link to OpenAI's privacy policy
+- [ ] Link to Anthropic's privacy policy
 - [ ] Consent for AI processing
 
 ### Testing
