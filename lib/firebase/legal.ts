@@ -43,12 +43,19 @@ export function createConsentRecord(
   method: 'checkbox' | 'button' | 'implicit' = 'checkbox',
   ipAddress?: string
 ): ConsentRecord {
-  return {
+  const record: ConsentRecord = {
     version,
     acceptedAt: new Date().toISOString(),
     method,
-    ipAddress,
   };
+
+  // Only include ipAddress if it was successfully fetched
+  // Firestore doesn't allow undefined values
+  if (ipAddress) {
+    record.ipAddress = ipAddress;
+  }
+
+  return record;
 }
 
 /**
