@@ -11,15 +11,17 @@ import {
   onAuthStateChanged,
 } from 'firebase/auth';
 import { getAuth } from './config';
-import { initializeUserLegalConsent } from './legal';
+import { initializeUserLegalConsent, hasAcceptedCurrentToS, hasAcceptedCurrentPrivacy } from './legal';
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
+  requiresToSAcceptance: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
+  markToSAccepted: () => void;
   error: string | null;
 }
 
@@ -29,13 +31,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [requiresToSAcceptance, setRequiresToSAcceptance] = useState(false);
 
   useEffect(() => {
     const auth = getAuth();
 
     // Set up auth state listener
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setUser(user);
+
+      // Check if user needs to accept ToS/Privacy
+      if (user) {
+        try {
+          const [hasToS, hasPrivacy] = await Promise.all([
+            hasAcceptedCurrentToS(user.uid),
+            hasAcceptedCurrentPrivacy(user.uid)
+          ]);
+
+          // Require acceptance if either is missing
+          setRequiresToSAcceptance(!hasToS || !hasPrivacy);
+        } catch (err) {
+          console.error('Error checking ToS acceptance:', err);
+          // If we can't check, require acceptance to be safe
+          setRequiresToSAcceptance(true);
+        }
+      } else {
+        setRequiresToSAcceptance(false);
+      }
+
       setLoading(false);
     });
 
@@ -125,8 +148,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const markToSAccepted = () => {
+    setRequiresToSAcceptance(false);
+  };
+
   return (
-    <AuthContext.Provider value={{ user, loading, signIn, signUp, signInWithGoogle, signOut, error }}>
+    <AuthContext.Provider value={{
+      user,
+      loading,
+      requiresToSAcceptance,
+      signIn,
+      signUp,
+      signInWithGoogle,
+      signOut,
+      markToSAccepted,
+      error
+    }}>
       {children}
     </AuthContext.Provider>
   );
