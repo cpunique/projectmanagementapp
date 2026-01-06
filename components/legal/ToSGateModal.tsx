@@ -52,20 +52,20 @@ export default function ToSGateModal({ userId, onAccepted, onDeclined }: ToSGate
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-black bg-opacity-50 dark:bg-opacity-70 flex items-center justify-center z-50 p-4">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         <div className="p-6">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">
             Terms of Service Update Required
           </h2>
 
-          <p className="text-gray-700 mb-4">
+          <p className="text-gray-700 dark:text-gray-300 mb-4">
             Before you can continue using our service, you must review and accept our updated Terms of Service and Privacy Policy.
           </p>
 
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-            <h3 className="font-semibold text-blue-900 mb-2">What's New</h3>
-            <ul className="text-sm text-blue-800 space-y-1 list-disc list-inside">
+          <div className="bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700 rounded-lg p-4 mb-6">
+            <h3 className="font-semibold text-blue-900 dark:text-blue-300 mb-2">What's New</h3>
+            <ul className="text-sm text-blue-800 dark:text-blue-200 space-y-1 list-disc list-inside">
               <li>Updated AI usage policy for Anthropic Claude integration</li>
               <li>Enhanced data privacy protections (GDPR/CCPA compliant)</li>
               <li>Clarified user content ownership and licensing</li>
@@ -81,14 +81,14 @@ export default function ToSGateModal({ userId, onAccepted, onDeclined }: ToSGate
                 checked={termsAccepted}
                 onChange={(e) => setTermsAccepted(e.target.checked)}
                 disabled={isSubmitting}
-                className="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                className="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 dark:border-gray-600 rounded"
               />
-              <label htmlFor="terms-gate" className="ml-3 text-sm text-gray-700">
+              <label htmlFor="terms-gate" className="ml-3 text-sm text-gray-700 dark:text-gray-300">
                 I have read and agree to the{' '}
                 <Link
                   href="/legal/terms"
                   target="_blank"
-                  className="text-blue-600 hover:text-blue-800 underline"
+                  className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 underline"
                 >
                   Terms of Service
                 </Link>{' '}
@@ -103,14 +103,14 @@ export default function ToSGateModal({ userId, onAccepted, onDeclined }: ToSGate
                 checked={privacyAccepted}
                 onChange={(e) => setPrivacyAccepted(e.target.checked)}
                 disabled={isSubmitting}
-                className="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                className="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 dark:border-gray-600 rounded"
               />
-              <label htmlFor="privacy-gate" className="ml-3 text-sm text-gray-700">
+              <label htmlFor="privacy-gate" className="ml-3 text-sm text-gray-700 dark:text-gray-300">
                 I have read and agree to the{' '}
                 <Link
                   href="/legal/privacy"
                   target="_blank"
-                  className="text-blue-600 hover:text-blue-800 underline"
+                  className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 underline"
                 >
                   Privacy Policy
                 </Link>{' '}
@@ -120,8 +120,8 @@ export default function ToSGateModal({ userId, onAccepted, onDeclined }: ToSGate
           </div>
 
           {error && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-sm text-red-800">{error}</p>
+            <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-700 rounded-lg">
+              <p className="text-sm text-red-800 dark:text-red-300">{error}</p>
             </div>
           )}
 
@@ -129,7 +129,7 @@ export default function ToSGateModal({ userId, onAccepted, onDeclined }: ToSGate
             <button
               onClick={handleAccept}
               disabled={isSubmitting || !termsAccepted || !privacyAccepted}
-              className="flex-1 bg-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+              className="flex-1 bg-blue-600 dark:bg-blue-700 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-700 dark:hover:bg-blue-600 disabled:bg-gray-300 dark:disabled:bg-gray-700 disabled:cursor-not-allowed transition-colors"
             >
               {isSubmitting ? 'Processing...' : 'Accept and Continue'}
             </button>
@@ -137,13 +137,13 @@ export default function ToSGateModal({ userId, onAccepted, onDeclined }: ToSGate
             <button
               onClick={handleDecline}
               disabled={isSubmitting}
-              className="flex-1 bg-white text-gray-700 py-3 px-4 rounded-lg font-medium border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="flex-1 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 py-3 px-4 rounded-lg font-medium border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               Decline and Sign Out
             </button>
           </div>
 
-          <p className="text-xs text-gray-500 mt-4 text-center">
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-4 text-center">
             By accepting, you agree that your acceptance will be recorded with a timestamp and IP address for legal compliance purposes.
           </p>
         </div>

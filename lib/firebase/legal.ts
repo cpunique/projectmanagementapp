@@ -139,11 +139,12 @@ export async function recordToSAcceptance(
   );
 
   try {
-    await updateDoc(userRef, {
+    // Use setDoc with merge to create document if it doesn't exist
+    await setDoc(userRef, {
       tosConsent: consent,
       needsTermsUpdate: false,
       updatedAt: new Date().toISOString(),
-    });
+    }, { merge: true });
   } catch (error) {
     console.error('Failed to record ToS acceptance:', error);
     throw error;
@@ -167,10 +168,11 @@ export async function recordPrivacyAcceptance(
   );
 
   try {
-    await updateDoc(userRef, {
+    // Use setDoc with merge to create document if it doesn't exist
+    await setDoc(userRef, {
       privacyConsent: consent,
       updatedAt: new Date().toISOString(),
-    });
+    }, { merge: true });
   } catch (error) {
     console.error('Failed to record privacy acceptance:', error);
     throw error;
@@ -193,10 +195,10 @@ export async function updateCookieConsent(
   };
 
   try {
-    await updateDoc(userRef, {
+    await setDoc(userRef, {
       cookieConsent,
       updatedAt: new Date().toISOString(),
-    });
+    }, { merge: true });
   } catch (error) {
     console.error('Failed to update cookie consent:', error);
     throw error;
@@ -220,10 +222,10 @@ export async function recordAIUsageAcceptance(
   );
 
   try {
-    await updateDoc(userRef, {
+    await setDoc(userRef, {
       aiUsageConsent: consent,
       updatedAt: new Date().toISOString(),
-    });
+    }, { merge: true });
   } catch (error) {
     console.error('Failed to record AI usage acceptance:', error);
     throw error;
@@ -244,13 +246,13 @@ export async function updateGDPRConsent(
   const userRef = getUserDoc(userId);
 
   try {
-    await updateDoc(userRef, {
+    await setDoc(userRef, {
       gdpr: {
         ...consents,
         lastUpdated: new Date().toISOString(),
       },
       updatedAt: new Date().toISOString(),
-    });
+    }, { merge: true });
   } catch (error) {
     console.error('Failed to update GDPR consent:', error);
     throw error;
@@ -267,13 +269,13 @@ export async function setCCPADoNotSell(
   const userRef = getUserDoc(userId);
 
   try {
-    await updateDoc(userRef, {
+    await setDoc(userRef, {
       ccpa: {
         doNotSell,
         lastUpdated: new Date().toISOString(),
       },
       updatedAt: new Date().toISOString(),
-    });
+    }, { merge: true });
   } catch (error) {
     console.error('Failed to set CCPA preference:', error);
     throw error;
@@ -340,10 +342,10 @@ export async function flagUserForTermsUpdate(userId: string): Promise<void> {
   const userRef = getUserDoc(userId);
 
   try {
-    await updateDoc(userRef, {
+    await setDoc(userRef, {
       needsTermsUpdate: true,
       updatedAt: new Date().toISOString(),
-    });
+    }, { merge: true });
   } catch (error) {
     console.error('Failed to flag user for terms update:', error);
     throw error;
