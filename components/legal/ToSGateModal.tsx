@@ -31,16 +31,28 @@ export default function ToSGateModal({ userId, onAccepted, onDeclined }: ToSGate
     setError('');
 
     try {
-      // Record both acceptances
-      await Promise.all([
-        recordToSAcceptance(userId),
-        recordPrivacyAcceptance(userId)
-      ]);
+      console.log('[ToSGate] Starting consent recording for user:', userId);
 
+      // Record both acceptances
+      await recordToSAcceptance(userId);
+      console.log('[ToSGate] ✓ ToS acceptance recorded');
+
+      await recordPrivacyAcceptance(userId);
+      console.log('[ToSGate] ✓ Privacy acceptance recorded');
+
+      console.log('[ToSGate] All consents recorded successfully');
       onAccepted();
-    } catch (err) {
-      console.error('Error recording legal consent:', err);
-      setError('Failed to record your consent. Please try again.');
+    } catch (err: any) {
+      console.error('[ToSGate] ❌ Error recording legal consent:', err);
+      console.error('[ToSGate] Error details:', {
+        message: err?.message,
+        code: err?.code,
+        stack: err?.stack
+      });
+
+      // Show detailed error message
+      const errorMessage = err?.message || 'Unknown error occurred';
+      setError(`Failed to record your consent: ${errorMessage}. Please check the console for details.`);
       setIsSubmitting(false);
     }
   };
