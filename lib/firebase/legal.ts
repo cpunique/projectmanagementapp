@@ -61,17 +61,14 @@ export function createConsentRecord(
 /**
  * Get user's IP address (client-side approximation)
  * In production, this should be captured server-side via API route
+ *
+ * TEMPORARILY DISABLED: Causing CSP issues with api.ipify.org
+ * TODO: Implement server-side IP capture via API route
  */
 async function getUserIpAddress(): Promise<string | undefined> {
-  try {
-    // This is a client-side approach - in production, use server-side API
-    const response = await fetch('https://api.ipify.org?format=json');
-    const data = await response.json();
-    return data.ip;
-  } catch (error) {
-    console.warn('Could not fetch IP address:', error);
-    return undefined;
-  }
+  // Temporarily disabled due to CSP caching issues
+  // Will implement proper server-side IP capture later
+  return undefined;
 }
 
 /**
