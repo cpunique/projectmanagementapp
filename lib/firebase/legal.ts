@@ -68,6 +68,7 @@ export function createConsentRecord(
 async function getUserIpAddress(): Promise<string | undefined> {
   // Temporarily disabled due to CSP caching issues
   // Will implement proper server-side IP capture later
+  console.log('[IP] ✅ NEW CODE: IP fetching disabled - returning undefined');
   return undefined;
 }
 
