@@ -135,13 +135,15 @@ export async function recordToSAcceptance(
   method: 'checkbox' | 'button' | 'implicit' = 'checkbox'
 ): Promise<void> {
   const userRef = getUserDoc(userId);
-  const ipAddress = await getUserIpAddress();
 
+  console.log('[recordToS] ✅ CREATING CONSENT RECORD (no IP)');
   const consent = createConsentRecord(
     LEGAL_VERSIONS.TERMS_OF_SERVICE,
     method,
-    ipAddress
+    undefined // Skip IP address entirely due to caching issues
   );
+
+  console.log('[recordToS] Consent object:', consent);
 
   try {
     // Use setDoc with merge to create document if it doesn't exist
@@ -150,8 +152,9 @@ export async function recordToSAcceptance(
       needsTermsUpdate: false,
       updatedAt: new Date().toISOString(),
     }, { merge: true });
+    console.log('[recordToS] ✅ Successfully saved to Firestore');
   } catch (error) {
-    console.error('Failed to record ToS acceptance:', error);
+    console.error('[recordToS] ❌ Failed to record ToS acceptance:', error);
     throw error;
   }
 }
@@ -164,13 +167,15 @@ export async function recordPrivacyAcceptance(
   method: 'checkbox' | 'button' | 'implicit' = 'checkbox'
 ): Promise<void> {
   const userRef = getUserDoc(userId);
-  const ipAddress = await getUserIpAddress();
 
+  console.log('[recordPrivacy] ✅ CREATING CONSENT RECORD (no IP)');
   const consent = createConsentRecord(
     LEGAL_VERSIONS.PRIVACY_POLICY,
     method,
-    ipAddress
+    undefined // Skip IP address entirely due to caching issues
   );
+
+  console.log('[recordPrivacy] Consent object:', consent);
 
   try {
     // Use setDoc with merge to create document if it doesn't exist
@@ -178,8 +183,9 @@ export async function recordPrivacyAcceptance(
       privacyConsent: consent,
       updatedAt: new Date().toISOString(),
     }, { merge: true });
+    console.log('[recordPrivacy] ✅ Successfully saved to Firestore');
   } catch (error) {
-    console.error('Failed to record privacy acceptance:', error);
+    console.error('[recordPrivacy] ❌ Failed to record privacy acceptance:', error);
     throw error;
   }
 }
