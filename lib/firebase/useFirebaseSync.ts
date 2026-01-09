@@ -11,7 +11,7 @@ import { initializeFirebaseSync, cleanupFirebaseSync, subscribeToStoreChanges } 
  * - Syncs store changes to Firebase in real-time
  */
 export function useFirebaseSync() {
-  const { user, loading } = useAuth();
+  const { user, loading, requiresToSAcceptance } = useAuth();
 
   useEffect(() => {
     // Skip if loading or no user
@@ -19,6 +19,14 @@ export function useFirebaseSync() {
       return;
     }
 
+    // Skip if user needs to accept ToS first
+    // Firebase sync will run once ToS is accepted
+    if (requiresToSAcceptance) {
+      console.log('[useFirebaseSync] Waiting for ToS acceptance before syncing boards');
+      return;
+    }
+
+    console.log('[useFirebaseSync] Initializing Firebase sync for user:', user.uid);
     // Initialize Firebase sync
     initializeFirebaseSync(user);
 
@@ -31,5 +39,5 @@ export function useFirebaseSync() {
       // unsubscribeFromStore?.();
       cleanupFirebaseSync();
     };
-  }, [user, loading]);
+  }, [user, loading, requiresToSAcceptance]);
 }
