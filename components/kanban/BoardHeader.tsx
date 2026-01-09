@@ -40,9 +40,9 @@ export default function BoardHeader({ boardId }: BoardHeaderProps) {
     <div className="mt-2">
       {/* Collapsed/Expanded Description */}
       {hasDescription && !isEditing && (
-        <button
+        <div
           onClick={() => setIsExpanded(!isExpanded)}
-          className="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 transition-colors text-left w-full group"
+          className="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 transition-colors text-left w-full group cursor-pointer"
         >
           <span>{isExpanded ? board.description : truncatedDesc}</span>
           {board.description && board.description.length > 60 && (
@@ -62,7 +62,7 @@ export default function BoardHeader({ boardId }: BoardHeaderProps) {
               Edit
             </button>
           )}
-        </button>
+        </div>
       )}
 
       {/* Empty State */}
