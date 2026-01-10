@@ -11,14 +11,17 @@ import {
   onAuthStateChanged,
 } from 'firebase/auth';
 import { getAuth } from './config';
+import { initializeUserLegalConsent, hasAcceptedCurrentToS, hasAcceptedCurrentPrivacy } from './legal';
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
+  requiresToSAcceptance: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
+  markToSAccepted: () => void;
   error: string | null;
 }
 
@@ -28,13 +31,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [requiresToSAcceptance, setRequiresToSAcceptance] = useState(false);
 
   useEffect(() => {
     const auth = getAuth();
 
     // Set up auth state listener
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setUser(user);
+
+      // Check if user needs to accept ToS/Privacy
+      if (user) {
+        try {
+          const [hasToS, hasPrivacy] = await Promise.all([
+            hasAcceptedCurrentToS(user.uid),
+            hasAcceptedCurrentPrivacy(user.uid)
+          ]);
+
+          // Require acceptance if either is missing
+          setRequiresToSAcceptance(!hasToS || !hasPrivacy);
+        } catch (err) {
+          console.error('Error checking ToS acceptance:', err);
+          // If we can't check, require acceptance to be safe
+          setRequiresToSAcceptance(true);
+        }
+      } else {
+        setRequiresToSAcceptance(false);
+      }
+
       setLoading(false);
     });
 
@@ -57,7 +81,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setError(null);
     try {
       const auth = getAuth();
-      await createUserWithEmailAndPassword(auth, email, password);
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+
+      // Initialize legal consent in Firestore
+      await initializeUserLegalConsent(
+        userCredential.user.uid,
+        email,
+        true, // User accepted ToS during signup
+        true  // User accepted Privacy Policy during signup
+      );
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to create account';
       setError(errorMessage);
@@ -77,6 +109,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
 
       const result = await signInWithPopup(auth, provider);
+
+      // Check if this is a new user and initialize consent
+      // Note: For Google sign-in, we assume consent by using the service
+      // In production, you may want to show a consent modal for first-time Google users
+      const additionalUserInfo = result.user.metadata;
+      const isNewUser = additionalUserInfo.creationTime === additionalUserInfo.lastSignInTime;
+
+      if (isNewUser && result.user.email) {
+        await initializeUserLegalConsent(
+          result.user.uid,
+          result.user.email,
+          true, // Implicit consent by using Google sign-in
+          true  // Implicit consent by using Google sign-in
+        );
+      }
     } catch (err: any) {
       console.error('[Auth] ❌ Google Sign-In error:', err);
       console.error('[Auth] Error code:', err.code);
@@ -101,8 +148,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const markToSAccepted = () => {
+    setRequiresToSAcceptance(false);
+  };
+
   return (
-    <AuthContext.Provider value={{ user, loading, signIn, signUp, signInWithGoogle, signOut, error }}>
+    <AuthContext.Provider value={{
+      user,
+      loading,
+      requiresToSAcceptance,
+      signIn,
+      signUp,
+      signInWithGoogle,
+      signOut,
+      markToSAccepted,
+      error
+    }}>
       {children}
     </AuthContext.Provider>
   );

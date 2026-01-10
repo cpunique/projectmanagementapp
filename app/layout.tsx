@@ -2,9 +2,11 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import Header from "@/components/layout/Header";
+import Footer from "@/components/layout/Footer";
 import DarkModeProvider from "@/components/providers/DarkModeProvider";
 import { AuthProvider } from "@/lib/firebase/AuthContext";
 import { FirebaseWrapper } from "@/components/firebase/FirebaseWrapper";
+import ToSGateWrapper from "@/components/legal/ToSGateWrapper";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -42,15 +44,18 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className={`${inter.className} bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100`}>
+      <body className={`${inter.className} bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 flex flex-col min-h-screen`}>
         <AuthProvider>
           <FirebaseWrapper>
-            <DarkModeProvider>
-              <Header />
-              <main className="min-h-screen">
-                {children}
-              </main>
-            </DarkModeProvider>
+            <ToSGateWrapper>
+              <DarkModeProvider>
+                <Header />
+                <main className="flex-1">
+                  {children}
+                </main>
+                <Footer />
+              </DarkModeProvider>
+            </ToSGateWrapper>
           </FirebaseWrapper>
         </AuthProvider>
       </body>
