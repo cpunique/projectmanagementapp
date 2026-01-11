@@ -3,6 +3,7 @@
 import { initializeApp, getApps } from 'firebase/app';
 import { getFirestore } from 'firebase/firestore';
 import { getAuth as getFirebaseAuth } from 'firebase/auth';
+import { getAnalytics, Analytics } from 'firebase/analytics';
 
 // Only initialize if we're in a browser environment with required env vars
 const isValidConfig = () => {
@@ -33,9 +34,10 @@ const firebaseConfig = {
 let app: any = null;
 let db: any = null;
 let auth: any = null;
+let analytics: Analytics | null = null;
 
 const initializeFirebase = () => {
-  if (app) return { app, db, auth };
+  if (app) return { app, db, auth, analytics };
 
   if (!isValidConfig()) {
     throw new Error('Firebase configuration is missing or invalid. Check your .env.local file.');
@@ -45,14 +47,20 @@ const initializeFirebase = () => {
     app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
     db = getFirestore(app);
     auth = getFirebaseAuth(app);
+
+    // Initialize Analytics only in browser (not during SSR)
+    if (typeof window !== 'undefined') {
+      analytics = getAnalytics(app);
+    }
   } catch (error) {
     console.error('Failed to initialize Firebase:', error);
     throw error;
   }
 
-  return { app, db, auth };
+  return { app, db, auth, analytics };
 };
 
 export const getApp = () => initializeFirebase().app;
 export const getDb = () => initializeFirebase().db;
 export const getAuth = () => initializeFirebase().auth;
+export const getFirebaseAnalytics = () => initializeFirebase().analytics;

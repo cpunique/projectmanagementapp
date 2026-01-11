@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import * as Sentry from '@sentry/nextjs';
 import { recordToSAcceptance, recordPrivacyAcceptance } from '@/lib/firebase/legal';
 import { LEGAL_VERSIONS } from '@/types/legal';
 
@@ -48,6 +49,20 @@ export default function ToSGateModal({ userId, onAccepted, onDeclined }: ToSGate
         message: err?.message,
         code: err?.code,
         stack: err?.stack
+      });
+
+      // Send error to Sentry for monitoring
+      Sentry.captureException(err, {
+        tags: {
+          component: 'ToSGateModal',
+          action: 'record_consent',
+        },
+        extra: {
+          userId,
+          termsAccepted,
+          privacyAccepted,
+          errorCode: err?.code,
+        },
       });
 
       // Show detailed error message

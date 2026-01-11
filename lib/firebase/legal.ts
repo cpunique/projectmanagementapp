@@ -10,6 +10,7 @@ import {
   serverTimestamp,
 } from 'firebase/firestore';
 import { getDb } from './config';
+import { trackToSAcceptance, trackPrivacyAcceptance } from './analytics';
 import type {
   UserLegalConsent,
   UserDocument,
@@ -153,6 +154,9 @@ export async function recordToSAcceptance(
       updatedAt: new Date().toISOString(),
     }, { merge: true });
     console.log('[recordToS] ✅ Successfully saved to Firestore');
+
+    // Track ToS acceptance in Analytics
+    trackToSAcceptance(method, 'existing');
   } catch (error) {
     console.error('[recordToS] ❌ Failed to record ToS acceptance:', error);
     throw error;
@@ -184,6 +188,9 @@ export async function recordPrivacyAcceptance(
       updatedAt: new Date().toISOString(),
     }, { merge: true });
     console.log('[recordPrivacy] ✅ Successfully saved to Firestore');
+
+    // Track Privacy Policy acceptance in Analytics
+    trackPrivacyAcceptance(method, 'existing');
   } catch (error) {
     console.error('[recordPrivacy] ❌ Failed to record privacy acceptance:', error);
     throw error;

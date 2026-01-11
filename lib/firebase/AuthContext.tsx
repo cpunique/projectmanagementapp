@@ -10,8 +10,10 @@ import {
   signOut as firebaseSignOut,
   onAuthStateChanged,
 } from 'firebase/auth';
+import * as Sentry from '@sentry/nextjs';
 import { getAuth } from './config';
 import { initializeUserLegalConsent, hasAcceptedCurrentToS, hasAcceptedCurrentPrivacy } from './legal';
+import { trackSignup, setAnalyticsUserProperties } from './analytics';
 
 interface AuthContextType {
   user: User | null;
@@ -50,13 +52,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
           // Require acceptance if either is missing
           setRequiresToSAcceptance(!hasToS || !hasPrivacy);
+
+          // Set Sentry user context for error tracking
+          Sentry.setUser({
+            id: user.uid,
+            email: user.email || undefined,
+            username: user.displayName || undefined,
+          });
         } catch (err) {
           console.error('Error checking ToS acceptance:', err);
           // If we can't check, require acceptance to be safe
           setRequiresToSAcceptance(true);
+
+          // Still set Sentry user context even if ToS check fails
+          Sentry.setUser({
+            id: user.uid,
+            email: user.email || undefined,
+          });
         }
       } else {
         setRequiresToSAcceptance(false);
+        // Clear Sentry user context on sign out
+        Sentry.setUser(null);
       }
 
       setLoading(false);
@@ -90,6 +107,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         true, // User accepted ToS during signup
         true  // User accepted Privacy Policy during signup
       );
+
+      // Track signup event in Analytics
+      trackSignup('email');
+      setAnalyticsUserProperties(userCredential.user.uid, {
+        signup_method: 'email',
+        account_created: new Date().toISOString(),
+      });
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to create account';
       setError(errorMessage);
@@ -123,6 +147,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           true, // Implicit consent by using Google sign-in
           true  // Implicit consent by using Google sign-in
         );
+
+        // Track signup event for new Google users
+        trackSignup('google');
+        setAnalyticsUserProperties(result.user.uid, {
+          signup_method: 'google',
+          account_created: new Date().toISOString(),
+        });
       }
     } catch (err: any) {
       console.error('[Auth] ❌ Google Sign-In error:', err);
