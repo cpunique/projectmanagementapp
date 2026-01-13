@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useKanbanStore } from '@/lib/store';
 import { useAuth } from '@/lib/firebase/AuthContext';
-import { updateBoard, setUserDefaultBoard } from '@/lib/firebase/firestore';
+import { updateBoard, createBoard, setUserDefaultBoard } from '@/lib/firebase/firestore';
 import { cn } from '@/lib/utils';
 
 type SaveState = 'idle' | 'saving' | 'saved';
@@ -15,6 +15,7 @@ const SaveButton = () => {
   const activeBoard = useKanbanStore((state) => state.activeBoard);
   const defaultBoardId = useKanbanStore((state) => state.defaultBoardId);
   const markAsSaved = useKanbanStore((state) => state.markAsSaved);
+  const updateBoardInStore = useKanbanStore((state) => state.updateBoard);
   const [saveState, setSaveState] = useState<SaveState>('idle');
   const [isVisible, setIsVisible] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -75,9 +76,14 @@ const SaveButton = () => {
         }
 
         if (boardWithOwner.ownerId) {
+          // Board already exists in Firebase, update it
           await updateBoard(currentBoard.id, currentBoard);
         } else {
-          console.warn('[SaveButton] Board has no ownerId - not saving to Firebase');
+          // New board not yet in Firebase - create it with ownerId
+          await createBoard(user.uid, currentBoard);
+          // Update the board in store to reflect the ownerId
+          updateBoardInStore(currentBoard.id, { ...currentBoard, ownerId: user.uid } as any);
+          console.log('[SaveButton] Created new board in Firebase:', currentBoard.id);
         }
       }
 
