@@ -15,7 +15,6 @@ const SaveButton = () => {
   const activeBoard = useKanbanStore((state) => state.activeBoard);
   const defaultBoardId = useKanbanStore((state) => state.defaultBoardId);
   const markAsSaved = useKanbanStore((state) => state.markAsSaved);
-  const updateBoardInStore = useKanbanStore((state) => state.updateBoard);
   const [saveState, setSaveState] = useState<SaveState>('idle');
   const [isVisible, setIsVisible] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -80,9 +79,8 @@ const SaveButton = () => {
           await updateBoard(currentBoard.id, currentBoard);
         } else {
           // New board not yet in Firebase - create it with ownerId
-          await createBoard(user.uid, currentBoard);
-          // Update the board in store to reflect the ownerId
-          updateBoardInStore(currentBoard.id, { ...currentBoard, ownerId: user.uid } as any);
+          const boardToCreate = { ...currentBoard, ownerId: user.uid };
+          await createBoard(user.uid, boardToCreate);
           console.log('[SaveButton] Created new board in Firebase:', currentBoard.id);
         }
       }
