@@ -29,7 +29,6 @@ export function MigrateLocalStorage() {
   useEffect(() => {
     if (!loading && user) {
       // Check if there are local boards in localStorage that need migration
-      // Only show migration banner if boards exist locally but not in user's ownerId
       const storedData = localStorage.getItem('kanban-store');
       let localBoards: any[] = [];
 
@@ -42,13 +41,18 @@ export function MigrateLocalStorage() {
         }
       }
 
+      // Get boards from Zustand store (which includes Firebase-loaded boards)
+      const firebaseLoadedBoardIds = new Set(boards.map(b => b.id));
+
       // Show migration if there are local boards that need syncing to Firebase
       // A board needs migration if:
       // 1. It exists in localStorage (meaning it wasn't cleared after previous migration)
       // 2. It's not the demo board
-      // 3. It either has no ownerId (very old) OR has current user's ownerId (unsyncedlocal board)
+      // 3. It's NOT already in Firebase (indicated by boards in Zustand store)
+      // 4. It either has no ownerId (very old) OR has current user's ownerId (unsynced local board)
       const boardsNeedingMigration = localBoards.filter((b: any) => {
         if (b.id === 'default-board') return false; // Skip demo board
+        if (firebaseLoadedBoardIds.has(b.id)) return false; // Already in Firebase, no migration needed
         if (!b.ownerId) return true; // Old unmigrated board
         if (b.ownerId === user.uid) return true; // Current user's board still in localStorage
         return false;
@@ -78,7 +82,7 @@ export function MigrateLocalStorage() {
         boardsMigrated: 0,
       });
     }
-  }, [user, loading]);
+  }, [user, loading, boards]);
 
   const handleMigrate = async () => {
     if (!user) {
