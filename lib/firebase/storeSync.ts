@@ -90,6 +90,23 @@ export async function initializeFirebaseSync(user: User) {
         store.toggleDemoMode();
       }
 
+      // Clear old localStorage boards since we've successfully loaded from Firebase
+      // This prevents the migration dialog from appearing unnecessarily
+      try {
+        const storeData = localStorage.getItem('kanban-store');
+        if (storeData) {
+          const parsed = JSON.parse(storeData);
+          parsed.state = {
+            ...parsed.state,
+            boards: [], // Clear local boards - we're now synced with Firebase
+          };
+          localStorage.setItem('kanban-store', JSON.stringify(parsed));
+          console.log('[Sync] Cleared localStorage boards after Firebase sync');
+        }
+      } catch (error) {
+        console.warn('[Sync] Failed to clear localStorage:', error);
+      }
+
       // Mark as saved since we just loaded from Firebase (no unsaved changes)
       store.markAsSaved();
     } else {
