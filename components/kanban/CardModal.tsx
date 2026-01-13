@@ -47,12 +47,21 @@ const CardModal = ({ isOpen, onClose, card, boardId }: CardModalProps) => {
   const [checklist, setChecklist] = useState<ChecklistItem[]>(card?.checklist || []);
   const [checklistInput, setChecklistInput] = useState('');
 
-  // Sync checklist state with card prop
+  // Sync all state with card prop when card changes (including when a new card is selected)
   useEffect(() => {
-    if (card?.checklist) {
-      setChecklist(card.checklist);
+    if (card) {
+      setTitle(card.title || '');
+      setDescription(card.description || '');
+      setNotes(card.notes || '');
+      setPriority(card.priority);
+      setDueDate(card.dueDate || '');
+      setTags(card.tags || []);
+      setColor(card.color || '');
+      setChecklist(card.checklist || []);
+      setTagInput('');
+      setChecklistInput('');
     }
-  }, [card?.checklist]);
+  }, [card?.id]); // Key dependency: when card ID changes, reset all state
 
   // Listen for theme changes
   useEffect(() => {
