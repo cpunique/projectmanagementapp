@@ -68,7 +68,7 @@ export async function initializeFirebaseSync(user: User) {
       const queryBoardId = urlParams?.get('board');
       const queryBoard = queryBoardId ? userBoards.find(b => b.id === queryBoardId) : null;
 
-      if (queryBoard) {
+      if (queryBoard && queryBoardId) {
         // Query parameter takes priority - user is navigating to a specific board
         console.log('[Sync] Using board from query parameter:', queryBoardId);
         store.switchBoard(queryBoardId);
