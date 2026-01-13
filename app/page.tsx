@@ -1,25 +1,13 @@
 'use client';
 
-import { useEffect } from 'react';
-import { useSearchParams } from 'next/navigation';
-import { useKanbanStore } from '@/lib/store';
+import { Suspense } from 'react';
 import KanbanBoard from '@/components/kanban/KanbanBoard';
 import { BoardWithPanel } from '@/components/layout/BoardWithPanel';
+import { BoardQueryHandler } from '@/components/layout/BoardQueryHandler';
 import AuthGate from '@/components/auth/AuthGate';
 import { MigrateLocalStorage } from '@/components/admin/MigrateLocalStorage';
 
 export default function Home() {
-  const searchParams = useSearchParams();
-  const switchBoard = useKanbanStore((state) => state.switchBoard);
-
-  // Handle board query parameter from recovery tools
-  useEffect(() => {
-    const boardId = searchParams.get('board');
-    if (boardId) {
-      switchBoard(boardId);
-    }
-  }, [searchParams, switchBoard]);
-
   return (
     <AuthGate>
       <div className="flex flex-col h-screen">
@@ -27,6 +15,9 @@ export default function Home() {
           <MigrateLocalStorage />
         </div>
         <div className="flex-1 overflow-hidden">
+          <Suspense fallback={null}>
+            <BoardQueryHandler />
+          </Suspense>
           <BoardWithPanel>
             <KanbanBoard />
           </BoardWithPanel>
