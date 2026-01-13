@@ -7,6 +7,7 @@ import DarkModeProvider from "@/components/providers/DarkModeProvider";
 import { AuthProvider } from "@/lib/firebase/AuthContext";
 import { FirebaseWrapper } from "@/components/firebase/FirebaseWrapper";
 import ToSGateWrapper from "@/components/legal/ToSGateWrapper";
+import { UnsavedChangesWarning } from "@/components/dialogs/UnsavedChangesWarning";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -49,6 +50,7 @@ export default function RootLayout({
           <FirebaseWrapper>
             <ToSGateWrapper>
               <DarkModeProvider>
+                <UnsavedChangesWarning />
                 <Header />
                 <main className="flex-1">
                   {children}

@@ -49,7 +49,21 @@
       "Bash(timeout 120 npm run build)",
       "Bash(timeout 15 bash:*)",
       "Bash(git restore:*)",
-      "Bash(npm info:*)"
+      "Bash(npm info:*)",
+      "Bash(dir:*)",
+      "Bash(git log:*)",
+      "Bash(git checkout:*)",
+      "Bash(firebase use:*)",
+      "Bash(gh auth:*)",
+      "Bash(git -c credential.helper=store push -u origin feature/admin-demo-board-config)",
+      "Bash(https://api.github.com/repos/cpunique/projectmanagementapp/pulls)",
+      "Bash(firebase login:*)",
+      "Bash(https://api.github.com/repos/cpunique/projectmanagementapp/pulls/4)",
+      "Bash(https://api.github.com/repos/cpunique/projectmanagementapp/pulls/4/merge)",
+      "Bash(vercel list:*)",
+      "Bash(firebase --version:*)",
+      "Bash(echo:*)",
+      "Bash(Data from the web\" board, while being conservative with Firebase quota.\n\n🤖 Generated with [Claude Code]\\(https://claude.com/claude-code\\)\n\nCo-Authored-By: Claude Haiku 4.5 <noreply@anthropic.com>\nEOF\n\\)\")"
     ],
     "deny": [],
     "ask": []

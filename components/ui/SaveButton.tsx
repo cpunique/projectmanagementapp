@@ -148,11 +148,13 @@ const SaveButton = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [hasUnsavedChanges, saveState, user]);
 
-  // Don't render if not visible and no error
-  if (!isVisible && !errorMessage) return null;
-
   return (
     <div className="relative">
+      {/* Unsaved changes indicator (always visible when there are unsaved changes) */}
+      {hasUnsavedChanges && saveState === 'idle' && (
+        <div className="absolute -top-1 -right-1 h-3 w-3 bg-amber-500 rounded-full animate-pulse" title="Unsaved changes - will auto-save after 5 minutes of inactivity or when switching boards" />
+      )}
+
       {errorMessage && (
         <div className="absolute top-full right-0 mt-2 px-4 py-2 bg-amber-500 text-white text-sm rounded-lg shadow-lg whitespace-nowrap z-50 animate-in fade-in slide-in-from-top-2 duration-300 max-w-xs">
           {errorMessage}
