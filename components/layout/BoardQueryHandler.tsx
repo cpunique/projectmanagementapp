@@ -16,22 +16,22 @@ export function BoardQueryHandler() {
   const searchParams = useSearchParams();
   const boards = useKanbanStore((state) => state.boards);
   const switchBoard = useKanbanStore((state) => state.switchBoard);
-  const hasProcessedRef = useRef(false);
+  const lastProcessedBoardIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     const boardId = searchParams.get('board');
 
     // Only process if:
     // 1. There's a board parameter
-    // 2. We haven't already processed it
+    // 2. It's different from the last one we processed (allows switching between boards)
     // 3. Boards have been loaded (more than just the default board)
-    if (boardId && !hasProcessedRef.current && boards.length > 0) {
+    if (boardId && boardId !== lastProcessedBoardIdRef.current && boards.length > 0) {
       // Check if the requested board exists
       const boardExists = boards.some(b => b.id === boardId);
       if (boardExists) {
         console.log('[BoardQueryHandler] Switching to board from query param:', boardId);
         switchBoard(boardId);
-        hasProcessedRef.current = true;
+        lastProcessedBoardIdRef.current = boardId;
       }
     }
   }, [searchParams, boards, switchBoard]);
