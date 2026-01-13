@@ -153,8 +153,8 @@ const KanbanBoard = () => {
         </div>
 
         {/* Columns Grid */}
-        <div className="overflow-x-auto overflow-y-visible pb-4">
-          <div className="flex gap-4 min-w-min items-start">
+        <div className="overflow-x-auto overflow-y-visible pb-4 h-[calc(100vh-200px)]">
+          <div className="flex gap-4 min-w-min items-start h-full">
             {board.columns.map((column) => (
               <Column
                 key={column.id}
