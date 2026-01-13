@@ -62,20 +62,32 @@ export async function initializeFirebaseSync(user: User) {
       // User has boards in Firebase - use those
       store.setBoards(userBoards);
 
-      // Load default board preference
-      const defaultBoardId = await getUserDefaultBoard(user.uid);
-      const defaultBoard = userBoards.find(b => b.id === defaultBoardId);
+      // Check if there's a board query parameter that should override default selection
+      // This handles navigation from recovery tools and deep links
+      const urlParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+      const queryBoardId = urlParams?.get('board');
+      const queryBoard = queryBoardId ? userBoards.find(b => b.id === queryBoardId) : null;
 
-      if (defaultBoardId && defaultBoard) {
-        store.setDefaultBoard(defaultBoardId);
-        store.switchBoard(defaultBoardId);
-      } else if (defaultBoardId && !defaultBoard) {
-        console.warn(`[Sync] Default board ID "${defaultBoardId}" not found, clearing preference`);
-        await setUserDefaultBoard(user.uid, null);
-        store.setDefaultBoard(null);
-        store.switchBoard(userBoards[0].id);
+      if (queryBoard) {
+        // Query parameter takes priority - user is navigating to a specific board
+        console.log('[Sync] Using board from query parameter:', queryBoardId);
+        store.switchBoard(queryBoardId);
       } else {
-        store.switchBoard(userBoards[0].id);
+        // No query param, use default board preference
+        const defaultBoardId = await getUserDefaultBoard(user.uid);
+        const defaultBoard = userBoards.find(b => b.id === defaultBoardId);
+
+        if (defaultBoardId && defaultBoard) {
+          store.setDefaultBoard(defaultBoardId);
+          store.switchBoard(defaultBoardId);
+        } else if (defaultBoardId && !defaultBoard) {
+          console.warn(`[Sync] Default board ID "${defaultBoardId}" not found, clearing preference`);
+          await setUserDefaultBoard(user.uid, null);
+          store.setDefaultBoard(null);
+          store.switchBoard(userBoards[0].id);
+        } else {
+          store.switchBoard(userBoards[0].id);
+        }
       }
 
       // Load UI preferences
