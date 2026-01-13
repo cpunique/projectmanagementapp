@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useKanbanStore } from '@/lib/store';
 import { useAuth } from '@/lib/firebase/AuthContext';
 
@@ -17,6 +17,13 @@ export default function BoardHeader({ boardId }: BoardHeaderProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(board?.description || '');
+
+  // Reset editValue when board changes
+  useEffect(() => {
+    setEditValue(board?.description || '');
+    setIsEditing(false);
+    setIsExpanded(false);
+  }, [boardId]);
 
   if (!board) return null;
 
