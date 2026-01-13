@@ -101,7 +101,7 @@ export default function BoardRecoveryPage() {
                     <p className="text-xs text-yellow-300 mt-1">⚠️ This board has corruption issues</p>
                   </div>
                   <a
-                    href="/"
+                    href={`/?board=${encodeURIComponent(board.docId)}`}
                     className="px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded font-semibold transition-colors whitespace-nowrap ml-4"
                   >
                     Open Board

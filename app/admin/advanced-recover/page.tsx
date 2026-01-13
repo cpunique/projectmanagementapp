@@ -43,8 +43,8 @@ export default function AdvancedRecoveryPage() {
     const boardData = board.data as any;
     // Update the store to switch to this board
     store.switchBoard(boardData.id);
-    // Redirect to main app
-    window.location.href = '/';
+    // Redirect to main app with board ID in query param to ensure it's loaded
+    window.location.href = `/?board=${encodeURIComponent(boardData.id)}`;
   };
 
   return (
