@@ -305,11 +305,12 @@ export async function getUserLegalConsent(
     const userSnap = await getDoc(userRef);
 
     if (!userSnap.exists()) {
+      console.warn(`[Legal] User document does not exist for user: ${userId}`);
       return null;
     }
 
     const data = userSnap.data();
-    return {
+    const consent: UserLegalConsent = {
       tosConsent: data.tosConsent,
       privacyConsent: data.privacyConsent,
       cookieConsent: data.cookieConsent,
@@ -318,6 +319,16 @@ export async function getUserLegalConsent(
       ccpa: data.ccpa,
       needsTermsUpdate: data.needsTermsUpdate,
     };
+
+    console.log(`[Legal] Retrieved consent for user ${userId}:`, {
+      hasToS: !!data.tosConsent,
+      tosVersion: data.tosConsent?.version,
+      hasPrivacy: !!data.privacyConsent,
+      privacyVersion: data.privacyConsent?.version,
+      needsUpdate: data.needsTermsUpdate,
+    });
+
+    return consent;
   } catch (error) {
     console.error('Failed to get user legal consent:', error);
     return null;
@@ -329,10 +340,20 @@ export async function getUserLegalConsent(
  */
 export async function hasAcceptedCurrentToS(userId: string): Promise<boolean> {
   const consent = await getUserLegalConsent(userId);
-  return (
+  const accepted =
     consent?.tosConsent?.version === LEGAL_VERSIONS.TERMS_OF_SERVICE &&
-    !consent?.needsTermsUpdate
-  );
+    !consent?.needsTermsUpdate;
+
+  console.log(`[Legal] hasAcceptedCurrentToS for ${userId}:`, {
+    accepted,
+    hasConsent: !!consent,
+    tosExists: !!consent?.tosConsent,
+    version: consent?.tosConsent?.version,
+    expectedVersion: LEGAL_VERSIONS.TERMS_OF_SERVICE,
+    needsUpdate: consent?.needsTermsUpdate,
+  });
+
+  return accepted;
 }
 
 /**
@@ -342,7 +363,17 @@ export async function hasAcceptedCurrentPrivacy(
   userId: string
 ): Promise<boolean> {
   const consent = await getUserLegalConsent(userId);
-  return consent?.privacyConsent?.version === LEGAL_VERSIONS.PRIVACY_POLICY;
+  const accepted = consent?.privacyConsent?.version === LEGAL_VERSIONS.PRIVACY_POLICY;
+
+  console.log(`[Legal] hasAcceptedCurrentPrivacy for ${userId}:`, {
+    accepted,
+    hasConsent: !!consent,
+    privacyExists: !!consent?.privacyConsent,
+    version: consent?.privacyConsent?.version,
+    expectedVersion: LEGAL_VERSIONS.PRIVACY_POLICY,
+  });
+
+  return accepted;
 }
 
 /**

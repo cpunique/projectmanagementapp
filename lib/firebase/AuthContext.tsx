@@ -43,13 +43,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Check if user needs to accept ToS/Privacy
       if (user) {
         try {
+          console.log(`[AuthContext] Checking ToS/Privacy acceptance for user: ${user.uid}`);
           const [hasToS, hasPrivacy] = await Promise.all([
             hasAcceptedCurrentToS(user.uid),
             hasAcceptedCurrentPrivacy(user.uid)
           ]);
 
+          const requiresAcceptance = !hasToS || !hasPrivacy;
+          console.log(`[AuthContext] ToS/Privacy check complete:`, {
+            hasToS,
+            hasPrivacy,
+            requiresAcceptance,
+          });
+
           // Require acceptance if either is missing
-          setRequiresToSAcceptance(!hasToS || !hasPrivacy);
+          setRequiresToSAcceptance(requiresAcceptance);
         } catch (err) {
           console.error('Error checking ToS acceptance:', err);
           // If we can't check, require acceptance to be safe
