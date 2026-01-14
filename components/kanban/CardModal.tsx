@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { nanoid } from 'nanoid';
 import { useKanbanStore } from '@/lib/store';
 import Modal from '@/components/ui/Modal';
 import Input from '@/components/ui/Input';
@@ -108,8 +109,17 @@ const CardModal = ({ isOpen, onClose, card, boardId }: CardModalProps) => {
 
   const handleAddChecklistItem = () => {
     if (checklistInput.trim() && card) {
-      addChecklistItem(boardId, card.id, checklistInput);
+      // Create the new item locally first so it shows immediately in the UI
+      const newItem: ChecklistItem = {
+        id: nanoid(),
+        text: checklistInput.trim(),
+        completed: false,
+        order: checklist.length,
+      };
+      setChecklist([...checklist, newItem]);
       setChecklistInput('');
+      // Then sync with store
+      addChecklistItem(boardId, card.id, checklistInput);
     }
   };
 
