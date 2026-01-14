@@ -412,3 +412,41 @@ export async function flagAllUsersForTermsUpdate(): Promise<void> {
   // });
   // await batch.commit();
 }
+
+/**
+ * Restore missing ToS/Privacy consent records for a user
+ * Use this to fix accounts that have incomplete legal consent data
+ */
+export async function restoreMissingConsent(userId: string): Promise<void> {
+  const userRef = getUserDoc(userId);
+  const ipAddress = await getUserIpAddress();
+
+  try {
+    console.log('[Legal] Restoring missing consent records for user:', userId);
+
+    // Create new consent records with current timestamp
+    const tosConsent = createConsentRecord(
+      LEGAL_VERSIONS.TERMS_OF_SERVICE,
+      'implicit',
+      ipAddress
+    );
+
+    const privacyConsent = createConsentRecord(
+      LEGAL_VERSIONS.PRIVACY_POLICY,
+      'implicit',
+      ipAddress
+    );
+
+    // Update user document with missing consent records
+    await setDoc(userRef, {
+      tosConsent,
+      privacyConsent,
+      updatedAt: new Date().toISOString(),
+    }, { merge: true });
+
+    console.log('[Legal] ✅ Successfully restored consent records for user:', userId);
+  } catch (error) {
+    console.error('[Legal] ❌ Failed to restore consent records:', error);
+    throw error;
+  }
+}
