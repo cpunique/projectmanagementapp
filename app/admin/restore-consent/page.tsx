@@ -59,25 +59,36 @@ export default function RestoreConsentPage() {
         </p>
       </div>
 
-      <button
-        onClick={handleRestore}
-        disabled={loading}
-        className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 disabled:bg-gray-400"
-      >
-        {loading ? 'Restoring...' : 'Restore Consent Records'}
-      </button>
+      <div className="space-y-4">
+        <button
+          onClick={handleRestore}
+          disabled={loading}
+          className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 disabled:bg-gray-400"
+        >
+          {loading ? 'Restoring...' : 'Restore Consent Records'}
+        </button>
 
-      {message && (
-        <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
-          <p className="text-green-800 whitespace-pre-wrap">{message}</p>
-        </div>
-      )}
+        {message && (
+          <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+            <p className="text-green-800 whitespace-pre-wrap">{message}</p>
+            <div className="mt-4 pt-4 border-t border-green-200 text-sm text-green-700">
+              <p className="font-bold mb-2">Next steps:</p>
+              <ol className="list-decimal list-inside space-y-1">
+                <li>Check the consent data at <code className="bg-white px-2 py-1 rounded">/admin/check-consent</code></li>
+                <li>Log out completely</li>
+                <li>Log back in</li>
+                <li>The ToS modal should NOT appear (if it does, click "Accept and Continue")</li>
+              </ol>
+            </div>
+          </div>
+        )}
 
-      {error && (
-        <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-          <p className="text-red-800">{error}</p>
-        </div>
-      )}
+        {error && (
+          <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-red-800">{error}</p>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

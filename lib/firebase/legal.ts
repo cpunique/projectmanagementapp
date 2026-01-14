@@ -432,13 +432,13 @@ export async function restoreMissingConsent(userId: string): Promise<void> {
     // Create new consent records with current timestamp
     const tosConsent = createConsentRecord(
       LEGAL_VERSIONS.TERMS_OF_SERVICE,
-      'implicit',
+      'checkbox', // Use checkbox method for explicit restoration
       ipAddress
     );
 
     const privacyConsent = createConsentRecord(
       LEGAL_VERSIONS.PRIVACY_POLICY,
-      'implicit',
+      'checkbox', // Use checkbox method for explicit restoration
       ipAddress
     );
 
@@ -452,6 +452,16 @@ export async function restoreMissingConsent(userId: string): Promise<void> {
     }, { merge: true });
 
     console.log('[Legal] ✅ Successfully restored consent records for user:', userId);
+    console.log('[Legal] Restored data:', {
+      tosVersion: tosConsent.version,
+      privacyVersion: privacyConsent.version,
+      needsTermsUpdate: false,
+      acceptedAt: tosConsent.acceptedAt,
+    });
+
+    // Give Firestore a moment to ensure the write is complete
+    // This helps prevent issues with cache inconsistency
+    await new Promise(resolve => setTimeout(resolve, 500));
   } catch (error) {
     console.error('[Legal] ❌ Failed to restore consent records:', error);
     throw error;
