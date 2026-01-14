@@ -23,8 +23,8 @@ export default function ToSGateWrapper({ children }: { children: React.ReactNode
 
   // Re-check consent status when navigating away from exempt pages
   useEffect(() => {
-    if (!user || !requiresToSAcceptance) {
-      setActualRequiresAcceptance(requiresToSAcceptance);
+    if (!user) {
+      setActualRequiresAcceptance(false);
       return;
     }
 
@@ -37,21 +37,40 @@ export default function ToSGateWrapper({ children }: { children: React.ReactNode
     const isExempt = exemptPages.some(page => pathname?.startsWith(page));
 
     // When leaving an exempt page, re-check Firebase to see if consent was restored
-    if (!isExempt) {
+    if (!isExempt && requiresToSAcceptance) {
+      console.log('[ToSGate] Navigated away from exempt page, re-checking Firebase consent...');
       (async () => {
-        const [tosAccepted, privacyAccepted] = await Promise.all([
-          hasAcceptedCurrentToS(user.uid),
-          hasAcceptedCurrentPrivacy(user.uid),
-        ]);
-        const stillNeedsAcceptance = !(tosAccepted && privacyAccepted);
-        setActualRequiresAcceptance(stillNeedsAcceptance);
+        try {
+          const [tosAccepted, privacyAccepted] = await Promise.all([
+            hasAcceptedCurrentToS(user.uid),
+            hasAcceptedCurrentPrivacy(user.uid),
+          ]);
+          const stillNeedsAcceptance = !(tosAccepted && privacyAccepted);
 
-        // If consent was restored, update local auth state
-        if (!stillNeedsAcceptance) {
-          console.log('[ToSGate] Consent was restored, marking as accepted');
-          markToSAccepted();
+          console.log('[ToSGate] Re-check result:', {
+            tosAccepted,
+            privacyAccepted,
+            stillNeedsAcceptance,
+          });
+
+          setActualRequiresAcceptance(stillNeedsAcceptance);
+
+          // If consent was restored, update local auth state
+          if (!stillNeedsAcceptance) {
+            console.log('[ToSGate] ✅ Consent was restored, marking as accepted');
+            markToSAccepted();
+          }
+        } catch (error) {
+          console.error('[ToSGate] Error re-checking consent:', error);
+          // Keep current state on error
         }
       })();
+    } else if (isExempt) {
+      // On exempt pages, don't check - just set to false to hide modal
+      setActualRequiresAcceptance(false);
+    } else if (!requiresToSAcceptance) {
+      // If initial check says no acceptance needed, trust it
+      setActualRequiresAcceptance(false);
     }
   }, [pathname, user, requiresToSAcceptance, markToSAccepted]);
 
