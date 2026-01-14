@@ -2,6 +2,7 @@
 
 import { useFirebaseSync } from '@/lib/firebase/useFirebaseSync';
 import { useAutoSave } from '@/lib/hooks/useAutoSave';
+import { useDefaultBoardSaver } from '@/lib/hooks/useDefaultBoardSaver';
 
 /**
  * Component that wraps the app and initializes Firebase sync and auto-save
@@ -10,6 +11,7 @@ import { useAutoSave } from '@/lib/hooks/useAutoSave';
 export function FirebaseWrapper({ children }: { children: React.ReactNode }) {
   useFirebaseSync();
   useAutoSave();
+  useDefaultBoardSaver();
 
   return <>{children}</>;
 }
