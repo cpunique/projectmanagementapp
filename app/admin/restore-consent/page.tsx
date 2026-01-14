@@ -5,7 +5,7 @@ import { useAuth } from '@/lib/firebase/AuthContext';
 import { restoreMissingConsent } from '@/lib/firebase/legal';
 
 export default function RestoreConsentPage() {
-  const { user } = useAuth();
+  const { user, markToSAccepted } = useAuth();
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
@@ -23,9 +23,14 @@ export default function RestoreConsentPage() {
     try {
       console.log('Restoring consent for user:', user.uid);
       await restoreMissingConsent(user.uid);
+
+      // Update the local auth state to hide the ToS modal immediately
+      // This prevents the modal from showing again while on this page
+      markToSAccepted();
+
       setMessage('✅ Successfully restored your ToS/Privacy consent records!');
-      setMessage(prev => prev + '\n\nPlease refresh the page to see the changes.')
-      setMessage(prev => prev + '\n\nYou should no longer see the ToS/Privacy modal on login.');
+      setMessage(prev => prev + '\n\nThe ToS/Privacy modal has been closed.');
+      setMessage(prev => prev + '\n\nYou should no longer see it when you log out and back in.');
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Unknown error';
       setError(`Failed to restore consent: ${errorMsg}`);
