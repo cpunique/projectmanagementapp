@@ -92,12 +92,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
 
       // Initialize legal consent in Firestore
-      await initializeUserLegalConsent(
-        userCredential.user.uid,
-        email,
-        true, // User accepted ToS during signup
-        true  // User accepted Privacy Policy during signup
-      );
+      try {
+        await initializeUserLegalConsent(
+          userCredential.user.uid,
+          email,
+          true, // User accepted ToS during signup
+          true  // User accepted Privacy Policy during signup
+        );
+      } catch (legalError) {
+        console.error('[Auth] Failed to initialize legal consent, but user account was created:', legalError);
+        // Don't fail signup if legal consent initialization fails - user can still use the app
+        // and will be prompted to accept on next login
+      }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to create account';
       setError(errorMessage);
@@ -125,12 +131,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const isNewUser = additionalUserInfo.creationTime === additionalUserInfo.lastSignInTime;
 
       if (isNewUser && result.user.email) {
-        await initializeUserLegalConsent(
-          result.user.uid,
-          result.user.email,
-          true, // Implicit consent by using Google sign-in
-          true  // Implicit consent by using Google sign-in
-        );
+        try {
+          await initializeUserLegalConsent(
+            result.user.uid,
+            result.user.email,
+            true, // Implicit consent by using Google sign-in
+            true  // Implicit consent by using Google sign-in
+          );
+        } catch (legalError) {
+          console.error('[Auth] Failed to initialize legal consent for Google user, but auth succeeded:', legalError);
+          // Don't fail Google sign-in if legal consent initialization fails
+          // User can still use the app and will be prompted to accept on next login
+        }
       }
     } catch (err: any) {
       console.error('[Auth] ❌ Google Sign-In error:', err);

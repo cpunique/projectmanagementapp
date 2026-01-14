@@ -119,10 +119,15 @@ export async function initializeUserLegalConsent(
     lastUpdated: now,
   };
 
+  // Set needsTermsUpdate to false if both ToS and Privacy were accepted
+  // This ensures new users don't see the update modal on first login
+  userData.needsTermsUpdate = !(acceptedToS && acceptedPrivacy);
+
   try {
     await setDoc(userRef, userData, { merge: true });
+    console.log('[Legal] ✅ Initialized legal consent for new user:', userId);
   } catch (error) {
-    console.error('Failed to initialize user legal consent:', error);
+    console.error('[Legal] ❌ Failed to initialize user legal consent:', error);
     throw error;
   }
 }
