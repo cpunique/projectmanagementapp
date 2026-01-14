@@ -442,6 +442,11 @@ export async function restoreMissingConsent(userId: string): Promise<void> {
       ipAddress
     );
 
+    console.log('[Legal] Creating consent data:', {
+      tosConsent,
+      privacyConsent,
+    });
+
     // Update user document with missing consent records
     // Also set needsTermsUpdate to false to mark that user doesn't need to re-accept
     await setDoc(userRef, {
@@ -451,17 +456,31 @@ export async function restoreMissingConsent(userId: string): Promise<void> {
       updatedAt: new Date().toISOString(),
     }, { merge: true });
 
-    console.log('[Legal] ✅ Successfully restored consent records for user:', userId);
-    console.log('[Legal] Restored data:', {
-      tosVersion: tosConsent.version,
-      privacyVersion: privacyConsent.version,
-      needsTermsUpdate: false,
-      acceptedAt: tosConsent.acceptedAt,
-    });
+    console.log('[Legal] ✅ Firestore write completed for user:', userId);
 
     // Give Firestore a moment to ensure the write is complete
     // This helps prevent issues with cache inconsistency
-    await new Promise(resolve => setTimeout(resolve, 500));
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    // Verify the write actually succeeded by reading back
+    console.log('[Legal] Verifying write by reading back from Firestore...');
+    const verified = await getUserLegalConsent(userId);
+
+    if (!verified?.tosConsent || !verified?.privacyConsent) {
+      console.error('[Legal] ❌ VERIFICATION FAILED: Consent was not written to Firestore!', {
+        hasToS: !!verified?.tosConsent,
+        hasPrivacy: !!verified?.privacyConsent,
+      });
+      throw new Error('Consent restoration verification failed - data not persisted to Firestore');
+    }
+
+    console.log('[Legal] ✅ VERIFIED: Consent records successfully restored and verified in Firestore');
+    console.log('[Legal] Restored data verified:', {
+      tosVersion: verified.tosConsent?.version,
+      privacyVersion: verified.privacyConsent?.version,
+      needsTermsUpdate: verified.needsTermsUpdate,
+      acceptedAt: verified.tosConsent?.acceptedAt,
+    });
   } catch (error) {
     console.error('[Legal] ❌ Failed to restore consent records:', error);
     throw error;
