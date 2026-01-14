@@ -1,7 +1,9 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { useAuth } from '@/lib/firebase/AuthContext';
 import { usePathname } from 'next/navigation';
+import { hasAcceptedCurrentToS, hasAcceptedCurrentPrivacy } from '@/lib/firebase/legal';
 import ToSGateModal from './ToSGateModal';
 
 /**
@@ -10,13 +12,52 @@ import ToSGateModal from './ToSGateModal';
  *
  * Exempts admin/restore-consent and admin/check-consent pages to allow
  * users to restore/check their consent records without being blocked
+ *
+ * When navigating away from exempt pages, re-checks Firebase to see if
+ * consent was restored, to avoid showing stale cached state
  */
 export default function ToSGateWrapper({ children }: { children: React.ReactNode }) {
   const { user, requiresToSAcceptance, signOut, markToSAccepted } = useAuth();
   const pathname = usePathname();
+  const [actualRequiresAcceptance, setActualRequiresAcceptance] = useState(requiresToSAcceptance);
+
+  // Re-check consent status when navigating away from exempt pages
+  useEffect(() => {
+    if (!user || !requiresToSAcceptance) {
+      setActualRequiresAcceptance(requiresToSAcceptance);
+      return;
+    }
+
+    // Pages exempt from ToS gate (admin tools to fix ToS/Privacy issues)
+    const exemptPages = [
+      '/admin/restore-consent',
+      '/admin/check-consent',
+    ];
+
+    const isExempt = exemptPages.some(page => pathname?.startsWith(page));
+
+    // When leaving an exempt page, re-check Firebase to see if consent was restored
+    if (!isExempt) {
+      (async () => {
+        const [tosAccepted, privacyAccepted] = await Promise.all([
+          hasAcceptedCurrentToS(user.uid),
+          hasAcceptedCurrentPrivacy(user.uid),
+        ]);
+        const stillNeedsAcceptance = !(tosAccepted && privacyAccepted);
+        setActualRequiresAcceptance(stillNeedsAcceptance);
+
+        // If consent was restored, update local auth state
+        if (!stillNeedsAcceptance) {
+          console.log('[ToSGate] Consent was restored, marking as accepted');
+          markToSAccepted();
+        }
+      })();
+    }
+  }, [pathname, user, requiresToSAcceptance, markToSAccepted]);
 
   const handleAccepted = () => {
     markToSAccepted();
+    setActualRequiresAcceptance(false);
   };
 
   const handleDeclined = async () => {
@@ -33,7 +74,7 @@ export default function ToSGateWrapper({ children }: { children: React.ReactNode
 
   // Show ToS gate if user is logged in but hasn't accepted current ToS
   // UNLESS they're on an exempt page (admin tools)
-  if (user && requiresToSAcceptance && !isExempt) {
+  if (user && actualRequiresAcceptance && !isExempt) {
     return (
       <>
         {children}
