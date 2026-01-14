@@ -438,9 +438,11 @@ export async function restoreMissingConsent(userId: string): Promise<void> {
     );
 
     // Update user document with missing consent records
+    // Also set needsTermsUpdate to false to mark that user doesn't need to re-accept
     await setDoc(userRef, {
       tosConsent,
       privacyConsent,
+      needsTermsUpdate: false,
       updatedAt: new Date().toISOString(),
     }, { merge: true });
 

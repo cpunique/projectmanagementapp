@@ -24,7 +24,8 @@ export default function RestoreConsentPage() {
       console.log('Restoring consent for user:', user.uid);
       await restoreMissingConsent(user.uid);
       setMessage('✅ Successfully restored your ToS/Privacy consent records!');
-      setMessage(prev => prev + '\n\nPlease refresh the page to see the changes.');
+      setMessage(prev => prev + '\n\nPlease refresh the page to see the changes.')
+      setMessage(prev => prev + '\n\nYou should no longer see the ToS/Privacy modal on login.');
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Unknown error';
       setError(`Failed to restore consent: ${errorMsg}`);
