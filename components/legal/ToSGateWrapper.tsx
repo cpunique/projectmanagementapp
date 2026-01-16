@@ -20,6 +20,7 @@ export default function ToSGateWrapper({ children }: { children: React.ReactNode
   const { user, requiresToSAcceptance, signOut, markToSAccepted } = useAuth();
   const pathname = usePathname();
   const [actualRequiresAcceptance, setActualRequiresAcceptance] = useState(requiresToSAcceptance);
+  const [prevPathname, setPrevPathname] = useState(pathname);
 
   // Re-check consent status when navigating away from exempt pages
   useEffect(() => {
@@ -35,9 +36,18 @@ export default function ToSGateWrapper({ children }: { children: React.ReactNode
     ];
 
     const isExempt = exemptPages.some(page => pathname?.startsWith(page));
+    const wasExempt = exemptPages.some(page => prevPathname?.startsWith(page));
 
-    // When leaving an exempt page, re-check Firebase to see if consent was restored
-    if (!isExempt && requiresToSAcceptance) {
+    console.log('[ToSGate] Pathname changed:', {
+      from: prevPathname,
+      to: pathname,
+      wasExempt,
+      isExempt,
+      requiresToSAcceptance,
+    });
+
+    // If we just LEFT an exempt page, always do a re-check
+    if (wasExempt && !isExempt) {
       console.log('[ToSGate] Navigated away from exempt page, re-checking Firebase consent...');
       (async () => {
         try {
@@ -67,12 +77,20 @@ export default function ToSGateWrapper({ children }: { children: React.ReactNode
       })();
     } else if (isExempt) {
       // On exempt pages, don't check - just set to false to hide modal
+      console.log('[ToSGate] On exempt page, hiding modal');
       setActualRequiresAcceptance(false);
     } else if (!requiresToSAcceptance) {
       // If initial check says no acceptance needed, trust it
+      console.log('[ToSGate] requiresToSAcceptance is false, hiding modal');
       setActualRequiresAcceptance(false);
+    } else {
+      // Sync actualRequiresAcceptance with requiresToSAcceptance
+      console.log('[ToSGate] Setting actualRequiresAcceptance to', requiresToSAcceptance);
+      setActualRequiresAcceptance(requiresToSAcceptance);
     }
-  }, [pathname, user, requiresToSAcceptance, markToSAccepted]);
+
+    setPrevPathname(pathname);
+  }, [pathname, user, requiresToSAcceptance, markToSAccepted, prevPathname]);
 
   const handleAccepted = () => {
     markToSAccepted();
