@@ -1,7 +1,7 @@
 'use client';
 
 import { initializeApp, getApps } from 'firebase/app';
-import { getFirestore, enableIndexedDbPersistence } from 'firebase/firestore';
+import { getFirestore } from 'firebase/firestore';
 import { getAuth as getFirebaseAuth } from 'firebase/auth';
 
 // Only initialize if we're in a browser environment with required env vars
@@ -45,15 +45,8 @@ const initializeFirebase = () => {
     app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
     db = getFirestore(app);
     auth = getFirebaseAuth(app);
-
-    // Enable offline persistence for Firestore
-    // This ensures writes are persisted to IndexedDB and synced to server
-    enableIndexedDbPersistence(db).catch((err) => {
-      // Ignore errors like "already enabled in other tab"
-      if (err.code !== 'failed-precondition' && err.code !== 'unimplemented') {
-        console.warn('[Firebase] Persistence might not be available:', err);
-      }
-    });
+    // Note: Not enabling enableIndexedDbPersistence() as it causes conflicts with multiple tabs
+    // The Firebase SDK handles caching automatically without explicit persistence
   } catch (error) {
     console.error('Failed to initialize Firebase:', error);
     throw error;
