@@ -302,12 +302,16 @@ export async function setCCPADoNotSell(
  * Get user's legal consent data
  */
 export async function getUserLegalConsent(
-  userId: string
+  userId: string,
+  forceFresh: boolean = false
 ): Promise<UserLegalConsent | null> {
   const userRef = getUserDoc(userId);
 
   try {
-    const userSnap = await getDoc(userRef);
+    // If forceFresh is true, bypass cache and read from server
+    const userSnap = forceFresh
+      ? await getDoc(userRef, { source: 'server' })
+      : await getDoc(userRef);
 
     if (!userSnap.exists()) {
       console.warn(`[Legal] User document does not exist for user: ${userId}`);
@@ -343,8 +347,9 @@ export async function getUserLegalConsent(
 /**
  * Check if user has accepted current version of ToS
  */
-export async function hasAcceptedCurrentToS(userId: string): Promise<boolean> {
-  const consent = await getUserLegalConsent(userId);
+export async function hasAcceptedCurrentToS(userId: string, forceFresh: boolean = false): Promise<boolean> {
+  // Use forceFresh to bypass cache on login checks
+  const consent = await getUserLegalConsent(userId, forceFresh);
   const accepted =
     consent?.tosConsent?.version === LEGAL_VERSIONS.TERMS_OF_SERVICE &&
     !consent?.needsTermsUpdate;
@@ -365,10 +370,15 @@ export async function hasAcceptedCurrentToS(userId: string): Promise<boolean> {
  * Check if user has accepted current version of Privacy Policy
  */
 export async function hasAcceptedCurrentPrivacy(
-  userId: string
+  userId: string,
+  forceFresh: boolean = false
 ): Promise<boolean> {
-  const consent = await getUserLegalConsent(userId);
-  const accepted = consent?.privacyConsent?.version === LEGAL_VERSIONS.PRIVACY_POLICY;
+  // Use forceFresh to bypass cache on login checks
+  const consent = await getUserLegalConsent(userId, forceFresh);
+  // Must also check needsTermsUpdate for consistency with hasAcceptedCurrentToS
+  const accepted =
+    consent?.privacyConsent?.version === LEGAL_VERSIONS.PRIVACY_POLICY &&
+    !consent?.needsTermsUpdate;
 
   console.log(`[Legal] hasAcceptedCurrentPrivacy for ${userId}:`, {
     accepted,
@@ -376,6 +386,7 @@ export async function hasAcceptedCurrentPrivacy(
     privacyExists: !!consent?.privacyConsent,
     version: consent?.privacyConsent?.version,
     expectedVersion: LEGAL_VERSIONS.PRIVACY_POLICY,
+    needsUpdate: consent?.needsTermsUpdate,
   });
 
   return accepted;

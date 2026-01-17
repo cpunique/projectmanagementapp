@@ -1,0 +1,87 @@
+════════════════════════════════════════════════════════════════════════════════
+                         QUICK START - TEST THE FIX
+════════════════════════════════════════════════════════════════════════════════
+
+⏱️ TAKES 3-5 MINUTES
+
+WHAT TO DO:
+───────────
+
+1. Open browser DevTools
+   Windows: F12
+   Mac: Cmd+Option+I
+
+2. Go to Console tab
+   Click "Console" tab in DevTools
+
+3. Navigate to restore page
+   http://localhost:3000/admin/restore-consent
+
+4. Click "Restore Consent Records"
+   Wait for green success message
+
+5. Navigate to main app
+   Click "Kanban" logo or go to http://localhost:3000/
+
+6. 🔴 CHECK IF MODAL APPEARS 🔴
+   YES  → Share console logs, we'll debug
+   NO   → ✅ FIX WORKS! Tell us it passed
+
+
+WHAT TO LOOK FOR:
+─────────────────
+
+Console should show (in this order):
+
+✅ [ToSGate] Pathname changed: { from: "/admin/check-consent", to: "/", ... }
+✅ [ToSGate] Navigated away from exempt page, re-checking Firebase consent...
+✅ [ToSGate] Re-check result: { tosAccepted: true, privacyAccepted: true, ... }
+✅ [ToSGate] ✅ Consent was restored, marking as accepted
+
+Then:
+✅ No modal appears
+✅ App loads normally
+
+
+IF MODAL STILL APPEARS:
+──────────────────────
+
+1. Open console (F12)
+2. Copy the [ToSGate] logs
+3. Tell us:
+   - Modal appeared: YES or NO
+   - Which [ToSGate] logs you see
+   - Any error messages (red text in console)
+
+
+NEED MORE HELP?
+───────────────
+
+→ Read: docs/CRITICAL_TEST_STEPS.md (detailed 6-step guide)
+→ Help: docs/QUICK_FIX_REFERENCE.md (troubleshooting)
+→ All:  docs/FIX_VERIFICATION_INDEX.md (complete index)
+
+
+EXPECTED RESULT:
+────────────────
+
+✅ PASS: No modal appears, console shows successful re-check
+❌ FAIL: Modal appears, console shows failure or missing logs
+
+
+QUICK CHECKLIST:
+────────────────
+
+□ Opened DevTools (F12)
+□ Went to Console tab
+□ Navigated to /admin/restore-consent
+□ Clicked "Restore Consent Records"
+□ Waited for success message
+□ Navigated to http://localhost:3000/
+□ Checked if modal appeared (NO = GOOD)
+□ Checked console logs (should show re-check)
+□ Reported results
+
+════════════════════════════════════════════════════════════════════════════════
+
+That's it! We're waiting to hear if the fix works. Thanks for testing!

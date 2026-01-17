@@ -44,9 +44,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (user) {
         try {
           console.log(`[AuthContext] Checking ToS/Privacy acceptance for user: ${user.uid}`);
+          // Use forceFresh=true to bypass cache and get fresh data from server
+          // This is important on login after hard refresh or when consent was just restored
           const [hasToS, hasPrivacy] = await Promise.all([
-            hasAcceptedCurrentToS(user.uid),
-            hasAcceptedCurrentPrivacy(user.uid)
+            hasAcceptedCurrentToS(user.uid, true),
+            hasAcceptedCurrentPrivacy(user.uid, true)
           ]);
 
           const requiresAcceptance = !hasToS || !hasPrivacy;
