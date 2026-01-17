@@ -21,20 +21,23 @@ export default function RestoreConsentPage() {
     setMessage('');
 
     try {
-      console.log('Restoring consent for user:', user.uid);
+      console.log('[RestorePage] Starting restoration for user:', user.uid);
       await restoreMissingConsent(user.uid);
+
+      console.log('[RestorePage] ✅ Restoration completed successfully');
 
       // Update the local auth state to hide the ToS modal immediately
       // This prevents the modal from showing again while on this page
       markToSAccepted();
+      console.log('[RestorePage] Called markToSAccepted()');
 
       setMessage('✅ Successfully restored your ToS/Privacy consent records!');
       setMessage(prev => prev + '\n\nThe ToS/Privacy modal has been closed.');
       setMessage(prev => prev + '\n\nYou should no longer see it when you log out and back in.');
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Unknown error';
+      console.error('[RestorePage] ❌ Restoration failed:', err);
       setError(`Failed to restore consent: ${errorMsg}`);
-      console.error('Error:', err);
     } finally {
       setLoading(false);
     }
