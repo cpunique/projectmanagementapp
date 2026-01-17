@@ -21,8 +21,9 @@ export default function ToSGateWrapper({ children }: { children: React.ReactNode
   const pathname = usePathname();
   const [actualRequiresAcceptance, setActualRequiresAcceptance] = useState(requiresToSAcceptance);
   const [prevPathname, setPrevPathname] = useState(pathname);
+  const [hasCheckedConsent, setHasCheckedConsent] = useState(false);
 
-  // Re-check consent status when navigating away from exempt pages
+  // Handle pathname changes and re-checks
   useEffect(() => {
     if (!user) {
       setActualRequiresAcceptance(false);
@@ -84,14 +85,62 @@ export default function ToSGateWrapper({ children }: { children: React.ReactNode
       // If initial check says no acceptance needed, trust it
       console.log('[ToSGate] requiresToSAcceptance is false, hiding modal');
       setActualRequiresAcceptance(false);
+      setHasCheckedConsent(false);
     } else {
-      // Sync actualRequiresAcceptance with requiresToSAcceptance
-      console.log('[ToSGate] Setting actualRequiresAcceptance to', requiresToSAcceptance);
+      // Default: Sync actualRequiresAcceptance with requiresToSAcceptance
+      console.log('[ToSGate] Default: Setting actualRequiresAcceptance to', requiresToSAcceptance);
       setActualRequiresAcceptance(requiresToSAcceptance);
+      // Mark that we need to do a fresh check on non-exempt pages
+      if (!isExempt) {
+        setHasCheckedConsent(false);
+      }
     }
 
     setPrevPathname(pathname);
   }, [pathname, user, requiresToSAcceptance, markToSAccepted, prevPathname]);
+
+  // Separate effect: Do a fresh consent check on non-exempt pages if acceptance is supposedly required
+  // This handles race conditions or stale auth state
+  useEffect(() => {
+    if (!user || !requiresToSAcceptance || hasCheckedConsent) {
+      return;
+    }
+
+    const exemptPages = ['/admin/restore-consent', '/admin/check-consent'];
+    const isExempt = exemptPages.some(page => pathname?.startsWith(page));
+
+    if (isExempt) {
+      return;
+    }
+
+    console.log('[ToSGate] Performing fresh consent check on non-exempt page');
+    setHasCheckedConsent(true);
+
+    (async () => {
+      try {
+        const [tosAccepted, privacyAccepted] = await Promise.all([
+          hasAcceptedCurrentToS(user.uid, true),
+          hasAcceptedCurrentPrivacy(user.uid, true),
+        ]);
+        const stillNeedsAcceptance = !(tosAccepted && privacyAccepted);
+
+        console.log('[ToSGate] Fresh consent check completed:', {
+          tosAccepted,
+          privacyAccepted,
+          stillNeedsAcceptance,
+        });
+
+        setActualRequiresAcceptance(stillNeedsAcceptance);
+
+        if (!stillNeedsAcceptance) {
+          console.log('[ToSGate] ✅ Consent verified as already accepted');
+          markToSAccepted();
+        }
+      } catch (error) {
+        console.error('[ToSGate] Error in fresh consent check:', error);
+      }
+    })();
+  }, [user, requiresToSAcceptance, hasCheckedConsent, pathname, markToSAccepted]);
 
   const handleAccepted = () => {
     markToSAccepted();
