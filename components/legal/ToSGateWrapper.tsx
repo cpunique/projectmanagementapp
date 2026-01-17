@@ -51,9 +51,10 @@ export default function ToSGateWrapper({ children }: { children: React.ReactNode
       console.log('[ToSGate] Navigated away from exempt page, re-checking Firebase consent...');
       (async () => {
         try {
+          // Use forceFresh=true to bypass cache and get fresh server data
           const [tosAccepted, privacyAccepted] = await Promise.all([
-            hasAcceptedCurrentToS(user.uid),
-            hasAcceptedCurrentPrivacy(user.uid),
+            hasAcceptedCurrentToS(user.uid, true),
+            hasAcceptedCurrentPrivacy(user.uid, true),
           ]);
           const stillNeedsAcceptance = !(tosAccepted && privacyAccepted);
 

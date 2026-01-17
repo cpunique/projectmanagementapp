@@ -350,17 +350,23 @@ export async function getUserLegalConsent(
 export async function hasAcceptedCurrentToS(userId: string, forceFresh: boolean = false): Promise<boolean> {
   // Use forceFresh to bypass cache on login checks
   const consent = await getUserLegalConsent(userId, forceFresh);
-  const accepted =
-    consent?.tosConsent?.version === LEGAL_VERSIONS.TERMS_OF_SERVICE &&
-    !consent?.needsTermsUpdate;
+
+  // Debug: Show what we're comparing
+  const versionMatch = consent?.tosConsent?.version === LEGAL_VERSIONS.TERMS_OF_SERVICE;
+  const needsUpdateCheck = !consent?.needsTermsUpdate;
+  const accepted = versionMatch && needsUpdateCheck;
 
   console.log(`[Legal] hasAcceptedCurrentToS for ${userId}:`, {
     accepted,
+    forceFresh,
     hasConsent: !!consent,
     tosExists: !!consent?.tosConsent,
     version: consent?.tosConsent?.version,
+    versionMatch,
     expectedVersion: LEGAL_VERSIONS.TERMS_OF_SERVICE,
     needsUpdate: consent?.needsTermsUpdate,
+    needsUpdateCheck,
+    actualTosConsent: consent?.tosConsent,
   });
 
   return accepted;
@@ -375,18 +381,23 @@ export async function hasAcceptedCurrentPrivacy(
 ): Promise<boolean> {
   // Use forceFresh to bypass cache on login checks
   const consent = await getUserLegalConsent(userId, forceFresh);
-  // Must also check needsTermsUpdate for consistency with hasAcceptedCurrentToS
-  const accepted =
-    consent?.privacyConsent?.version === LEGAL_VERSIONS.PRIVACY_POLICY &&
-    !consent?.needsTermsUpdate;
+
+  // Debug: Show what we're comparing
+  const versionMatch = consent?.privacyConsent?.version === LEGAL_VERSIONS.PRIVACY_POLICY;
+  const needsUpdateCheck = !consent?.needsTermsUpdate;
+  const accepted = versionMatch && needsUpdateCheck;
 
   console.log(`[Legal] hasAcceptedCurrentPrivacy for ${userId}:`, {
     accepted,
+    forceFresh,
     hasConsent: !!consent,
     privacyExists: !!consent?.privacyConsent,
     version: consent?.privacyConsent?.version,
+    versionMatch,
     expectedVersion: LEGAL_VERSIONS.PRIVACY_POLICY,
     needsUpdate: consent?.needsTermsUpdate,
+    needsUpdateCheck,
+    actualPrivacyConsent: consent?.privacyConsent,
   });
 
   return accepted;
