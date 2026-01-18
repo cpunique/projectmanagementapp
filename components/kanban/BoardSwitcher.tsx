@@ -32,6 +32,13 @@ const BoardSwitcher = () => {
 
   const currentBoard = boards.find((b) => b.id === activeBoard);
 
+  // CRITICAL DEBUG: Log every render to see if defaultBoardId is being set
+  console.log('[BoardSwitcher] Render:', {
+    defaultBoardId,
+    boards: boards.map(b => ({ id: b.id, name: b.name })),
+    activeBoard,
+  });
+
   const handleCreateBoard = () => {
     if (newBoardName.trim()) {
       addBoard(newBoardName);
