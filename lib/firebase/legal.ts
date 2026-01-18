@@ -8,7 +8,6 @@ import {
   setDoc,
   updateDoc,
   serverTimestamp,
-  clearPersistence,
 } from 'firebase/firestore';
 import { getDb } from './config';
 import type {
@@ -38,8 +37,11 @@ const getUserDoc = (userId: string) => {
 
 /**
  * Helper to ensure fresh server reads by adding a small delay
- * This helps work around Firestore SDK cache issues on page reloads
- * Minimal delay (50ms) allows SDK to initialize without noticeable UI flash
+ * This helps work around Firestore SDK cache issues on page reloads.
+ *
+ * Note: We can't use { source: 'server' } parameter in Firebase 12.7.0 due to
+ * type signature changes. The 50ms delay allows the SDK to initialize and
+ * fetch fresh data from the network.
  */
 const ensureFreshRead = async (delayMs: number = 50): Promise<void> => {
   return new Promise(resolve => setTimeout(resolve, delayMs));
@@ -318,27 +320,13 @@ export async function getUserLegalConsent(
   const userRef = getUserDoc(userId);
 
   try {
-    // If forceFresh is true, bypass cache and read from server
+    // If forceFresh is true, add delay to ensure SDK can fetch fresh data
+    // This works around Firestore SDK cache issues on page reloads
     if (forceFresh) {
-      // Add minimal delay (50ms) before fresh read to ensure SDK is ready
-      // This works around Firestore SDK cache issues on page reloads
       await ensureFreshRead(50);
     }
 
-    let userSnap;
-    if (forceFresh) {
-      // Force fresh read by clearing local cache first
-      try {
-        await clearPersistence(getDb());
-      } catch (e) {
-        // Ignore errors from clearPersistence (may not be enabled)
-      }
-      // Add delay to ensure cache is cleared
-      await ensureFreshRead(50);
-      userSnap = await getDoc(userRef);
-    } else {
-      userSnap = await getDoc(userRef);
-    }
+    const userSnap = await getDoc(userRef);
 
     if (!userSnap.exists()) {
       console.warn(`[Legal] User document does not exist for user: ${userId}`);
