@@ -36,6 +36,15 @@ const getUserDoc = (userId: string) => {
 };
 
 /**
+ * Helper to ensure fresh server reads by adding a small delay
+ * This helps work around Firestore SDK cache issues on page reloads
+ * Minimal delay (50ms) allows SDK to initialize without noticeable UI flash
+ */
+const ensureFreshRead = async (delayMs: number = 50): Promise<void> => {
+  return new Promise(resolve => setTimeout(resolve, delayMs));
+};
+
+/**
  * Create a new consent record with current timestamp
  */
 export function createConsentRecord(
@@ -309,6 +318,12 @@ export async function getUserLegalConsent(
 
   try {
     // If forceFresh is true, bypass cache and read from server
+    if (forceFresh) {
+      // Add minimal delay (50ms) before fresh read to ensure SDK is ready
+      // This works around Firestore SDK cache issues on page reloads
+      await ensureFreshRead(50);
+    }
+
     const userSnap = forceFresh
       ? await getDoc(userRef, { source: 'server' })
       : await getDoc(userRef);
@@ -329,14 +344,6 @@ export async function getUserLegalConsent(
       needsTermsUpdate: data.needsTermsUpdate,
     };
 
-    console.log(`[Legal] Retrieved consent for user ${userId}:`, {
-      hasToS: !!data.tosConsent,
-      tosVersion: data.tosConsent?.version,
-      hasPrivacy: !!data.privacyConsent,
-      privacyVersion: data.privacyConsent?.version,
-      needsUpdate: data.needsTermsUpdate,
-    });
-
     return consent;
   } catch (error) {
     console.error('Failed to get user legal consent:', error);
@@ -351,23 +358,9 @@ export async function hasAcceptedCurrentToS(userId: string, forceFresh: boolean 
   // Use forceFresh to bypass cache on login checks
   const consent = await getUserLegalConsent(userId, forceFresh);
 
-  // Debug: Show what we're comparing
   const versionMatch = consent?.tosConsent?.version === LEGAL_VERSIONS.TERMS_OF_SERVICE;
   const needsUpdateCheck = !consent?.needsTermsUpdate;
   const accepted = versionMatch && needsUpdateCheck;
-
-  console.log(`[Legal] hasAcceptedCurrentToS for ${userId}:`, {
-    accepted,
-    forceFresh,
-    hasConsent: !!consent,
-    tosExists: !!consent?.tosConsent,
-    version: consent?.tosConsent?.version,
-    versionMatch,
-    expectedVersion: LEGAL_VERSIONS.TERMS_OF_SERVICE,
-    needsUpdate: consent?.needsTermsUpdate,
-    needsUpdateCheck,
-    actualTosConsent: consent?.tosConsent,
-  });
 
   return accepted;
 }
@@ -382,23 +375,9 @@ export async function hasAcceptedCurrentPrivacy(
   // Use forceFresh to bypass cache on login checks
   const consent = await getUserLegalConsent(userId, forceFresh);
 
-  // Debug: Show what we're comparing
   const versionMatch = consent?.privacyConsent?.version === LEGAL_VERSIONS.PRIVACY_POLICY;
   const needsUpdateCheck = !consent?.needsTermsUpdate;
   const accepted = versionMatch && needsUpdateCheck;
-
-  console.log(`[Legal] hasAcceptedCurrentPrivacy for ${userId}:`, {
-    accepted,
-    forceFresh,
-    hasConsent: !!consent,
-    privacyExists: !!consent?.privacyConsent,
-    version: consent?.privacyConsent?.version,
-    versionMatch,
-    expectedVersion: LEGAL_VERSIONS.PRIVACY_POLICY,
-    needsUpdate: consent?.needsTermsUpdate,
-    needsUpdateCheck,
-    actualPrivacyConsent: consent?.privacyConsent,
-  });
 
   return accepted;
 }
@@ -471,29 +450,54 @@ export async function restoreMissingConsent(userId: string): Promise<void> {
 
     // Update user document with missing consent records
     // Also set needsTermsUpdate to false to mark that user doesn't need to re-accept
-    await setDoc(userRef, {
-      tosConsent,
-      privacyConsent,
-      needsTermsUpdate: false,
-      updatedAt: new Date().toISOString(),
-    }, { merge: true });
+    try {
+      console.log('[Legal] Attempting Firestore write for user:', userId);
+      await setDoc(userRef, {
+        tosConsent,
+        privacyConsent,
+        needsTermsUpdate: false,
+        updatedAt: new Date().toISOString(),
+      }, { merge: true });
 
-    console.log('[Legal] ✅ Firestore write completed for user:', userId);
+      console.log('[Legal] ✅ Firestore write completed for user:', userId);
+    } catch (writeError) {
+      console.error('[Legal] ❌ Firestore write failed:', writeError);
+      throw writeError;
+    }
 
     // Give Firestore a moment to ensure the write is complete
     // This helps prevent issues with cache inconsistency
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    // Increased to 3 seconds to ensure server sync
+    await new Promise(resolve => setTimeout(resolve, 3000));
 
-    // Verify the write actually succeeded by reading back
-    console.log('[Legal] Verifying write by reading back from Firestore...');
-    const verified = await getUserLegalConsent(userId);
+    // Verify the write actually succeeded by reading back FROM SERVER (not cache)
+    // This is critical - we must use forceFresh=true to ensure data was written to Firestore
+    console.log('[Legal] Verifying write by reading back from Firestore server...');
+    const verified = await getUserLegalConsent(userId, true); // forceFresh=true for server read
 
     if (!verified?.tosConsent || !verified?.privacyConsent) {
       console.error('[Legal] ❌ VERIFICATION FAILED: Consent was not written to Firestore!', {
         hasToS: !!verified?.tosConsent,
         hasPrivacy: !!verified?.privacyConsent,
+        fullVerifiedData: verified,
+        allKeys: Object.keys(verified || {}),
       });
-      throw new Error('Consent restoration verification failed - data not persisted to Firestore');
+
+      // Try one more time after a longer delay
+      console.log('[Legal] Retrying verification after additional delay...');
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      const verifiedRetry = await getUserLegalConsent(userId, true);
+
+      if (!verifiedRetry?.tosConsent || !verifiedRetry?.privacyConsent) {
+        console.error('[Legal] ❌ RETRY FAILED: Data still not in Firestore', {
+          hasToS: !!verifiedRetry?.tosConsent,
+          hasPrivacy: !!verifiedRetry?.privacyConsent,
+        });
+        throw new Error('Consent restoration verification failed - data not persisted to Firestore after retry');
+      }
+
+      console.log('[Legal] ✅ Retry succeeded!');
+      const verified_for_logging = verifiedRetry;
     }
 
     console.log('[Legal] ✅ VERIFIED: Consent records successfully restored and verified in Firestore');
