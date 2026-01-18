@@ -501,12 +501,14 @@ export async function restoreMissingConsent(userId: string): Promise<void> {
     }
 
     console.log('[Legal] ✅ VERIFIED: Consent records successfully restored and verified in Firestore');
-    console.log('[Legal] Restored data verified:', {
-      tosVersion: verified.tosConsent?.version,
-      privacyVersion: verified.privacyConsent?.version,
-      needsTermsUpdate: verified.needsTermsUpdate,
-      acceptedAt: verified.tosConsent?.acceptedAt,
-    });
+    if (verified) {
+      console.log('[Legal] Restored data verified:', {
+        tosVersion: verified.tosConsent?.version,
+        privacyVersion: verified.privacyConsent?.version,
+        needsTermsUpdate: verified.needsTermsUpdate,
+        acceptedAt: verified.tosConsent?.acceptedAt,
+      });
+    }
   } catch (error) {
     console.error('[Legal] ❌ Failed to restore consent records:', error);
     throw error;
