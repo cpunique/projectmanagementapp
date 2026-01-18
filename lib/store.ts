@@ -699,9 +699,11 @@ export const useKanbanStore = create<KanbanStore>()(
     {
       name: 'kanban-store',
       version: 1,
-      // Exclude activeBoard from localStorage - Firebase is the source of truth for authenticated users
+      // Exclude activeBoard and defaultBoardId from localStorage
+      // Firebase is the source of truth for authenticated users
+      // Only client-side UI state (darkMode, filters, etc.) should be in localStorage
       partialize: (state) => {
-        const { activeBoard, ...rest } = state;
+        const { activeBoard, defaultBoardId, ...rest } = state;
         return rest;
       },
       migrate: (persistedState: any, version: number) => {
