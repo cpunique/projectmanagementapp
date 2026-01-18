@@ -8,6 +8,7 @@ import {
   setDoc,
   updateDoc,
   serverTimestamp,
+  clearPersistence,
 } from 'firebase/firestore';
 import { getDb } from './config';
 import type {
@@ -324,9 +325,20 @@ export async function getUserLegalConsent(
       await ensureFreshRead(50);
     }
 
-    const userSnap = forceFresh
-      ? await getDoc(userRef, { source: 'server' } as any)
-      : await getDoc(userRef);
+    let userSnap;
+    if (forceFresh) {
+      // Force fresh read by clearing local cache first
+      try {
+        await clearPersistence(getDb());
+      } catch (e) {
+        // Ignore errors from clearPersistence (may not be enabled)
+      }
+      // Add delay to ensure cache is cleared
+      await ensureFreshRead(50);
+      userSnap = await getDoc(userRef);
+    } else {
+      userSnap = await getDoc(userRef);
+    }
 
     if (!userSnap.exists()) {
       console.warn(`[Legal] User document does not exist for user: ${userId}`);
