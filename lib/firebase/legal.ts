@@ -8,7 +8,6 @@ import {
   setDoc,
   updateDoc,
   serverTimestamp,
-  GetDocumentOptions,
 } from 'firebase/firestore';
 import { getDb } from './config';
 import type {
@@ -325,8 +324,9 @@ export async function getUserLegalConsent(
       await ensureFreshRead(50);
     }
 
-    const options: GetDocumentOptions | undefined = forceFresh ? { source: 'server' as const } : undefined;
-    const userSnap = await getDoc(userRef, options);
+    const userSnap = forceFresh
+      ? await getDoc(userRef, { source: 'server' } as any)
+      : await getDoc(userRef);
 
     if (!userSnap.exists()) {
       console.warn(`[Legal] User document does not exist for user: ${userId}`);
