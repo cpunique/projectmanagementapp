@@ -36,14 +36,15 @@ const getUserDoc = (userId: string) => {
 };
 
 /**
- * Helper to ensure fresh server reads by adding a small delay
- * This helps work around Firestore SDK cache issues on page reloads.
+ * Helper to ensure fresh server reads by adding a delay
+ * This helps work around Firestore SDK cache issues on hard refresh/cache clear.
  *
  * Note: We can't use { source: 'server' } parameter in Firebase 12.7.0 due to
- * type signature changes. The 50ms delay allows the SDK to initialize and
- * fetch fresh data from the network.
+ * type signature changes. When cache is cleared (hard refresh), the SDK needs
+ * time to reconnect and fetch fresh data. A longer delay ensures the network
+ * connection is properly established before attempting to read.
  */
-const ensureFreshRead = async (delayMs: number = 50): Promise<void> => {
+const ensureFreshRead = async (delayMs: number = 500): Promise<void> => {
   return new Promise(resolve => setTimeout(resolve, delayMs));
 };
 
@@ -321,9 +322,10 @@ export async function getUserLegalConsent(
 
   try {
     // If forceFresh is true, add delay to ensure SDK can fetch fresh data
-    // This works around Firestore SDK cache issues on page reloads
+    // This is critical for hard refresh scenarios where browser cache is cleared
+    // The SDK needs time to reconnect to Firebase after cache invalidation
     if (forceFresh) {
-      await ensureFreshRead(50);
+      await ensureFreshRead();
     }
 
     const userSnap = await getDoc(userRef);
