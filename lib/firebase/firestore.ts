@@ -304,13 +304,20 @@ export function subscribeToUserBoards(
  */
 export async function getUserDefaultBoard(userId: string): Promise<string | null> {
   try {
+    console.log('[getUserDefaultBoard] Fetching default board for user:', userId);
     const userRef = doc(getUsersCollection(), userId);
     const userSnap = await getDoc(userRef);
 
-    if (!userSnap.exists()) return null;
+    if (!userSnap.exists()) {
+      console.log('[getUserDefaultBoard] User document does not exist');
+      return null;
+    }
 
     const data = userSnap.data();
-    return data.defaultBoardId || null;
+    const defaultBoardId = data.defaultBoardId || null;
+    console.log('[getUserDefaultBoard] Found defaultBoardId in Firestore:', defaultBoardId);
+    console.log('[getUserDefaultBoard] All user data fields:', Object.keys(data));
+    return defaultBoardId;
   } catch (error) {
     console.error('Failed to get user default board:', error);
     return null;
@@ -322,8 +329,10 @@ export async function getUserDefaultBoard(userId: string): Promise<string | null
  */
 export async function setUserDefaultBoard(userId: string, boardId: string | null) {
   try {
+    console.log('[setUserDefaultBoard] Saving default board for user:', userId, 'Board ID:', boardId);
     const userRef = doc(getUsersCollection(), userId);
     await setDoc(userRef, { defaultBoardId: boardId }, { merge: true });
+    console.log('[setUserDefaultBoard] ✅ Successfully saved to Firestore');
   } catch (error) {
     console.error('Failed to set user default board:', error);
     throw error;

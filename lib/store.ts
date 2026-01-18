@@ -715,14 +715,23 @@ export const useKanbanStore = create<KanbanStore>()(
             ensureDefaultColumns(board)
           ) || [createDefaultBoard()];
 
+          // CRITICAL: Remove defaultBoardId from persisted state
+          // defaultBoardId should ONLY come from Firestore, not localStorage
+          // This migration cleans up any defaultBoardId that was saved before the fix
+          const { defaultBoardId: _unused, ...cleanState } = persistedState;
+
+          console.log('[Store Migration] Removing defaultBoardId from localStorage (will reload from Firestore)');
+
           return {
-            ...persistedState,
+            ...cleanState,
             boards: migratedBoards,
             // Ensure activeBoard is set (activeBoard is excluded from localStorage)
             // Use the first board ID or default board ID
             activeBoard: persistedState.activeBoard || migratedBoards[0]?.id || DEFAULT_BOARD_ID,
             // Preserve dueDatePanelOpen (landing page will set to false when shown)
             dueDatePanelOpen: persistedState.dueDatePanelOpen !== undefined ? persistedState.dueDatePanelOpen : true,
+            // Explicitly set defaultBoardId to null (will be loaded from Firestore later)
+            defaultBoardId: null,
           };
         }
         return persistedState;

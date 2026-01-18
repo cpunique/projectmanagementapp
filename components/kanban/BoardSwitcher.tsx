@@ -57,6 +57,7 @@ const BoardSwitcher = () => {
   const handleSetDefaultBoard = async (boardId: string) => {
     // Prevent concurrent executions (guard against double-clicks or rapid re-renders)
     if (isSavingDefaultBoard) {
+      console.log('[BoardSwitcher] Already saving, ignoring click');
       return;
     }
 
@@ -69,16 +70,27 @@ const BoardSwitcher = () => {
     const boardName = boards.find((b) => b.id === boardId)?.name || 'Unknown Board';
     const newDefaultId = defaultBoardId === boardId ? null : boardId;
 
+    console.log('[BoardSwitcher] Star clicked:', {
+      boardId,
+      boardName,
+      currentDefaultBoardId: defaultBoardId,
+      newDefaultId,
+      isUnsetting: defaultBoardId === boardId,
+    });
+
     // Set guard flag
     setIsSavingDefaultBoard(true);
 
     // Update local state immediately
+    console.log('[BoardSwitcher] Updating local state to:', newDefaultId);
     setDefaultBoard(newDefaultId);
 
     // Save to Firebase immediately (don't wait for manual save)
     if (user) {
       try {
+        console.log('[BoardSwitcher] Saving to Firestore for user:', user.uid);
         await setUserDefaultBoard(user.uid, newDefaultId);
+        console.log('[BoardSwitcher] ✅ Firestore save successful');
       } catch (error) {
         console.error('[BoardSwitcher] Failed to save default board:', error);
       }
