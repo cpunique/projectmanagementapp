@@ -74,16 +74,10 @@ export async function initializeFirebaseSync(user: User) {
         store.switchBoard(queryBoardId);
       } else {
         // No query param, use default board preference
-        console.log('[Sync] Loading default board preference from Firestore...');
         const defaultBoardId = await getUserDefaultBoard(user.uid);
-        console.log('[Sync] getUserDefaultBoard returned:', defaultBoardId);
-        console.log('[Sync] Available boards:', userBoards.map(b => ({ id: b.id, name: b.name })));
-
         const defaultBoard = userBoards.find(b => b.id === defaultBoardId);
-        console.log('[Sync] Default board lookup result:', defaultBoard ? `Found: ${defaultBoard.name}` : 'Not found');
 
         if (defaultBoardId && defaultBoard) {
-          console.log(`[Sync] Setting default board: ${defaultBoardId} (${defaultBoard.name})`);
           store.setDefaultBoard(defaultBoardId);
           store.switchBoard(defaultBoardId);
         } else if (defaultBoardId && !defaultBoard) {
@@ -92,7 +86,6 @@ export async function initializeFirebaseSync(user: User) {
           store.setDefaultBoard(null);
           store.switchBoard(userBoards[0].id);
         } else {
-          console.log('[Sync] No default board set, switching to first board');
           store.switchBoard(userBoards[0].id);
         }
       }

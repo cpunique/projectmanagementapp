@@ -191,9 +191,7 @@ export const useKanbanStore = create<KanbanStore>()(
 
       setDefaultBoard: (boardId: string | null) => {
         // Don't mark as unsaved - default board is saved immediately in BoardSwitcher
-        console.log('[Store] setDefaultBoard called with:', boardId);
         set({ defaultBoardId: boardId });
-        console.log('[Store] setDefaultBoard - new state:', { defaultBoardId: boardId });
       },
 
       exportBoards: (boardId?: string) => {
@@ -721,8 +719,6 @@ export const useKanbanStore = create<KanbanStore>()(
           // defaultBoardId should ONLY come from Firestore, not localStorage
           // This migration cleans up any defaultBoardId that was saved before the fix
           const { defaultBoardId: _unused, ...cleanState } = persistedState;
-
-          console.log('[Store Migration] Removing defaultBoardId from localStorage (will reload from Firestore)');
 
           return {
             ...cleanState,
