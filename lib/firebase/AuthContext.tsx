@@ -44,6 +44,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (user) {
         try {
           console.log(`[AuthContext] Checking ToS/Privacy acceptance for user: ${user.uid}`);
+          // Add delay to ensure user document exists in Firestore
+          // On first login, the user doc might not be readable immediately
+          await new Promise(resolve => setTimeout(resolve, 1000));
+
           // Use forceFresh=true to bypass cache and get fresh data from server
           // This is important on login after hard refresh or when consent was just restored
           const [hasToS, hasPrivacy] = await Promise.all([
@@ -61,7 +65,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           // Require acceptance if either is missing
           setRequiresToSAcceptance(requiresAcceptance);
         } catch (err) {
-          console.error('Error checking ToS acceptance:', err);
+          console.error('[AuthContext] Error checking ToS acceptance:', err);
           // If we can't check, require acceptance to be safe
           setRequiresToSAcceptance(true);
         }
@@ -99,7 +103,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           userCredential.user.uid,
           email,
           true, // User accepted ToS during signup
-          true  // User accepted Privacy Policy during signup
+          true // User accepted Privacy Policy during signup
         );
       } catch (legalError) {
         console.error('[Auth] Failed to initialize legal consent, but user account was created:', legalError);
@@ -138,7 +142,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             result.user.uid,
             result.user.email,
             true, // Implicit consent by using Google sign-in
-            true  // Implicit consent by using Google sign-in
+            true // Implicit consent by using Google sign-in
           );
         } catch (legalError) {
           console.error('[Auth] Failed to initialize legal consent for Google user, but auth succeeded:', legalError);

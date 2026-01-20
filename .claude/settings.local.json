@@ -63,7 +63,16 @@
       "Bash(vercel list:*)",
       "Bash(firebase --version:*)",
       "Bash(echo:*)",
-      "Bash(Data from the web\" board, while being conservative with Firebase quota.\n\n🤖 Generated with [Claude Code]\\(https://claude.com/claude-code\\)\n\nCo-Authored-By: Claude Haiku 4.5 <noreply@anthropic.com>\nEOF\n\\)\")"
+      "Bash(Data from the web\" board, while being conservative with Firebase quota.\n\n🤖 Generated with [Claude Code]\\(https://claude.com/claude-code\\)\n\nCo-Authored-By: Claude Haiku 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(Get-Process -Name \"node\" -ErrorAction SilentlyContinue)",
+      "Bash(Select-Object ProcessName, Id, PM)",
+      "Bash(Format-Table -AutoSize)",
+      "Bash(timeout 5 curl:*)",
+      "Bash(for i in {3000..3007})",
+      "Bash(do netstat -ano)",
+      "Bash(xargs:*)",
+      "Bash(done)",
+      "Bash(Get-NetTCPConnection -LocalPort 3000 -ErrorAction SilentlyContinue)"
     ],
     "deny": [],
     "ask": []

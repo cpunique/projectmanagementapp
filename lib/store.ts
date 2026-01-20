@@ -14,7 +14,7 @@ import {
 } from '@/lib/constants';
 
 // Create default board with default columns
-function createDefaultBoard(): Board {
+function createDefaultBoard(ownerId: string = 'demo-user'): Board {
   const columns: Column[] = DEFAULT_COLUMNS.map((col, index) => ({
     id: nanoid(),
     title: col.title,
@@ -29,6 +29,8 @@ function createDefaultBoard(): Board {
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
     columns,
+    ownerId,
+    sharedWith: [],
   };
 }
 
@@ -134,6 +136,8 @@ export const useKanbanStore = create<KanbanStore>()(
             boardId: '',
             cards: [],
           })),
+          ownerId: '', // Will be set when synced to Firebase
+          sharedWith: [],
         };
 
         // Update board IDs

@@ -10,6 +10,7 @@ import Button from '@/components/ui/Button';
 import Modal from '@/components/ui/Modal';
 import Input from '@/components/ui/Input';
 import CloneBoardModal from '@/components/kanban/CloneBoardModal';
+import ShareBoardModal from '@/components/kanban/ShareBoardModal';
 
 const BoardSwitcher = () => {
   const { user } = useAuth();
@@ -29,6 +30,8 @@ const BoardSwitcher = () => {
   const [isSavingDefaultBoard, setIsSavingDefaultBoard] = useState(false);
   const [isCloneModalOpen, setIsCloneModalOpen] = useState(false);
   const [boardToClone, setBoardToClone] = useState<string | null>(null);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [boardToShare, setBoardToShare] = useState<string | null>(null);
 
   const currentBoard = boards.find((b) => b.id === activeBoard);
 
@@ -171,6 +174,24 @@ const BoardSwitcher = () => {
                       >
                         ⎘
                       </button>
+                      {user && board.ownerId === user.uid && (
+                        <button
+                          onMouseDown={(e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                          }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            setBoardToShare(board.id);
+                            setIsShareModalOpen(true);
+                          }}
+                          className="text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 p-1 rounded text-sm"
+                          title="Share board"
+                        >
+                          ⎇
+                        </button>
+                      )}
                       <button
                         onMouseDown={(e) => {
                           e.stopPropagation();
@@ -284,6 +305,27 @@ const BoardSwitcher = () => {
             setBoardToClone(null);
           }}
           sourceBoard={boards.find((b) => b.id === boardToClone)!}
+        />
+      )}
+
+      {/* Share Board Modal */}
+      {user && boardToShare && (
+        <ShareBoardModal
+          isOpen={isShareModalOpen}
+          onClose={() => {
+            setIsShareModalOpen(false);
+            setBoardToShare(null);
+          }}
+          board={boards.find((b) => b.id === boardToShare) || null}
+          currentUserId={user.uid}
+          onBoardUpdated={(updatedBoard) => {
+            // Update the board in the store
+            const currentBoards = useKanbanStore.getState().boards;
+            const updatedBoards = currentBoards.map((b) =>
+              b.id === updatedBoard.id ? updatedBoard : b
+            );
+            useKanbanStore.setState({ boards: updatedBoards });
+          }}
         />
       )}
     </>

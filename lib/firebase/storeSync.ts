@@ -29,6 +29,7 @@ let isSyncingFromFirebase = false;
 export async function initializeFirebaseSync(user: User) {
   try {
     const store = useKanbanStore.getState();
+    console.log('[Sync] Starting Firebase sync initialization for user:', user.uid);
 
     // Set flag to prevent sync loop during initialization
     isSyncingFromFirebase = true;
@@ -41,8 +42,13 @@ export async function initializeFirebaseSync(user: User) {
         // Give Firestore a moment to process the recovery
         await new Promise(resolve => setTimeout(resolve, 500));
       }
-    } catch (error) {
-      console.warn('[Sync] Aggressive recovery skipped or failed:', error);
+    } catch (error: any) {
+      // Permission denied during recovery is normal on first login - user doc might not exist yet
+      if (error?.code === 'permission-denied') {
+        console.log('[Sync] Skipping recovery (permission denied - normal on first login)');
+      } else {
+        console.warn('[Sync] Aggressive recovery skipped or failed:', error);
+      }
     }
 
     // Then, repair any remaining corrupted board IDs
@@ -51,8 +57,13 @@ export async function initializeFirebaseSync(user: User) {
       if (repairedBoards.length > 0) {
         console.log('[Sync] Repaired boards:', repairedBoards);
       }
-    } catch (error) {
-      console.warn('[Sync] Board repair skipped or failed:', error);
+    } catch (error: any) {
+      // Permission denied during repair is normal on first login
+      if (error?.code === 'permission-denied') {
+        console.log('[Sync] Skipping repair (permission denied - normal on first login)');
+      } else {
+        console.warn('[Sync] Board repair skipped or failed:', error);
+      }
     }
 
     // Load all boards for the user from Firebase
@@ -181,9 +192,15 @@ export async function initializeFirebaseSync(user: User) {
 
     // Reset flag after initialization completes
     isSyncingFromFirebase = false;
-  } catch (error) {
-    console.error('Failed to initialize Firebase sync:', error);
+  } catch (error: any) {
+    console.error('[Sync] Failed to initialize Firebase sync:', error);
+    // Log the specific error code if it's a Firebase error
+    if (error?.code) {
+      console.error('[Sync] Firebase error code:', error.code);
+      console.error('[Sync] Firebase error message:', error.message);
+    }
     isSyncingFromFirebase = false;
+    // Don't re-throw - let app continue without sync
   }
 }
 

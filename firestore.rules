@@ -44,6 +44,27 @@ service cloud.firestore {
       return boardId == 'default-board' && isAuthenticated();
     }
 
+    // Check if user can access a board (owner or collaborator)
+    function canAccessBoard(boardId) {
+      let boardData = get(/databases/$(database)/documents/boards/$(boardId)).data;
+      return request.auth.uid == boardData.ownerId ||
+             boardData.sharedWith.hasAny([{'userId': request.auth.uid}]);
+    }
+
+    // Check if user can edit a board (owner or editor collaborator)
+    function canEditBoard(boardId) {
+      // Owner can always edit
+      let boardData = get(/databases/$(database)/documents/boards/$(boardId)).data;
+      if (request.auth.uid == boardData.ownerId) return true;
+
+      // Check if user is an editor collaborator
+      let collaborators = boardData.sharedWith;
+      return collaborators.hasAny([{
+        'userId': request.auth.uid,
+        'role': 'editor'
+      }]);
+    }
+
     // ============================================
     // Users Collection Rules
     // ============================================
@@ -68,8 +89,8 @@ service cloud.firestore {
 
     match /boards/{boardId} {
 
-      // Read: Only owner can read
-      allow read: if isAuthenticated() && isOwner(boardId);
+      // Read: Owner or collaborator can read
+      allow read: if isAuthenticated() && canAccessBoard(boardId);
 
       // Create: Can create if setting self as owner and no sharing initially
       allow create: if isAuthenticated() &&
@@ -78,9 +99,9 @@ service cloud.firestore {
                       isValidBoardData() &&
                       isValidBoardSize();
 
-      // Update: Only owner can update, and ownerId cannot change
+      // Update: Owner or editor collaborator can update, and ownerId cannot change
       allow update: if isAuthenticated() &&
-                      isOwner(boardId) &&
+                      canEditBoard(boardId) &&
                       ownershipUnchanged() &&
                       isValidBoardData() &&
                       isValidBoardSize();

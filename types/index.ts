@@ -5,6 +5,14 @@ export interface ChecklistItem {
   order: number;
 }
 
+export interface BoardCollaborator {
+  userId: string;
+  email: string;
+  role: 'viewer' | 'editor';
+  addedAt: string;
+  addedBy: string; // userId of person who added them
+}
+
 export interface Card {
   id: string;
   title: string;
@@ -39,6 +47,8 @@ export interface Board {
   createdAt: string;
   updatedAt: string;
   columns: Column[];
+  ownerId: string; // User ID of the board creator
+  sharedWith?: BoardCollaborator[]; // Array of collaborators (empty if not shared)
 }
 
 export interface KanbanState {
