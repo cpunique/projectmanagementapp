@@ -31,6 +31,23 @@ export async function initializeFirebaseSync(user: User) {
     const store = useKanbanStore.getState();
     console.log('[Sync] Starting Firebase sync initialization for user:', user.uid);
 
+    // CRITICAL FIX: Clear localStorage boards on every login
+    // This prevents boards from previous user account being migrated
+    try {
+      const storeData = localStorage.getItem('kanban-store');
+      if (storeData) {
+        const parsed = JSON.parse(storeData);
+        if (parsed.state?.boards && parsed.state.boards.length > 0) {
+          console.log('[Sync] ⚠️ Found', parsed.state.boards.length, 'boards in localStorage - clearing to prevent cross-user contamination');
+          parsed.state.boards = [];
+          localStorage.setItem('kanban-store', JSON.stringify(parsed));
+        }
+      }
+    } catch (error) {
+      console.warn('[Sync] Failed to clear localStorage boards:', error);
+      // Continue anyway - non-critical
+    }
+
     // Set flag to prevent sync loop during initialization
     isSyncingFromFirebase = true;
 
@@ -133,56 +150,16 @@ export async function initializeFirebaseSync(user: User) {
       // Mark as saved since we just loaded from Firebase (no unsaved changes)
       store.markAsSaved();
     } else {
-      // No boards in Firebase yet
-      // Check if we have backed up user boards from demo mode
-      const currentState = store as any;
-      if (currentState._userBoardsBackup && currentState._userBoardsBackup.length > 0) {
-        // Restore from backup and migrate to Firebase
-        const backupBoards = currentState._userBoardsBackup;
-        store.setBoards(backupBoards);
-
-        // Migrate to Firebase
-        for (const board of backupBoards) {
-          try {
-            await createBoard(user.uid, board);
-          } catch (error) {
-            console.error(`Failed to migrate board ${board.name}:`, error);
-          }
-        }
-
-        // Wait a moment for Firestore to propagate writes
-        await new Promise(resolve => setTimeout(resolve, 1000));
-
-        // Reload from Firebase to get proper timestamps
-        const migratedBoards = await getUserBoards(user.uid);
-        if (migratedBoards.length > 0) {
-          store.setBoards(migratedBoards);
-          store.switchBoard(migratedBoards[0].id);
-        } else {
-          // If Firebase query still comes back empty, use the backup boards as-is
-          // They have the correct ownerId set from the backup
-          console.warn('Firebase query returned no boards after migration. Using backup boards directly.');
-          store.setBoards(backupBoards);
-          store.switchBoard(backupBoards[0].id);
-        }
-      } else if (store.boards.length > 0 && !store.demoMode) {
-        // User has local boards but nothing in Firebase yet (not in demo mode)
-        // Migrate local boards to Firebase
-        for (const board of store.boards) {
-          await createBoard(user.uid, board);
-        }
-
-        // Update timestamps from Firebase response
-        const migratedBoards = await getUserBoards(user.uid);
-        store.setBoards(migratedBoards);
-      }
+      // No boards in Firebase yet - start fresh
+      console.log('[Sync] User has no boards in Firebase yet. Starting with empty state.');
+      store.setBoards([]);
 
       // Disable demo mode if enabled
       if (store.demoMode) {
         store.toggleDemoMode();
       }
 
-      // Mark as saved after migration
+      // Mark as saved
       store.markAsSaved();
     }
 
@@ -213,10 +190,15 @@ export function cleanupFirebaseSync() {
   });
   activeSubscriptions.clear();
 
+  // DEFENSIVE FIX: Clear boards from store on logout
+  const store = useKanbanStore.getState();
+  store.setBoards([]);
+
   // Reset UI preferences to defaults when user logs out
   // This ensures the landing page always shows with dueDatePanelOpen: false (landing page default)
-  const store = useKanbanStore.getState();
   store.setDueDatePanelOpen(false);
+
+  console.log('[Sync] Cleanup complete - all subscriptions cancelled, boards cleared');
 }
 
 /**
