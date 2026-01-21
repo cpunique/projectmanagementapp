@@ -252,6 +252,11 @@ export function subscribeToStoreChanges(user: User) {
 
   return useKanbanStore.subscribe(
     (state) => {
+      // CRITICAL: Skip sync if in demo mode (user is testing, not persisting)
+      if (state.demoMode) {
+        return;
+      }
+
       // Skip sync if changes are coming FROM Firebase (not user actions)
       if (isSyncingFromFirebase) {
         // Still update our tracking map to stay in sync
