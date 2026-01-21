@@ -42,6 +42,9 @@ export default function LandingPage() {
   useEffect(() => {
     const store = useKanbanStore.getState();
     if (demoBoardLoaded && !user) {
+      // CRITICAL: Reset boards to empty before setting demo mode
+      // This prevents stale boards from previous sessions from affecting the demo
+      store.setBoards([]);
       store.setDemoMode(true, customDemoBoard || undefined);
       store.setDueDatePanelOpen(false);
     }

@@ -714,14 +714,17 @@ export const useKanbanStore = create<KanbanStore>()(
       migrate: (persistedState: any, version: number) => {
         // Apply migrations for all versions
         if (version === 1) {
-          // CRITICAL SECURITY FIX: Always start with empty boards array
+          // CRITICAL SECURITY FIX: Don't restore boards from localStorage
           // Boards are NOT persisted to localStorage - they come from Firebase
           // This ensures no cross-account data leakage when switching users
+          //
+          // However, we still restore UI state (demoMode, filters, etc.)
+          // The default board will be created on first store access if needed
 
           return {
             ...persistedState,
-            boards: [], // Start fresh - boards will be loaded from Firebase
-            activeBoard: null, // Will be set after Firebase loads boards
+            boards: [], // Don't restore boards - they come from Firebase or demo mode
+            activeBoard: null, // Will be set after Firebase loads boards or demo initializes
             defaultBoardId: null, // Will be loaded from Firestore later
           };
         }
