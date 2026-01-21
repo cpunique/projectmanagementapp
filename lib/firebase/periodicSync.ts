@@ -147,6 +147,11 @@ async function performPeriodicSync(user: User) {
 
     // Check for deleted boards
     for (const localBoard of currentBoards) {
+      // CRITICAL: Skip demo board - it's not in Firebase, but that doesn't mean it's deleted
+      if (localBoard.id === 'default-board') {
+        continue;
+      }
+
       const stillExists = remoteBoards.find(b => b.id === localBoard.id);
       if (!stillExists) {
         console.log('[PeriodicSync] Board deleted on remote:', localBoard.id);
