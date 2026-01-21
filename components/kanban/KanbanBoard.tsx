@@ -11,7 +11,7 @@ import Button from '@/components/ui/Button';
 
 const KanbanBoard = () => {
   const { user } = useAuth();
-  const { boards, activeBoard, moveCard, reorderCards, addColumn, reorderColumns } = useKanbanStore();
+  const { boards, activeBoard, moveCard, reorderCards, addColumn, reorderColumns, demoMode } = useKanbanStore();
   const [draggedCardId, setDraggedCardId] = useState<string | null>(null);
   const [draggedFromColumnId, setDraggedFromColumnId] = useState<string | null>(null);
   const [draggedColumnId, setDraggedColumnId] = useState<string | null>(null);
@@ -23,11 +23,14 @@ const KanbanBoard = () => {
 
   // Calculate user's permission level for this board
   const userRole = useMemo(() => {
-    if (!user || !board) return null;
+    if (!board) return null;
+    // In demo mode, always grant full edit permissions (owner role)
+    if (demoMode) return 'owner';
+    if (!user) return null;
     if (board.ownerId === user.uid) return 'owner';
     const collab = board.sharedWith?.find((c) => c.userId === user.uid);
     return collab?.role || null;
-  }, [user, board]);
+  }, [user, board, demoMode]);
 
   const canEdit = userRole === 'owner' || userRole === 'editor';
   const isViewOnly = userRole === 'viewer';
