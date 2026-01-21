@@ -703,12 +703,13 @@ export const useKanbanStore = create<KanbanStore>()(
     {
       name: 'kanban-store',
       version: 1,
-      // CRITICAL SECURITY FIX: Exclude boards, activeBoard, and defaultBoardId from localStorage
+      // CRITICAL SECURITY FIX: Exclude boards, activeBoard, defaultBoardId, and demoMode from localStorage
       // Boards are the source of truth in Firebase, not localStorage
       // Persisting boards causes cross-account data leakage when users switch accounts
-      // Only client-side UI state (darkMode, filters, etc.) should be in localStorage
+      // demoMode is temporary state that should only exist during landing page session
+      // Only persistent client-side UI state (darkMode, filters, etc.) should be in localStorage
       partialize: (state) => {
-        const { boards, activeBoard, defaultBoardId, ...rest } = state;
+        const { boards, activeBoard, defaultBoardId, demoMode, ...rest } = state;
         return rest;
       },
       migrate: (persistedState: any, version: number) => {
