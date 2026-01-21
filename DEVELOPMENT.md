@@ -22,6 +22,12 @@ This happens when:
 # Use the clean dev server to avoid cache issues
 npm run dev:clean
 
+# This automatically:
+# 1. Removes .next/ directory (old builds)
+# 2. Removes node_modules/.cache/ (old modules)
+# 3. Starts fresh dev server
+# 4. Works on Windows, macOS, and Linux
+
 # Instead of: npm run dev
 ```
 
@@ -43,10 +49,7 @@ npm run dev:clean
 # 1. Kill all node processes
 taskkill /F /IM node.exe
 
-# 2. Clean everything
-rm -rf .next node_modules/.cache
-
-# 3. Restart dev server
+# 2. Simply run the clean dev command (handles cleanup automatically)
 npm run dev:clean
 ```
 
