@@ -27,6 +27,12 @@ export function useDefaultBoardSaver() {
       return;
     }
 
+    // CRITICAL: Never save the demo board ID ('default-board') as default - it doesn't exist in Firebase
+    if (activeBoard === 'default-board') {
+      console.log('[DefaultBoardSaver] Skipping auto-save - active board is demo board');
+      return;
+    }
+
     // CRITICAL: Only auto-save the active board as default if there's NO explicit default set
     // If the user has manually set a default (via star icon), respect that choice
     if (defaultBoardId !== null) {
