@@ -1,6 +1,8 @@
 import { User } from 'firebase/auth';
 import { useKanbanStore } from '@/lib/store';
 import { useAuth } from './AuthContext';
+import { isAdmin } from '@/lib/admin/isAdmin';
+import { saveDemoConfig } from './demoConfig';
 import {
   getUserBoards,
   subscribeToBoard,
@@ -252,8 +254,9 @@ export function subscribeToStoreChanges(user: User) {
 
   return useKanbanStore.subscribe(
     (state) => {
-      // CRITICAL: Skip sync if in demo mode (user is testing, not persisting)
-      if (state.demoMode) {
+      // CRITICAL: Skip sync if in demo mode UNLESS user is admin
+      // Admin can edit and persist demo board changes; others just test ephemeral state
+      if (state.demoMode && !isAdmin(user)) {
         return;
       }
 
@@ -295,8 +298,17 @@ export function subscribeToStoreChanges(user: User) {
           for (const board of changedBoards) {
             const boardWithOwner = board as any;
 
-            // Security: skip demo board
+            // Handle demo board: only sync if admin user
             if (board.id === 'default-board') {
+              if (isAdmin(user)) {
+                try {
+                  console.log('[Sync] Admin user editing demo board - saving to demo-configs/active');
+                  await saveDemoConfig(board, user.uid);
+                } catch (error) {
+                  console.error('[Sync] Failed to save demo config:', error);
+                }
+              }
+              // Non-admin users: skip demo board sync (ephemeral state)
               continue;
             }
 

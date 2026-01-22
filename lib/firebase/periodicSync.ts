@@ -1,5 +1,6 @@
 import { User } from 'firebase/auth';
 import { useKanbanStore } from '@/lib/store';
+import { isAdmin } from '@/lib/admin/isAdmin';
 import { getUserBoards, getBoard } from './firestore';
 import { getDocs, query, where, collection, getFirestore } from 'firebase/firestore';
 import type { Board } from '@/types';
@@ -147,7 +148,7 @@ async function performPeriodicSync(user: User) {
 
     // Check for deleted boards
     for (const localBoard of currentBoards) {
-      // CRITICAL: Skip demo board - it's not in Firebase, but that doesn't mean it's deleted
+      // CRITICAL: Skip demo board - it's not in Firebase (except for admin), but that doesn't mean it's deleted
       if (localBoard.id === 'default-board') {
         continue;
       }

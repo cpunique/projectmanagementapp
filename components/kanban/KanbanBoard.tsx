@@ -2,6 +2,7 @@
 
 import { useKanbanStore } from '@/lib/store';
 import { useAuth } from '@/lib/firebase/AuthContext';
+import { isAdmin } from '@/lib/admin/isAdmin';
 import Column from './Column';
 import Container from '@/components/layout/Container';
 import BoardHeader from './BoardHeader';
@@ -24,8 +25,10 @@ const KanbanBoard = () => {
   // Calculate user's permission level for this board
   const userRole = useMemo(() => {
     if (!board) return null;
-    // In demo mode, always grant full edit permissions (owner role)
-    if (demoMode) return 'owner';
+    // In demo mode, only admin can edit; others are viewers
+    if (demoMode) {
+      return isAdmin(user) ? 'owner' : 'viewer';
+    }
     if (!user) return null;
     if (board.ownerId === user.uid) return 'owner';
     const collab = board.sharedWith?.find((c) => c.userId === user.uid);
