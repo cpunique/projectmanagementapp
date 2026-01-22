@@ -161,6 +161,12 @@ async function performPeriodicSync(user: User) {
 
     // If there are updates, refresh all boards from Firebase
     if (hasUpdates) {
+      // CRITICAL: Don't sync boards while in demo mode - demo board should stay visible
+      if (store.demoMode) {
+        console.log('[PeriodicSync] Updates detected but skipping sync - in demo mode');
+        return;
+      }
+
       console.log('[PeriodicSync] Updates detected, refreshing boards from Firebase');
       store.setBoards(remoteBoards);
 
