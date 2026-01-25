@@ -105,6 +105,9 @@ export interface UserDocument extends UserLegalConsent {
   /** User's email */
   email: string;
 
+  /** Authentication method used to sign up: 'google.com', 'password', etc. */
+  authMethod?: string;
+
   /** When the user account was created */
   createdAt: string;
 

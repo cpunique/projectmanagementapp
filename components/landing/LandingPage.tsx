@@ -42,17 +42,34 @@ export default function LandingPage() {
   useEffect(() => {
     const store = useKanbanStore.getState();
     if (demoBoardLoaded && !user) {
+      // CRITICAL: Always reload demo mode when customDemoBoard changes
+      // Exit demo mode first, then re-enter with the new board
+      if (store.demoMode) {
+        store.setDemoMode(false);
+      }
+
+      // Now enter demo mode with the custom demo board
+      store.setBoards([]);
       store.setDemoMode(true, customDemoBoard || undefined);
       store.setDueDatePanelOpen(false);
     }
   }, [demoBoardLoaded, user, customDemoBoard]);
 
-  // Clear localStorage to prevent demo changes from persisting
+  // Clear localStorage and reset store on mount/unmount
   // This ensures unauthenticated users start fresh each time
   useEffect(() => {
     // Clear the persisted store state when on landing page
     // This prevents demo modifications from being saved to localStorage
     localStorage.removeItem('kanban-store');
+
+    // Reset store to clean state
+    const store = useKanbanStore.getState();
+    store.setBoards([]);
+    // CRITICAL: Exit demo mode if it was persisted
+    // Demo mode should only be active on the landing page during this mount
+    if (store.demoMode) {
+      store.setDemoMode(false);
+    }
 
     return () => {
       // Also clear when leaving the landing page

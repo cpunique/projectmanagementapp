@@ -14,7 +14,7 @@ import {
 } from '@/lib/constants';
 
 // Create default board with default columns
-function createDefaultBoard(): Board {
+function createDefaultBoard(ownerId: string = 'demo-user'): Board {
   const columns: Column[] = DEFAULT_COLUMNS.map((col, index) => ({
     id: nanoid(),
     title: col.title,
@@ -29,6 +29,8 @@ function createDefaultBoard(): Board {
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
     columns,
+    ownerId,
+    sharedWith: [],
   };
 }
 
@@ -134,6 +136,8 @@ export const useKanbanStore = create<KanbanStore>()(
             boardId: '',
             cards: [],
           })),
+          ownerId: '', // Will be set when synced to Firebase
+          sharedWith: [],
         };
 
         // Update board IDs
@@ -699,37 +703,30 @@ export const useKanbanStore = create<KanbanStore>()(
     {
       name: 'kanban-store',
       version: 1,
-      // Exclude activeBoard and defaultBoardId from localStorage
-      // Firebase is the source of truth for authenticated users
-      // Only client-side UI state (darkMode, filters, etc.) should be in localStorage
+      // CRITICAL SECURITY FIX: Exclude boards, activeBoard, defaultBoardId, and demoMode from localStorage
+      // Boards are the source of truth in Firebase, not localStorage
+      // Persisting boards causes cross-account data leakage when users switch accounts
+      // demoMode is temporary state that should only exist during landing page session
+      // Only persistent client-side UI state (darkMode, filters, etc.) should be in localStorage
       partialize: (state) => {
-        const { activeBoard, defaultBoardId, ...rest } = state;
+        const { boards, activeBoard, defaultBoardId, demoMode, ...rest } = state;
         return rest;
       },
       migrate: (persistedState: any, version: number) => {
         // Apply migrations for all versions
         if (version === 1) {
-          // Ensure all boards have default columns
-          // Preserve UI state (dueDatePanelOpen, darkMode, etc.)
-          const migratedBoards = persistedState.boards?.map((board: Board) =>
-            ensureDefaultColumns(board)
-          ) || [createDefaultBoard()];
-
-          // CRITICAL: Remove defaultBoardId from persisted state
-          // defaultBoardId should ONLY come from Firestore, not localStorage
-          // This migration cleans up any defaultBoardId that was saved before the fix
-          const { defaultBoardId: _unused, ...cleanState } = persistedState;
+          // CRITICAL SECURITY FIX: Don't restore boards from localStorage
+          // Boards are NOT persisted to localStorage - they come from Firebase
+          // This ensures no cross-account data leakage when switching users
+          //
+          // However, we still restore UI state (demoMode, filters, etc.)
+          // The default board will be created on first store access if needed
 
           return {
-            ...cleanState,
-            boards: migratedBoards,
-            // Ensure activeBoard is set (activeBoard is excluded from localStorage)
-            // Use the first board ID or default board ID
-            activeBoard: persistedState.activeBoard || migratedBoards[0]?.id || DEFAULT_BOARD_ID,
-            // Preserve dueDatePanelOpen (landing page will set to false when shown)
-            dueDatePanelOpen: persistedState.dueDatePanelOpen !== undefined ? persistedState.dueDatePanelOpen : true,
-            // Explicitly set defaultBoardId to null (will be loaded from Firestore later)
-            defaultBoardId: null,
+            ...persistedState,
+            boards: [], // Don't restore boards - they come from Firebase or demo mode
+            activeBoard: null, // Will be set after Firebase loads boards or demo initializes
+            defaultBoardId: null, // Will be loaded from Firestore later
           };
         }
         return persistedState;

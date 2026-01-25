@@ -24,13 +24,15 @@ export async function getActiveDemoConfig(): Promise<Board | null> {
     const configSnap = await getDoc(configRef);
 
     if (!configSnap.exists()) {
+      console.log('[DemoConfig] demo-configs/active document does not exist, using hardcoded fallback');
       return null;
     }
 
     const data = configSnap.data();
+    console.log('[DemoConfig] ✅ Loaded custom demo board from Firestore:', data.board?.name);
     return data.board as Board;
   } catch (error) {
-    console.error('Failed to fetch demo config from Firestore:', error);
+    console.error('[DemoConfig] Failed to fetch demo config from Firestore:', error);
     return null;
   }
 }

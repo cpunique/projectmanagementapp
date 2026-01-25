@@ -5,6 +5,14 @@ export interface ChecklistItem {
   order: number;
 }
 
+export interface BoardCollaborator {
+  userId: string;
+  email: string;
+  role: 'viewer' | 'editor';
+  addedAt: string;
+  addedBy: string; // userId of person who added them
+}
+
 export interface Card {
   id: string;
   title: string;
@@ -39,6 +47,10 @@ export interface Board {
   createdAt: string;
   updatedAt: string;
   columns: Column[];
+  ownerId: string; // User ID of the board creator
+  sharedWith?: BoardCollaborator[]; // Array of collaborators (empty if not shared)
+  sharedWithUserIds?: string[]; // Denormalized array of user IDs for Firestore rule checks
+  editorUserIds?: string[]; // Denormalized array of editor user IDs for Firestore permission checks
 }
 
 export interface KanbanState {
@@ -138,4 +150,36 @@ export interface DemoConfig {
   board: Board;
   updatedAt: string;
   updatedBy: string;
+}
+
+// Tier and Subscription Types
+export type UserTier = 'free' | 'pro' | 'enterprise';
+
+export interface UserSubscription {
+  tier: UserTier;
+  status: 'active' | 'cancelled' | 'past_due' | 'trialing';
+  stripeCustomerId?: string;
+  stripeSubscriptionId?: string;
+  currentPeriodEnd?: string;
+  cancelAtPeriodEnd?: boolean;
+}
+
+export interface TierLimits {
+  maxBoards: number;
+  maxCollaboratorsPerBoard: number;
+  maxStorageMB: number;
+  features: {
+    advancedAnalytics: boolean;
+    customFields: boolean;
+    apiAccess: boolean;
+    prioritySupport: boolean;
+  };
+}
+
+export interface UserProfile {
+  uid: string;
+  email: string;
+  subscription: UserSubscription;
+  createdAt: string;
+  updatedAt: string;
 }

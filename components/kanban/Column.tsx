@@ -23,6 +23,7 @@ interface ColumnProps {
   onColumnReorder: (e: React.DragEvent, columnId: string) => void;
   isDraggingColumn: boolean;
   isDropTarget: boolean;
+  canEdit: boolean;
 }
 
 const Column = ({
@@ -40,6 +41,7 @@ const Column = ({
   onColumnReorder,
   isDraggingColumn,
   isDropTarget,
+  canEdit,
 }: ColumnProps) => {
   const { addCard, updateColumn, deleteColumn, boards, reorderCards } = useKanbanStore();
   const currentBoard = boards.find((b) => b.id === boardId);
@@ -51,14 +53,19 @@ const Column = ({
   const [dropTargetCardId, setDropTargetCardId] = useState<string | null>(null);
 
   const handleRename = () => {
-    if (editTitle.trim() && editTitle !== column.title) {
-      updateColumn(boardId, column.id, editTitle);
+    if (!canEdit || !editTitle.trim() || editTitle === column.title) {
+      setIsEditing(false);
+      setEditTitle(column.title);
+      return;
     }
+    updateColumn(boardId, column.id, editTitle);
     setIsEditing(false);
     setEditTitle(column.title);
   };
 
   const handleDelete = () => {
+    if (!canEdit) return;
+
     const board = boards.find((b) => b.id === boardId);
     // Check if board would be empty after deletion
     if (board && board.columns.length <= 1) {
@@ -72,13 +79,12 @@ const Column = ({
   };
 
   const handleAddCard = () => {
-    if (newCardTitle.trim()) {
-      addCard(boardId, column.id, {
-        title: newCardTitle,
-      });
-      setNewCardTitle('');
-      setIsAddingCard(false);
-    }
+    if (!canEdit || !newCardTitle.trim()) return;
+    addCard(boardId, column.id, {
+      title: newCardTitle,
+    });
+    setNewCardTitle('');
+    setIsAddingCard(false);
   };
 
   const handleCardDragOver = (e: React.DragEvent, targetCardId: string) => {
@@ -206,7 +212,7 @@ const Column = ({
             </svg>
           </div>
 
-          {isEditing ? (
+          {isEditing && canEdit ? (
             <Input
               value={editTitle}
               onChange={(e) => setEditTitle(e.target.value)}
@@ -224,19 +230,23 @@ const Column = ({
             />
           ) : (
             <h3
-              onDoubleClick={() => setIsEditing(true)}
-              className="font-bold text-lg text-gray-900 dark:text-white cursor-pointer hover:text-purple-600 dark:hover:text-purple-400 transition-colors flex-1"
+              onDoubleClick={() => canEdit && setIsEditing(true)}
+              className={`font-bold text-lg text-gray-900 dark:text-white flex-1 transition-colors ${
+                canEdit ? 'cursor-pointer hover:text-purple-600 dark:hover:text-purple-400' : 'cursor-default'
+              }`}
             >
               {column.title}
             </h3>
           )}
-          <button
-            onClick={handleDelete}
-            className="opacity-50 hover:opacity-100 text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400 text-sm pointer-events-auto flex-shrink-0"
-            title="Delete column"
-          >
-            ✕
-          </button>
+          {canEdit && (
+            <button
+              onClick={handleDelete}
+              className="opacity-50 hover:opacity-100 text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400 text-sm pointer-events-auto flex-shrink-0"
+              title="Delete column"
+            >
+              ✕
+            </button>
+          )}
         </div>
 
         {/* Task Count - below column name */}
@@ -286,13 +296,14 @@ const Column = ({
                 onDragStart={onCardDragStart}
                 onDragEnd={onCardDragEnd}
                 isDragging={draggedCardId === card.id}
+                canEdit={canEdit}
               />
             </motion.div>
           ))}
         </AnimatePresence>
 
         {/* Add Card Input - appears right after cards */}
-        {isAddingCard && (
+        {canEdit && isAddingCard && (
           <div className="mt-1 w-full px-4 flex justify-center">
             <div className="w-60">
               <Input
@@ -335,7 +346,7 @@ const Column = ({
         )}
 
         {/* Add Task Button - appears right after cards or input */}
-        {!isAddingCard && (
+        {canEdit && !isAddingCard && (
           <div className="w-full flex justify-center">
             <button
               onClick={() => setIsAddingCard(true)}

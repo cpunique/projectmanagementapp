@@ -17,9 +17,21 @@ export function useDefaultBoardSaver() {
   const { user } = useAuth();
   const activeBoard = useKanbanStore((state) => state.activeBoard);
   const defaultBoardId = useKanbanStore((state) => state.defaultBoardId);
+  const demoMode = useKanbanStore((state) => state.demoMode);
 
   useEffect(() => {
     if (!user || !activeBoard) return;
+
+    // CRITICAL: Skip auto-save in demo mode - demo board is ephemeral
+    if (demoMode) {
+      return;
+    }
+
+    // CRITICAL: Never save the demo board ID ('default-board') as default - it doesn't exist in Firebase
+    if (activeBoard === 'default-board') {
+      console.log('[DefaultBoardSaver] Skipping auto-save - active board is demo board');
+      return;
+    }
 
     // CRITICAL: Only auto-save the active board as default if there's NO explicit default set
     // If the user has manually set a default (via star icon), respect that choice
@@ -41,5 +53,5 @@ export function useDefaultBoardSaver() {
     };
 
     saveDefaultBoard();
-  }, [user?.uid, activeBoard, defaultBoardId]);
+  }, [user?.uid, activeBoard, defaultBoardId, demoMode]);
 }

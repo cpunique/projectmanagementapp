@@ -24,6 +24,8 @@ export async function cloneBoard(sourceBoard: Board, newBoardName: string, userI
       columns: JSON.parse(JSON.stringify(sourceBoard.columns)), // Deep copy columns
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
+      ownerId: userId,
+      sharedWith: [],
     };
 
     // Save to Firestore (with additional fields not in Board interface)

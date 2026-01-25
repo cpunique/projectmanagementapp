@@ -1,15 +1,18 @@
 'use client';
 
 import { useKanbanStore } from '@/lib/store';
+import { useAuth } from '@/lib/firebase/AuthContext';
+import { isAdmin } from '@/lib/admin/isAdmin';
 import Column from './Column';
 import Container from '@/components/layout/Container';
 import BoardHeader from './BoardHeader';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import Input from '@/components/ui/Input';
 import Button from '@/components/ui/Button';
 
 const KanbanBoard = () => {
-  const { boards, activeBoard, moveCard, reorderCards, addColumn, reorderColumns } = useKanbanStore();
+  const { user } = useAuth();
+  const { boards, activeBoard, moveCard, reorderCards, addColumn, reorderColumns, demoMode } = useKanbanStore();
   const [draggedCardId, setDraggedCardId] = useState<string | null>(null);
   const [draggedFromColumnId, setDraggedFromColumnId] = useState<string | null>(null);
   const [draggedColumnId, setDraggedColumnId] = useState<string | null>(null);
@@ -18,6 +21,22 @@ const KanbanBoard = () => {
   const [newColumnTitle, setNewColumnTitle] = useState('');
 
   const board = boards.find((b) => b.id === activeBoard);
+
+  // Calculate user's permission level for this board
+  const userRole = useMemo(() => {
+    if (!board) return null;
+    // In demo mode, only admin can edit; others are viewers
+    if (demoMode) {
+      return isAdmin(user) ? 'owner' : 'viewer';
+    }
+    if (!user) return null;
+    if (board.ownerId === user.uid) return 'owner';
+    const collab = board.sharedWith?.find((c) => c.userId === user.uid);
+    return collab?.role || null;
+  }, [user, board, demoMode]);
+
+  const canEdit = userRole === 'owner' || userRole === 'editor';
+  const isViewOnly = userRole === 'viewer';
 
   if (!board) {
     return (
@@ -30,6 +49,10 @@ const KanbanBoard = () => {
   }
 
   const handleCardDragStart = (e: React.DragEvent, cardId: string, columnId: string) => {
+    if (!canEdit) {
+      e.preventDefault();
+      return;
+    }
     setDraggedCardId(cardId);
     setDraggedFromColumnId(columnId);
     e.dataTransfer.effectAllowed = 'move';
@@ -82,6 +105,10 @@ const KanbanBoard = () => {
   };
 
   const handleColumnDragStart = (e: React.DragEvent, columnId: string) => {
+    if (!canEdit) {
+      e.preventDefault();
+      return;
+    }
     setDraggedColumnId(columnId);
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('columnId', columnId);
@@ -129,11 +156,10 @@ const KanbanBoard = () => {
   };
 
   const handleAddColumn = () => {
-    if (newColumnTitle.trim()) {
-      addColumn(board.id, newColumnTitle);
-      setNewColumnTitle('');
-      setIsAddingColumn(false);
-    }
+    if (!canEdit || !newColumnTitle.trim()) return;
+    addColumn(board.id, newColumnTitle);
+    setNewColumnTitle('');
+    setIsAddingColumn(false);
   };
 
   return (
@@ -141,9 +167,16 @@ const KanbanBoard = () => {
       <div className="py-6 overflow-visible" style={{ marginLeft: '2rem', marginRight: '2rem' }}>
         {/* Board Title */}
         <div className="mb-6">
-          <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
-            {board.name}
-          </h2>
+          <div className="flex items-center gap-3 mb-2">
+            <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
+              {board.name}
+            </h2>
+            {isViewOnly && (
+              <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
+                🔒 View Only
+              </span>
+            )}
+          </div>
           <BoardHeader boardId={board.id} />
           <p className="text-gray-600 dark:text-gray-400 mt-1">
             {board.columns.length} column{board.columns.length !== 1 ? 's' : ''} • {' '}
@@ -151,6 +184,13 @@ const KanbanBoard = () => {
             {board.columns.reduce((sum, col) => sum + col.cards.length, 0) !== 1 ? 's' : ''}
           </p>
         </div>
+
+        {/* View-Only Notice */}
+        {isViewOnly && (
+          <div className="mb-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded-lg text-sm text-yellow-800 dark:text-yellow-200">
+            You have read-only access to this board. Contact the board owner to request editing permissions.
+          </div>
+        )}
 
         {/* Columns Grid */}
         <div className="overflow-x-auto overflow-y-visible pb-4 h-[calc(100vh-200px)]">
@@ -172,11 +212,12 @@ const KanbanBoard = () => {
                 onColumnReorder={handleColumnReorder}
                 isDraggingColumn={draggedColumnId === column.id}
                 isDropTarget={dragOverColumnId === column.id}
+                canEdit={canEdit}
               />
             ))}
 
             {/* Add Column Button/Input */}
-            {isAddingColumn ? (
+            {canEdit && (isAddingColumn ? (
               <div className="w-72 flex-shrink-0 bg-gray-100 dark:bg-gray-800 rounded-lg p-4 shadow-sm mt-4">
                 <h3 className="font-bold text-sm text-gray-900 dark:text-white mb-3">
                   New Column
@@ -225,7 +266,7 @@ const KanbanBoard = () => {
               >
                 <span className="text-white font-bold text-2xl leading-none">+</span>
               </button>
-            )}
+            ))}
           </div>
         </div>
       </div>

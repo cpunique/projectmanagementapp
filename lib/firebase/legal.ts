@@ -93,7 +93,8 @@ export async function initializeUserLegalConsent(
   userId: string,
   email: string,
   acceptedToS: boolean = false,
-  acceptedPrivacy: boolean = false
+  acceptedPrivacy: boolean = false,
+  authMethod: string = 'password'
 ): Promise<void> {
   const userRef = getUserDoc(userId);
   const ipAddress = await getUserIpAddress();
@@ -103,6 +104,7 @@ export async function initializeUserLegalConsent(
   const userData: Partial<UserDocument> = {
     uid: userId,
     email,
+    authMethod,  // NEW: Track auth provider (google.com, password, etc.)
     createdAt: now,
     updatedAt: now,
   };
@@ -347,8 +349,13 @@ export async function getUserLegalConsent(
     };
 
     return consent;
-  } catch (error) {
-    console.error('Failed to get user legal consent:', error);
+  } catch (error: any) {
+    // Permission denied is normal during first login - user doc might not be readable yet
+    if (error?.code === 'permission-denied') {
+      console.warn('[Legal] Permission denied reading user document (may be normal on first login):', error.message);
+      return null;
+    }
+    console.error('[Legal] Failed to get user legal consent:', error?.code || error?.message || error);
     return null;
   }
 }

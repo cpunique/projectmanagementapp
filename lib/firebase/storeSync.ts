@@ -1,6 +1,8 @@
 import { User } from 'firebase/auth';
 import { useKanbanStore } from '@/lib/store';
 import { useAuth } from './AuthContext';
+import { isAdmin } from '@/lib/admin/isAdmin';
+import { saveDemoConfig } from './demoConfig';
 import {
   getUserBoards,
   subscribeToBoard,
@@ -29,6 +31,24 @@ let isSyncingFromFirebase = false;
 export async function initializeFirebaseSync(user: User) {
   try {
     const store = useKanbanStore.getState();
+    console.log('[Sync] Starting Firebase sync initialization for user:', user.uid);
+
+    // CRITICAL FIX: Clear localStorage boards on every login
+    // This prevents boards from previous user account being migrated
+    try {
+      const storeData = localStorage.getItem('kanban-store');
+      if (storeData) {
+        const parsed = JSON.parse(storeData);
+        if (parsed.state?.boards && parsed.state.boards.length > 0) {
+          console.log('[Sync] ⚠️ Found', parsed.state.boards.length, 'boards in localStorage - clearing to prevent cross-user contamination');
+          parsed.state.boards = [];
+          localStorage.setItem('kanban-store', JSON.stringify(parsed));
+        }
+      }
+    } catch (error) {
+      console.warn('[Sync] Failed to clear localStorage boards:', error);
+      // Continue anyway - non-critical
+    }
 
     // Set flag to prevent sync loop during initialization
     isSyncingFromFirebase = true;
@@ -41,8 +61,13 @@ export async function initializeFirebaseSync(user: User) {
         // Give Firestore a moment to process the recovery
         await new Promise(resolve => setTimeout(resolve, 500));
       }
-    } catch (error) {
-      console.warn('[Sync] Aggressive recovery skipped or failed:', error);
+    } catch (error: any) {
+      // Permission denied during recovery is normal on first login - user doc might not exist yet
+      if (error?.code === 'permission-denied') {
+        console.log('[Sync] Skipping recovery (permission denied - normal on first login)');
+      } else {
+        console.warn('[Sync] Aggressive recovery skipped or failed:', error);
+      }
     }
 
     // Then, repair any remaining corrupted board IDs
@@ -51,8 +76,13 @@ export async function initializeFirebaseSync(user: User) {
       if (repairedBoards.length > 0) {
         console.log('[Sync] Repaired boards:', repairedBoards);
       }
-    } catch (error) {
-      console.warn('[Sync] Board repair skipped or failed:', error);
+    } catch (error: any) {
+      // Permission denied during repair is normal on first login
+      if (error?.code === 'permission-denied') {
+        console.log('[Sync] Skipping repair (permission denied - normal on first login)');
+      } else {
+        console.warn('[Sync] Board repair skipped or failed:', error);
+      }
     }
 
     // Load all boards for the user from Firebase
@@ -122,56 +152,16 @@ export async function initializeFirebaseSync(user: User) {
       // Mark as saved since we just loaded from Firebase (no unsaved changes)
       store.markAsSaved();
     } else {
-      // No boards in Firebase yet
-      // Check if we have backed up user boards from demo mode
-      const currentState = store as any;
-      if (currentState._userBoardsBackup && currentState._userBoardsBackup.length > 0) {
-        // Restore from backup and migrate to Firebase
-        const backupBoards = currentState._userBoardsBackup;
-        store.setBoards(backupBoards);
-
-        // Migrate to Firebase
-        for (const board of backupBoards) {
-          try {
-            await createBoard(user.uid, board);
-          } catch (error) {
-            console.error(`Failed to migrate board ${board.name}:`, error);
-          }
-        }
-
-        // Wait a moment for Firestore to propagate writes
-        await new Promise(resolve => setTimeout(resolve, 1000));
-
-        // Reload from Firebase to get proper timestamps
-        const migratedBoards = await getUserBoards(user.uid);
-        if (migratedBoards.length > 0) {
-          store.setBoards(migratedBoards);
-          store.switchBoard(migratedBoards[0].id);
-        } else {
-          // If Firebase query still comes back empty, use the backup boards as-is
-          // They have the correct ownerId set from the backup
-          console.warn('Firebase query returned no boards after migration. Using backup boards directly.');
-          store.setBoards(backupBoards);
-          store.switchBoard(backupBoards[0].id);
-        }
-      } else if (store.boards.length > 0 && !store.demoMode) {
-        // User has local boards but nothing in Firebase yet (not in demo mode)
-        // Migrate local boards to Firebase
-        for (const board of store.boards) {
-          await createBoard(user.uid, board);
-        }
-
-        // Update timestamps from Firebase response
-        const migratedBoards = await getUserBoards(user.uid);
-        store.setBoards(migratedBoards);
-      }
+      // No boards in Firebase yet - start fresh
+      console.log('[Sync] User has no boards in Firebase yet. Starting with empty state.');
+      store.setBoards([]);
 
       // Disable demo mode if enabled
       if (store.demoMode) {
         store.toggleDemoMode();
       }
 
-      // Mark as saved after migration
+      // Mark as saved
       store.markAsSaved();
     }
 
@@ -181,9 +171,15 @@ export async function initializeFirebaseSync(user: User) {
 
     // Reset flag after initialization completes
     isSyncingFromFirebase = false;
-  } catch (error) {
-    console.error('Failed to initialize Firebase sync:', error);
+  } catch (error: any) {
+    console.error('[Sync] Failed to initialize Firebase sync:', error);
+    // Log the specific error code if it's a Firebase error
+    if (error?.code) {
+      console.error('[Sync] Firebase error code:', error.code);
+      console.error('[Sync] Firebase error message:', error.message);
+    }
     isSyncingFromFirebase = false;
+    // Don't re-throw - let app continue without sync
   }
 }
 
@@ -196,10 +192,15 @@ export function cleanupFirebaseSync() {
   });
   activeSubscriptions.clear();
 
+  // DEFENSIVE FIX: Clear boards from store on logout
+  const store = useKanbanStore.getState();
+  store.setBoards([]);
+
   // Reset UI preferences to defaults when user logs out
   // This ensures the landing page always shows with dueDatePanelOpen: false (landing page default)
-  const store = useKanbanStore.getState();
   store.setDueDatePanelOpen(false);
+
+  console.log('[Sync] Cleanup complete - all subscriptions cancelled, boards cleared');
 }
 
 /**
@@ -253,6 +254,12 @@ export function subscribeToStoreChanges(user: User) {
 
   return useKanbanStore.subscribe(
     (state) => {
+      // CRITICAL: Skip sync if in demo mode UNLESS user is admin
+      // Admin can edit and persist demo board changes; others just test ephemeral state
+      if (state.demoMode && !isAdmin(user)) {
+        return;
+      }
+
       // Skip sync if changes are coming FROM Firebase (not user actions)
       if (isSyncingFromFirebase) {
         // Still update our tracking map to stay in sync
@@ -291,8 +298,17 @@ export function subscribeToStoreChanges(user: User) {
           for (const board of changedBoards) {
             const boardWithOwner = board as any;
 
-            // Security: skip demo board
+            // Handle demo board: only sync if admin user
             if (board.id === 'default-board') {
+              if (isAdmin(user)) {
+                try {
+                  console.log('[Sync] Admin user editing demo board - saving to demo-configs/active');
+                  await saveDemoConfig(board, user.uid);
+                } catch (error) {
+                  console.error('[Sync] Failed to save demo config:', error);
+                }
+              }
+              // Non-admin users: skip demo board sync (ephemeral state)
               continue;
             }
 

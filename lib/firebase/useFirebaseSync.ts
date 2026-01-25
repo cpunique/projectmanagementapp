@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import { useAuth } from './AuthContext';
 import { initializeFirebaseSync, cleanupFirebaseSync, subscribeToStoreChanges } from './storeSync';
+import { startPeriodicSync, stopPeriodicSync } from './periodicSync';
 
 /**
  * Hook to manage Firebase sync lifecycle
@@ -27,8 +28,21 @@ export function useFirebaseSync() {
     }
 
     console.log('[useFirebaseSync] Initializing Firebase sync for user:', user.uid);
-    // Initialize Firebase sync
-    initializeFirebaseSync(user);
+
+    // Add a small delay to ensure Firebase auth is fully settled
+    // This prevents permission errors during initial sync on first login
+    const delayAndSync = async () => {
+      await new Promise(resolve => setTimeout(resolve, 500));
+      await initializeFirebaseSync(user);
+
+      // Start periodic sync for collaborative boards (every 15 seconds)
+      // This checks for updates from other users on shared boards
+      startPeriodicSync(user, 15000);
+    };
+
+    delayAndSync().catch(err => {
+      console.error('[useFirebaseSync] Error during delayed initialization:', err);
+    });
 
     // AUTO-SYNC DISABLED: Using manual save button instead to avoid Firebase quota issues
     // Subscribe to store changes for real-time sync
@@ -37,6 +51,7 @@ export function useFirebaseSync() {
     // Cleanup function
     return () => {
       // unsubscribeFromStore?.();
+      stopPeriodicSync();
       cleanupFirebaseSync();
     };
   }, [user, loading, requiresToSAcceptance]);

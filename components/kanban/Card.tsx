@@ -20,9 +20,10 @@ interface CardProps {
   onDragStart: (e: React.DragEvent, cardId: string, columnId: string) => void;
   onDragEnd: () => void;
   isDragging: boolean;
+  canEdit: boolean;
 }
 
-const Card = ({ card, boardId, columnId, onDragStart, onDragEnd, isDragging }: CardProps) => {
+const Card = ({ card, boardId, columnId, onDragStart, onDragEnd, isDragging, canEdit }: CardProps) => {
   const { deleteCard, boards } = useKanbanStore();
   const { user } = useAuth();
   const [isHovering, setIsHovering] = useState(false);
@@ -34,8 +35,8 @@ const Card = ({ card, boardId, columnId, onDragStart, onDragEnd, isDragging }: C
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
   const notesIconRef = useRef<HTMLDivElement>(null);
 
-  // AI features locked for unauthenticated users (can still view existing prompts)
-  const isAIFeatureLocked = !user;
+  // AI features locked for unauthenticated users or read-only access (can still view existing prompts)
+  const isAIFeatureLocked = !user || !canEdit;
 
   // Detect actual theme from DOM instead of store (since store's darkMode is broken)
   const [actualDarkMode, setActualDarkMode] = useState(() => {
@@ -63,6 +64,7 @@ const Card = ({ card, boardId, columnId, onDragStart, onDragEnd, isDragging }: C
   }, []);
 
   const handleDelete = () => {
+    if (!canEdit) return;
     if (confirm(`Delete card "${card.title}"`)) {
       deleteCard(boardId, card.id);
     }
@@ -173,33 +175,37 @@ const Card = ({ card, boardId, columnId, onDragStart, onDragEnd, isDragging }: C
               {isAIFeatureLocked && !card.aiPrompt && <span className="absolute -top-1 -right-1 w-2 h-2 bg-yellow-400 rounded-full border border-white" />}
             </button>
 
-            {/* Edit Button */}
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setIsModalOpen(true);
-              }}
-              className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-150 text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 pointer-events-auto"
-              title="Edit card"
-            >
-              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-              </svg>
-            </button>
+            {/* Edit Button - disabled for viewers */}
+            {canEdit && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsModalOpen(true);
+                }}
+                className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-150 text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 pointer-events-auto"
+                title="Edit card"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                </svg>
+              </button>
+            )}
 
-            {/* Delete Button */}
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                handleDelete();
-              }}
-              className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-150 text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400 pointer-events-auto"
-              title="Delete card"
-            >
-              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
+            {/* Delete Button - disabled for viewers */}
+            {canEdit && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDelete();
+                }}
+                className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-150 text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400 pointer-events-auto"
+                title="Delete card"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            )}
           </div>
         )}
 
