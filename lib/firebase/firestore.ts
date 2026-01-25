@@ -68,6 +68,8 @@ export async function createBoard(
     columns: board.columns,
     ownerId: userId,
     sharedWith: [],
+    sharedWithUserIds: [], // Denormalized for Firestore rule checks
+    editorUserIds: [], // Denormalized for Firestore permission checks
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   };
@@ -95,10 +97,29 @@ export async function getBoard(boardId: string): Promise<Board | null> {
   if (!boardSnap.exists()) return null;
 
   const data = boardSnap.data();
+
+  // Helper function to safely convert timestamps
+  const convertTimestamp = (ts: any): string => {
+    if (!ts) return new Date().toISOString();
+    if (typeof ts.toDate === 'function') {
+      return ts.toDate().toISOString();
+    }
+    if (ts instanceof Date) {
+      return ts.toISOString();
+    }
+    if (typeof ts === 'string') {
+      return ts;
+    }
+    if (ts.seconds !== undefined) {
+      return new Date(ts.seconds * 1000).toISOString();
+    }
+    return new Date().toISOString();
+  };
+
   return {
     ...data,
-    createdAt: (data.createdAt as Timestamp).toDate().toISOString(),
-    updatedAt: (data.updatedAt as Timestamp).toDate().toISOString(),
+    createdAt: convertTimestamp(data.createdAt),
+    updatedAt: convertTimestamp(data.updatedAt),
   } as Board;
 }
 
@@ -145,8 +166,7 @@ export async function deleteBoard(boardId: string) {
 
 /**
  * Get all boards for a user (owned or shared with them)
- * Note: Due to Firestore limitations, shared boards are fetched by filtering all boards client-side
- * This is not optimal for large datasets but works for MVP
+ * Uses denormalized sharedWithUserIds array for efficient querying
  */
 export async function getUserBoards(userId: string): Promise<Board[]> {
   try {
@@ -186,13 +206,28 @@ export async function getUserBoards(userId: string): Promise<Board[]> {
       } as Board);
     });
 
-    // TODO: Optimize shared boards query
-    // Firestore doesn't support querying nested array fields directly (sharedWith[].userId == userId)
-    // Options for optimization:
-    // 1. Denormalize: Add sharedUserIds: string[] array to each board for fast queries
-    // 2. Separate collection: Create a user_boards index collection with userId -> boardId mappings
-    // 3. Accept client-side filtering for MVP (current approach - not ideal at scale)
-    // For now, we load owned boards only and shared boards will be loaded via subscriptions
+    // Query for boards shared with the user (using denormalized sharedWithUserIds array)
+    // Wrapped in try-catch to handle cases where Firestore rules temporarily restrict shared board access
+    try {
+      const sharedQuery = query(getBoardsCollection(), where('sharedWithUserIds', 'array-contains', userId));
+      const sharedSnapshot = await getDocs(sharedQuery);
+
+      sharedSnapshot.docs.forEach((doc) => {
+        const data = doc.data();
+        // Only add if not already in map (owned boards take precedence)
+        if (!boardMap.has(doc.id)) {
+          boardMap.set(doc.id, {
+            ...data,
+            createdAt: convertTimestamp(data.createdAt),
+            updatedAt: convertTimestamp(data.updatedAt),
+          } as Board);
+        }
+      });
+    } catch (sharedError) {
+      // Shared boards query may fail if Firestore rules don't allow it
+      // Continue with owned boards only
+      console.log('[getUserBoards] Could not fetch shared boards (rules may be restricted):', sharedError instanceof Error ? sharedError.message : 'Unknown error');
+    }
 
     return Array.from(boardMap.values());
   } catch (error) {
@@ -483,6 +518,8 @@ export async function recoverCorruptedBoards(userId: string): Promise<string[]> 
           columns: localBoard.columns || [],
           ownerId: userId,
           sharedWith: [],
+          sharedWithUserIds: [], // Denormalized for Firestore rule checks
+          editorUserIds: [], // Denormalized for Firestore permission checks
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
         };
@@ -583,17 +620,38 @@ export async function shareBoardWithUser(
     };
 
     // Update board with new collaborator
+    // Also update sharedWithUserIds and editorUserIds for Firestore rule access checks
     const boardRef = doc(getBoardsCollection(), boardId);
-    await updateDoc(boardRef, {
+
+    // Calculate current editorUserIds from existing collaborators
+    const currentEditors = board.sharedWith?.filter((c) => c.role === 'editor').map((c) => c.userId) || [];
+
+    // Build the update data
+    const updateData: any = {
       sharedWith: arrayUnion(collaborator),
+      sharedWithUserIds: arrayUnion(userId),
       updatedAt: serverTimestamp(),
-    });
+    };
+
+    // Always set editorUserIds explicitly to ensure it exists
+    // This migrates old boards and maintains role-based permissions
+    if (role === 'editor') {
+      // Add new editor to the list
+      updateData.editorUserIds = [...new Set([...currentEditors, userId])];
+    } else {
+      // Viewer role - just preserve existing editors
+      updateData.editorUserIds = currentEditors;
+    }
+
+    await updateDoc(boardRef, updateData);
 
     console.log('[Collaboration] Board shared with:', userEmail, '(uid:', userId, ') role:', role);
     return { success: true };
-  } catch (error) {
+  } catch (error: any) {
     console.error('[Collaboration] Failed to share board:', error);
-    return { success: false, error: 'Failed to share board' };
+    console.error('[Collaboration] Error code:', error?.code);
+    console.error('[Collaboration] Error message:', error?.message);
+    return { success: false, error: error?.message || 'Failed to share board' };
   }
 }
 
@@ -621,10 +679,15 @@ export async function removeCollaborator(
 
     // Find and remove the collaborator
     const updatedSharedWith = board.sharedWith?.filter((c) => c.userId !== userId) || [];
+    // Also update the denormalized sharedWithUserIds and editorUserIds arrays
+    const updatedSharedWithUserIds = updatedSharedWith.map((c) => c.userId);
+    const updatedEditorUserIds = updatedSharedWith.filter((c) => c.role === 'editor').map((c) => c.userId);
 
     const boardRef = doc(getBoardsCollection(), boardId);
     await updateDoc(boardRef, {
       sharedWith: updatedSharedWith,
+      sharedWithUserIds: updatedSharedWithUserIds,
+      editorUserIds: updatedEditorUserIds,
       updatedAt: serverTimestamp(),
     });
 
@@ -670,9 +733,13 @@ export async function updateCollaboratorRole(
       c.userId === userId ? { ...c, role: newRole } : c
     ) || [];
 
+    // Recalculate editorUserIds to reflect the role change
+    const updatedEditorUserIds = updatedSharedWith.filter((c) => c.role === 'editor').map((c) => c.userId);
+
     const boardRef = doc(getBoardsCollection(), boardId);
     await updateDoc(boardRef, {
       sharedWith: updatedSharedWith,
+      editorUserIds: updatedEditorUserIds,
       updatedAt: serverTimestamp(),
     });
 

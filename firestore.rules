@@ -12,11 +12,30 @@ service cloud.firestore {
     }
 
     // Check if user is the owner (for read/update operations)
-    function isOwner(boardId) {
+    function isOwner() {
       return isAuthenticated() && request.auth.uid == resource.data.ownerId;
     }
 
+    // Check if user is an editor (has edit permissions)
+    function isEditor() {
+      return isAuthenticated() &&
+             resource.data.editorUserIds != null &&
+             request.auth.uid in resource.data.editorUserIds;
+    }
+
+    // Check if user is owner or editor (can modify board)
+    // For backwards compatibility: if editorUserIds doesn't exist, fall back to checking sharedWithUserIds
+    function canEdit() {
+      return isOwner() ||
+             isEditor() ||
+             // Backwards compatibility: allow all collaborators to edit if editorUserIds doesn't exist
+             (resource.data.editorUserIds == null &&
+              resource.data.sharedWithUserIds != null &&
+              request.auth.uid in resource.data.sharedWithUserIds);
+    }
+
     // Validate board data structure and constraints
+    // Note: sharedWithUserIds is optional for backwards compatibility with existing boards
     function isValidBoardData() {
       let data = request.resource.data;
       return data.keys().hasAll(['id', 'name', 'columns', 'ownerId', 'sharedWith']) &&
@@ -44,34 +63,13 @@ service cloud.firestore {
       return boardId == 'default-board' && isAuthenticated();
     }
 
-    // Check if user can access a board (owner or collaborator)
-    function canAccessBoard(boardId) {
-      let boardData = get(/databases/$(database)/documents/boards/$(boardId)).data;
-      return request.auth.uid == boardData.ownerId ||
-             boardData.sharedWith.hasAny([{'userId': request.auth.uid}]);
-    }
-
-    // Check if user can edit a board (owner or editor collaborator)
-    function canEditBoard(boardId) {
-      // Owner can always edit
-      let boardData = get(/databases/$(database)/documents/boards/$(boardId)).data;
-      if (request.auth.uid == boardData.ownerId) return true;
-
-      // Check if user is an editor collaborator
-      let collaborators = boardData.sharedWith;
-      return collaborators.hasAny([{
-        'userId': request.auth.uid,
-        'role': 'editor'
-      }]);
-    }
-
     // ============================================
     // Users Collection Rules
     // ============================================
 
     match /users/{userId} {
-      // Users can read their own document
-      allow read: if isAuthenticated() && request.auth.uid == userId;
+      // Users can read any user document (needed for board sharing feature to lookup by email)
+      allow read: if isAuthenticated();
 
       // Users can create their own document
       allow create: if isAuthenticated() && request.auth.uid == userId;
@@ -84,54 +82,33 @@ service cloud.firestore {
     }
 
     // ============================================
-    // Boards Collection Rules - OWNER-ONLY ACCESS
+    // Boards Collection Rules
     // ============================================
 
     match /boards/{boardId} {
 
-      // Read: Owner or collaborator can read
-      allow read: if isAuthenticated() && canAccessBoard(boardId);
+      // Read: Owner can read, OR user is in sharedWithUserIds (collaborators can read)
+      // Backwards compatible: works even if sharedWithUserIds doesn't exist
+      allow read: if isAuthenticated() &&
+                    (resource.data.ownerId == request.auth.uid ||
+                     (resource.data.sharedWithUserIds != null &&
+                      request.auth.uid in resource.data.sharedWithUserIds));
 
-      // Create: Can create if setting self as owner and no sharing initially
+      // Create: Can create if setting self as owner
       allow create: if isAuthenticated() &&
                       request.resource.data.ownerId == request.auth.uid &&
-                      request.resource.data.sharedWith == [] &&
                       isValidBoardData() &&
                       isValidBoardSize();
 
-      // Update: Owner or editor collaborator can update, and ownerId cannot change
+      // Update: Owner can update, OR user is an editor (viewers can only read)
       allow update: if isAuthenticated() &&
-                      canEditBoard(boardId) &&
                       ownershipUnchanged() &&
                       isValidBoardData() &&
-                      isValidBoardSize();
+                      isValidBoardSize() &&
+                      canEdit();
 
       // Delete: Only owner can delete, or allow special case for corrupted 'default-board'
-      allow delete: if (isAuthenticated() && isOwner(boardId)) || isDefaultBoardCorrupted(boardId);
-
-      // ============================================
-      // Nested Collections (future use)
-      // ============================================
-
-      // Comments subcollection (for future feature)
-      match /comments/{commentId} {
-        allow read: if isAuthenticated() && canAccessBoard(boardId);
-        allow create: if isAuthenticated() && canAccessBoard(boardId) &&
-                       request.resource.data.userId == request.auth.uid;
-        allow update: if isAuthenticated() &&
-                      request.resource.data.userId == request.auth.uid;
-        allow delete: if isAuthenticated() &&
-                      resource.data.userId == request.auth.uid;
-      }
-
-      // Attachments subcollection (for future feature)
-      match /attachments/{attachmentId} {
-        allow read: if isAuthenticated() && canAccessBoard(boardId);
-        allow create: if isAuthenticated() && canAccessBoard(boardId) &&
-                      request.resource.data.uploadedBy == request.auth.uid;
-        allow delete: if isAuthenticated() &&
-                     resource.data.uploadedBy == request.auth.uid;
-      }
+      allow delete: if (isAuthenticated() && isOwner()) || isDefaultBoardCorrupted(boardId);
     }
 
     // ============================================
@@ -145,6 +122,18 @@ service cloud.firestore {
       // Only the designated admin can write
       allow write: if isAuthenticated() &&
                       request.auth.uid == 'OWDbFDLVxgfW6ftSXoQBurAvAiB2';
+    }
+
+    // ============================================
+    // Presence Collection Rules
+    // ============================================
+
+    match /presence/{userId} {
+      // Anyone authenticated can read presence (to see who's online)
+      allow read: if isAuthenticated();
+
+      // Users can only write their own presence status
+      allow write: if isAuthenticated() && request.auth.uid == userId;
     }
 
     // ============================================
