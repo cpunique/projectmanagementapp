@@ -7,6 +7,7 @@ import Button from '@/components/ui/Button';
 import Badge from '@/components/ui/Badge';
 import Dropdown from '@/components/ui/Dropdown';
 import { shareBoardWithUser, removeCollaborator, updateCollaboratorRole, getBoard } from '@/lib/firebase/firestore';
+import { useBoardPresence } from '@/lib/hooks/useBoardPresence';
 import type { Board } from '@/types';
 
 interface ShareBoardModalProps {
@@ -31,6 +32,9 @@ export default function ShareBoardModal({
   const [success, setSuccess] = useState('');
   const [localBoard, setLocalBoard] = useState<Board | null>(board);
 
+  // Track online users (presence system)
+  const { onlineUsers } = useBoardPresence(board?.id || null);
+
   // Update local board when prop changes
   useEffect(() => {
     setLocalBoard(board);
@@ -39,6 +43,9 @@ export default function ShareBoardModal({
   if (!board || !localBoard) return null;
 
   const isOwner = board.ownerId === currentUserId;
+
+  // Helper to check if a user is currently online
+  const isUserOnline = (userId: string) => onlineUsers.includes(userId);
 
   const handleInvite = async () => {
     if (!email.trim()) {
@@ -184,11 +191,24 @@ export default function ShareBoardModal({
           <div className="max-h-64 overflow-y-auto space-y-2 border border-gray-200 dark:border-gray-700 rounded-lg p-3">
             {/* Owner */}
             <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-              <div className="w-8 h-8 rounded-full bg-purple-600 text-white flex items-center justify-center text-sm font-medium flex-shrink-0">
-                {board.ownerId.charAt(0).toUpperCase()}
+              <div className="relative">
+                <div className="w-8 h-8 rounded-full bg-purple-600 text-white flex items-center justify-center text-sm font-medium flex-shrink-0">
+                  {board.ownerId.charAt(0).toUpperCase()}
+                </div>
+                {isUserOnline(board.ownerId) && (
+                  <div
+                    className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-gray-50 dark:border-gray-800"
+                    title="Online"
+                  />
+                )}
               </div>
               <div className="flex-1 min-w-0">
-                <div className="text-sm font-medium text-gray-900 dark:text-gray-100">Owner</div>
+                <div className="text-sm font-medium text-gray-900 dark:text-gray-100 flex items-center gap-2">
+                  Owner
+                  {isUserOnline(board.ownerId) && (
+                    <span className="text-xs text-green-600 dark:text-green-400">• Online</span>
+                  )}
+                </div>
                 <div className="text-xs text-gray-500 dark:text-gray-400 truncate">
                   {currentUserId === board.ownerId ? 'You' : board.ownerId}
                 </div>
@@ -205,12 +225,23 @@ export default function ShareBoardModal({
                   key={collab.userId}
                   className="flex items-center gap-3 p-3 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors"
                 >
-                  <div className="w-8 h-8 rounded-full bg-blue-500 text-white flex items-center justify-center text-sm font-medium flex-shrink-0">
-                    {collab.email.charAt(0).toUpperCase()}
+                  <div className="relative">
+                    <div className="w-8 h-8 rounded-full bg-blue-500 text-white flex items-center justify-center text-sm font-medium flex-shrink-0">
+                      {collab.email.charAt(0).toUpperCase()}
+                    </div>
+                    {isUserOnline(collab.userId) && (
+                      <div
+                        className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-white dark:border-gray-700"
+                        title="Online"
+                      />
+                    )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
+                    <div className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate flex items-center gap-2">
                       {collab.email}
+                      {isUserOnline(collab.userId) && (
+                        <span className="text-xs text-green-600 dark:text-green-400">• Viewing</span>
+                      )}
                     </div>
                     <div className="text-xs text-gray-500 dark:text-gray-400">
                       Added {new Date(collab.addedAt).toLocaleDateString()}
@@ -277,6 +308,7 @@ export default function ShareBoardModal({
             <ul className="list-disc list-inside space-y-1 text-xs">
               <li>Editors can view and modify all cards and columns</li>
               <li>Viewers can only view the board (read-only)</li>
+              <li>Green dot indicates who's currently viewing this board</li>
               <li>Changes sync across all users every 10-30 seconds</li>
             </ul>
           </div>

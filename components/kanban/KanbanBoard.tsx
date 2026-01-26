@@ -6,6 +6,8 @@ import { isAdmin } from '@/lib/admin/isAdmin';
 import Column from './Column';
 import Container from '@/components/layout/Container';
 import BoardHeader from './BoardHeader';
+import { CollaboratorAvatarStack } from './CollaboratorAvatarStack';
+import { useBoardPresence } from '@/lib/hooks/useBoardPresence';
 import { useState, useMemo } from 'react';
 import Input from '@/components/ui/Input';
 import Button from '@/components/ui/Button';
@@ -21,6 +23,9 @@ const KanbanBoard = () => {
   const [newColumnTitle, setNewColumnTitle] = useState('');
 
   const board = boards.find((b) => b.id === activeBoard);
+
+  // Track online users for presence indicators
+  const { onlineUsers } = useBoardPresence(board?.id || null, !!user && !!board);
 
   // Calculate user's permission level for this board
   const userRole = useMemo(() => {
@@ -176,6 +181,14 @@ const KanbanBoard = () => {
                 🔒 View Only
               </span>
             )}
+            {/* Collaborator Avatars */}
+            <CollaboratorAvatarStack
+              ownerId={board.ownerId}
+              ownerEmail={user?.email}
+              collaborators={board.sharedWith}
+              onlineUsers={onlineUsers}
+              maxVisible={4}
+            />
           </div>
           <BoardHeader boardId={board.id} />
           <p className="text-gray-600 dark:text-gray-400 mt-1">
