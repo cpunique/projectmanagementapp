@@ -25,7 +25,7 @@ export function CollaboratorAvatarStack({
   // Combine owner and collaborators
   const allUsers = [
     { userId: ownerId, email: ownerEmail || 'Owner', role: 'owner' as const },
-    ...collaborators.map((c) => ({ ...c, role: c.role as const })),
+    ...collaborators,
   ];
 
   const visibleUsers = allUsers.slice(0, maxVisible);
