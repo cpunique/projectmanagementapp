@@ -184,7 +184,7 @@ const KanbanBoard = () => {
             {/* Collaborator Avatars */}
             <CollaboratorAvatarStack
               ownerId={board.ownerId}
-              ownerEmail={user?.email}
+              ownerEmail={user?.email || undefined}
               collaborators={board.sharedWith}
               onlineUsers={onlineUsers}
               maxVisible={4}
