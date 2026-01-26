@@ -22,44 +22,15 @@ const MIN_SYNC_INTERVAL = 10000; // 10 seconds minimum between syncs
 
 /**
  * Fetch all boards for a user (owned + shared)
- * Workaround for Firestore query limitation on nested array fields
+ * Uses getUserBoards which properly queries with role-based permissions
  */
 async function fetchAllUserBoards(userId: string): Promise<Board[]> {
   try {
-    // Get owned boards
-    const ownedBoards = await getUserBoards(userId);
-
-    // Get all boards and filter for those where user is in sharedWith
-    // Note: This is not ideal at scale but works for MVP until we denormalize the data
-    const db = getFirestore();
-    const allBoardsQuery = query(collection(db, 'boards'));
-    const allBoardsSnapshot = await getDocs(allBoardsQuery);
-
-    const boardMap = new Map<string, Board>();
-
-    // Add owned boards
-    ownedBoards.forEach(board => {
-      boardMap.set(board.id, board);
-    });
-
-    // Add shared boards where user is a collaborator
-    allBoardsSnapshot.docs.forEach(doc => {
-      const data = doc.data() as any;
-      const isSharedWithUser = data.sharedWith?.some((collab: any) => collab.userId === userId);
-
-      if (isSharedWithUser && !boardMap.has(doc.id)) {
-        boardMap.set(doc.id, {
-          ...data,
-          id: doc.id,
-        } as Board);
-      }
-    });
-
-    return Array.from(boardMap.values());
+    // getUserBoards already fetches both owned and shared boards using sharedWithUserIds
+    return await getUserBoards(userId);
   } catch (error) {
-    console.error('[PeriodicSync] Failed to fetch all boards:', error);
-    // Fall back to owned boards only
-    return getUserBoards(userId);
+    console.error('[PeriodicSync] Failed to fetch boards:', error);
+    return [];
   }
 }
 
