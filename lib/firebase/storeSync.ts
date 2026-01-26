@@ -127,13 +127,18 @@ export async function initializeFirebaseSync(user: User) {
         store.setDueDatePanelOpen(uiPreferences.dueDatePanelOpen);
       }
 
-      // Disable demo mode if enabled
-      if (store.demoMode) {
-        store.toggleDemoMode();
+      // Disable demo mode if enabled - but DON'T use toggleDemoMode() because that would
+      // restore the old _userBoardsBackup and overwrite the boards we just loaded from Firebase
+      if (useKanbanStore.getState().demoMode) {
+        useKanbanStore.setState({
+          demoMode: false,
+          _userBoardsBackup: undefined // Clear the backup since we have fresh Firebase boards
+        });
       }
 
-      // Clear old localStorage boards since we've successfully loaded from Firebase
+      // Clear old localStorage boards and activeBoard since we've successfully loaded from Firebase
       // This prevents the migration dialog from appearing unnecessarily
+      // and ensures the correct default board loads on next page refresh
       try {
         const storeData = localStorage.getItem('kanban-store');
         if (storeData) {
@@ -141,9 +146,9 @@ export async function initializeFirebaseSync(user: User) {
           parsed.state = {
             ...parsed.state,
             boards: [], // Clear local boards - we're now synced with Firebase
+            activeBoard: store.activeBoard, // Preserve the board we just switched to from Firebase
           };
           localStorage.setItem('kanban-store', JSON.stringify(parsed));
-          console.log('[Sync] Cleared localStorage boards after Firebase sync');
         }
       } catch (error) {
         console.warn('[Sync] Failed to clear localStorage:', error);
@@ -156,9 +161,13 @@ export async function initializeFirebaseSync(user: User) {
       console.log('[Sync] User has no boards in Firebase yet. Starting with empty state.');
       store.setBoards([]);
 
-      // Disable demo mode if enabled
-      if (store.demoMode) {
-        store.toggleDemoMode();
+      // Disable demo mode if enabled - but DON'T use toggleDemoMode() because that would
+      // restore the old _userBoardsBackup and overwrite the boards we just loaded from Firebase
+      if (useKanbanStore.getState().demoMode) {
+        useKanbanStore.setState({
+          demoMode: false,
+          _userBoardsBackup: undefined // Clear the backup since we have fresh Firebase boards
+        });
       }
 
       // Mark as saved

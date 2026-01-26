@@ -31,6 +31,7 @@ function createDefaultBoard(ownerId: string = 'demo-user'): Board {
     columns,
     ownerId,
     sharedWith: [],
+    sharedWithUserIds: [],
   };
 }
 
@@ -138,6 +139,7 @@ export const useKanbanStore = create<KanbanStore>()(
           })),
           ownerId: '', // Will be set when synced to Firebase
           sharedWith: [],
+          sharedWithUserIds: [],
         };
 
         // Update board IDs

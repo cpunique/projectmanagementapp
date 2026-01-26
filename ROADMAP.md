@@ -2,6 +2,23 @@
 
 ## Recently Completed ✅
 
+### Board Collaboration & Online Presence (Jan 2026)
+- ✅ Implemented visible collaborator display in board header
+- ✅ Added online presence system with real-time status indicators (green dots)
+- ✅ Built tier infrastructure for future monetization (unlimited during testing)
+- ✅ Created collaborator avatar stack with tooltips showing role and online status
+- ✅ Implemented Firestore presence tracking with 30-second heartbeat
+- ✅ Added graceful degradation for presence failures (non-critical feature)
+- ✅ Deployed Firestore security rules for presence collection
+
+**Status**: Deployed and tested
+**Key Files**:
+- `components/kanban/CollaboratorAvatarStack.tsx` - Avatar display
+- `lib/firebase/presence.ts` - Presence tracking system
+- `lib/hooks/useBoardPresence.ts` - React presence hook
+- `lib/tiers/config.ts` - Tier limits configuration
+- `firestore.rules` - Security rules for presence
+
 ### Default Board Persistence Fix (Jan 2026)
 - ✅ Fixed star-selected default board not persisting across logout/login
 - ✅ Fixed `useDefaultBoardSaver` hook conflict with manual selection
@@ -177,6 +194,22 @@ Expected: All changes sync successfully ✅
 - Conflict history
 - Backup status
 
+### Phase 6: Role-Based Permission Enforcement
+**Priority**: Medium
+**Effort**: 1-2 days
+**Current state**: UI enforces viewer vs editor roles, but Firestore rules allow all collaborators to edit
+
+**What needs to be done**:
+- Enhance Firestore security rules to enforce role-based permissions
+- Viewers should only have read access at the rule level
+- Editors should have full read/write access
+- Owner maintains full control including delete permissions
+
+**Files to modify**:
+- `firestore.rules` - Add role checking logic to update rules
+
+**Current workaround**: UI prevents viewers from editing, but technically they could bypass it with direct Firestore API calls
+
 ---
 
 ## Alternative Focus Areas
@@ -192,12 +225,14 @@ If disaster recovery isn't urgent, consider these instead:
 **Estimated effort**: 1 week
 
 ### B. Collaboration Features
-- Real-time multi-user editing
-- User presence indicators
-- Comment threads on cards
-- @mentions and notifications
+- ✅ User presence indicators (completed)
+- ✅ Real-time collaborator visibility in board header (completed)
+- 🔲 Role-based permissions enforcement in Firestore rules (viewer vs editor at rule level)
+- 🔲 Comment threads on cards
+- 🔲 @mentions and notifications
+- 🔲 Activity feed showing recent changes
 
-**Estimated effort**: 3-4 weeks
+**Estimated effort for remaining features**: 2-3 weeks
 
 ### C. Advanced Card Features
 - Card templates
@@ -294,6 +329,6 @@ Before starting, clarify:
 
 ---
 
-**Last Updated**: January 18, 2026
-**Current Version**: Production-ready for basic usage
-**Recommended Next**: Disaster Recovery MVP (2 weeks)
+**Last Updated**: January 24, 2026
+**Current Version**: Production-ready with collaboration features
+**Recommended Next**: Disaster Recovery MVP (2 weeks) OR Role-Based Permissions (2 days)
