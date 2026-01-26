@@ -193,26 +193,33 @@ export async function getUserBoards(userId: string): Promise<Board[]> {
     // Combine and deduplicate results
     const boardMap = new Map<string, Board>();
 
-    // Query for boards owned by the user
+    // Query for owned and shared boards in parallel for faster loading
     const ownedQuery = query(getBoardsCollection(), where('ownerId', '==', userId));
-    const ownedSnapshot = await getDocs(ownedQuery);
+    const sharedQuery = query(getBoardsCollection(), where('sharedWithUserIds', 'array-contains', userId));
 
-    ownedSnapshot.docs.forEach((doc) => {
-      const data = doc.data();
-      boardMap.set(doc.id, {
-        ...data,
-        createdAt: convertTimestamp(data.createdAt),
-        updatedAt: convertTimestamp(data.updatedAt),
-      } as Board);
-    });
+    // Execute both queries in parallel
+    const [ownedSnapshot, sharedSnapshot] = await Promise.allSettled([
+      getDocs(ownedQuery),
+      getDocs(sharedQuery),
+    ]);
 
-    // Query for boards shared with the user (using denormalized sharedWithUserIds array)
-    // Wrapped in try-catch to handle cases where Firestore rules temporarily restrict shared board access
-    try {
-      const sharedQuery = query(getBoardsCollection(), where('sharedWithUserIds', 'array-contains', userId));
-      const sharedSnapshot = await getDocs(sharedQuery);
+    // Process owned boards
+    if (ownedSnapshot.status === 'fulfilled') {
+      ownedSnapshot.value.docs.forEach((doc) => {
+        const data = doc.data();
+        boardMap.set(doc.id, {
+          ...data,
+          createdAt: convertTimestamp(data.createdAt),
+          updatedAt: convertTimestamp(data.updatedAt),
+        } as Board);
+      });
+    } else {
+      console.error('[getUserBoards] Failed to fetch owned boards:', ownedSnapshot.reason);
+    }
 
-      sharedSnapshot.docs.forEach((doc) => {
+    // Process shared boards
+    if (sharedSnapshot.status === 'fulfilled') {
+      sharedSnapshot.value.docs.forEach((doc) => {
         const data = doc.data();
         // Only add if not already in map (owned boards take precedence)
         if (!boardMap.has(doc.id)) {
@@ -223,10 +230,9 @@ export async function getUserBoards(userId: string): Promise<Board[]> {
           } as Board);
         }
       });
-    } catch (sharedError) {
-      // Shared boards query may fail if Firestore rules don't allow it
-      // Continue with owned boards only
-      console.log('[getUserBoards] Could not fetch shared boards (rules may be restricted):', sharedError instanceof Error ? sharedError.message : 'Unknown error');
+    } else {
+      // Shared boards query may fail if Firestore rules restrict access
+      console.log('[getUserBoards] Could not fetch shared boards (rules may be restricted):', sharedSnapshot.reason instanceof Error ? sharedSnapshot.reason.message : 'Unknown error');
     }
 
     return Array.from(boardMap.values());
