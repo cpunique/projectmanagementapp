@@ -53,6 +53,8 @@ export interface Board {
   editorUserIds?: string[]; // Denormalized array of editor user IDs for Firestore permission checks
 }
 
+export type SyncState = 'idle' | 'syncing' | 'synced' | 'error' | 'offline';
+
 export interface KanbanState {
   boards: Board[];
   activeBoard: string | null;
@@ -73,6 +75,11 @@ export interface KanbanState {
   dueDatePanelWidth: number;
   // Unsaved changes tracking
   hasUnsavedChanges: boolean;
+  // Sync state tracking
+  syncState: SyncState;
+  lastSyncTime: string | null; // ISO timestamp
+  pendingOperations: number; // Count of pending operations when offline
+  isOnline: boolean; // Network connectivity status
 }
 
 export interface KanbanActions {
@@ -141,6 +148,14 @@ export interface KanbanActions {
   markAsUnsaved: () => void;
   markAsSaved: () => void;
   saveToFirebase: () => Promise<void>;
+
+  // Sync state actions
+  setSyncState: (state: SyncState) => void;
+  setLastSyncTime: (time: string | null) => void;
+  setPendingOperations: (count: number) => void;
+  setIsOnline: (isOnline: boolean) => void;
+  incrementPendingOperations: () => void;
+  decrementPendingOperations: () => void;
 }
 
 export type KanbanStore = KanbanState & KanbanActions;

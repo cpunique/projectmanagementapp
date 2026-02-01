@@ -49,6 +49,7 @@ const CardModal = ({ isOpen, onClose, card, boardId }: CardModalProps) => {
   const [checklistInput, setChecklistInput] = useState('');
 
   // Sync all state with card prop when card changes (including when a new card is selected)
+  // Also sync when card.updatedAt changes to support real-time collaboration
   useEffect(() => {
     if (card) {
       setTitle(card.title || '');
@@ -62,7 +63,7 @@ const CardModal = ({ isOpen, onClose, card, boardId }: CardModalProps) => {
       setTagInput('');
       setChecklistInput('');
     }
-  }, [card?.id]); // Key dependency: when card ID changes, reset all state
+  }, [card?.id, card?.updatedAt]); // Re-sync when card ID or updatedAt changes (collaboration support)
 
   // Listen for theme changes
   useEffect(() => {

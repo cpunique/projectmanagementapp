@@ -33,6 +33,9 @@ export async function initializeFirebaseSync(user: User) {
     const store = useKanbanStore.getState();
     console.log('[Sync] Starting Firebase sync initialization for user:', user.uid);
 
+    // Set syncing state
+    store.setSyncState('syncing');
+
     // CRITICAL FIX: Clear localStorage boards on every login
     // This prevents boards from previous user account being migrated
     try {
@@ -180,6 +183,10 @@ export async function initializeFirebaseSync(user: User) {
 
     // Reset flag after initialization completes
     isSyncingFromFirebase = false;
+
+    // Mark sync as complete
+    store.setSyncState('synced');
+    store.setLastSyncTime(new Date().toISOString());
   } catch (error: any) {
     console.error('[Sync] Failed to initialize Firebase sync:', error);
     // Log the specific error code if it's a Firebase error
@@ -188,6 +195,11 @@ export async function initializeFirebaseSync(user: User) {
       console.error('[Sync] Firebase error message:', error.message);
     }
     isSyncingFromFirebase = false;
+
+    // Mark sync as failed
+    const store = useKanbanStore.getState();
+    store.setSyncState('error');
+
     // Don't re-throw - let app continue without sync
   }
 }

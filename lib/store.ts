@@ -121,6 +121,11 @@ export const useKanbanStore = create<KanbanStore>()(
       dueDatePanelOpen: true,
       dueDatePanelWidth: 320,
       hasUnsavedChanges: false,
+      // Sync state
+      syncState: 'idle',
+      lastSyncTime: null,
+      pendingOperations: 0,
+      isOnline: typeof navigator !== 'undefined' ? navigator.onLine : true,
 
       // Board actions
       addBoard: (name: string, description?: string) => {
@@ -701,6 +706,14 @@ export const useKanbanStore = create<KanbanStore>()(
         // which has access to the authenticated user
         set({ hasUnsavedChanges: false });
       },
+
+      // Sync state actions
+      setSyncState: (state) => set({ syncState: state }),
+      setLastSyncTime: (time) => set({ lastSyncTime: time }),
+      setPendingOperations: (count) => set({ pendingOperations: count }),
+      setIsOnline: (isOnline) => set({ isOnline }),
+      incrementPendingOperations: () => set((state) => ({ pendingOperations: state.pendingOperations + 1 })),
+      decrementPendingOperations: () => set((state) => ({ pendingOperations: Math.max(0, state.pendingOperations - 1) })),
     }),
     {
       name: 'kanban-store',

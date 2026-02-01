@@ -15,6 +15,8 @@ const SaveButton = () => {
   const activeBoard = useKanbanStore((state) => state.activeBoard);
   const defaultBoardId = useKanbanStore((state) => state.defaultBoardId);
   const markAsSaved = useKanbanStore((state) => state.markAsSaved);
+  const setSyncState = useKanbanStore((state) => state.setSyncState);
+  const setLastSyncTime = useKanbanStore((state) => state.setLastSyncTime);
   const [saveState, setSaveState] = useState<SaveState>('idle');
   const [isVisible, setIsVisible] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -34,6 +36,7 @@ const SaveButton = () => {
     if (saveState === 'saving' || !user) return;
 
     setSaveState('saving');
+    setSyncState('syncing');
     setErrorMessage(null);
 
     // If quota is already exceeded, skip Firebase save entirely
@@ -88,6 +91,8 @@ const SaveButton = () => {
       // Mark as saved (changes are always saved locally via Zustand persist)
       markAsSaved();
       setSaveState('saved');
+      setSyncState('synced');
+      setLastSyncTime(new Date().toISOString());
 
       // Show "Saved ✓" for 2 seconds, then fade out
       setTimeout(() => {
@@ -99,6 +104,9 @@ const SaveButton = () => {
       }, 2000);
     } catch (error: any) {
       console.error('[SaveButton] Failed to save:', error);
+
+      // Mark sync as failed
+      setSyncState('error');
 
       // Handle quota exceeded error - stop trying to save to Firebase
       if (error?.code === 'resource-exhausted') {
