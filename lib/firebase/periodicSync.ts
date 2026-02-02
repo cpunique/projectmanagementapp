@@ -3,7 +3,75 @@ import { useKanbanStore } from '@/lib/store';
 import { isAdmin } from '@/lib/admin/isAdmin';
 import { getUserBoards, getBoard } from './firestore';
 import { getDocs, query, where, collection, getFirestore } from 'firebase/firestore';
-import type { Board } from '@/types';
+import type { Board, Card, CardComment } from '@/types';
+
+/**
+ * Merge comments from local and remote cards
+ * Uses comment ID to deduplicate, keeping the most recent version
+ */
+function mergeComments(localComments: CardComment[] = [], remoteComments: CardComment[] = []): CardComment[] {
+  const commentMap = new Map<string, CardComment>();
+
+  // Add local comments first (preserve unsaved local comments)
+  for (const comment of localComments) {
+    commentMap.set(comment.id, comment);
+  }
+
+  // Add remote comments (new ones from other users)
+  for (const comment of remoteComments) {
+    const existing = commentMap.get(comment.id);
+    if (!existing) {
+      // New remote comment not in local - add it
+      commentMap.set(comment.id, comment);
+    } else {
+      // Comment exists in both - keep the one with more recent update
+      const localTime = new Date(existing.updatedAt || existing.createdAt).getTime();
+      const remoteTime = new Date(comment.updatedAt || comment.createdAt).getTime();
+      if (remoteTime > localTime) {
+        commentMap.set(comment.id, comment);
+      }
+    }
+  }
+
+  // Sort by createdAt
+  return Array.from(commentMap.values()).sort(
+    (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+  );
+}
+
+/**
+ * Merge remote board into local board, preserving local comments
+ */
+function mergeRemoteIntoLocal(localBoard: Board, remoteBoard: Board): Board {
+  // Create a map of local cards by ID for quick lookup
+  const localCardMap = new Map<string, Card>();
+  for (const column of localBoard.columns) {
+    for (const card of column.cards) {
+      localCardMap.set(card.id, card);
+    }
+  }
+
+  // Merge: use remote structure but preserve/merge local comments
+  const mergedColumns = remoteBoard.columns.map(remoteColumn => ({
+    ...remoteColumn,
+    cards: remoteColumn.cards.map(remoteCard => {
+      const localCard = localCardMap.get(remoteCard.id);
+      if (localCard && localCard.comments && localCard.comments.length > 0) {
+        // Merge comments from both versions
+        return {
+          ...remoteCard,
+          comments: mergeComments(localCard.comments, remoteCard.comments),
+        };
+      }
+      return remoteCard;
+    }),
+  }));
+
+  return {
+    ...remoteBoard,
+    columns: mergedColumns,
+  };
+}
 
 /**
  * Periodic sync manager for collaborative boards
@@ -131,7 +199,7 @@ async function performPeriodicSync(user: User) {
       }
     }
 
-    // If there are updates, refresh all boards from Firebase
+    // If there are updates, refresh boards from Firebase with comment merging
     if (hasUpdates) {
       // CRITICAL: Don't sync boards while in demo mode - demo board should stay visible
       if (store.demoMode) {
@@ -139,13 +207,24 @@ async function performPeriodicSync(user: User) {
         return;
       }
 
-      console.log('[PeriodicSync] Updates detected, refreshing boards from Firebase');
-      store.setBoards(remoteBoards);
+      console.log('[PeriodicSync] Updates detected, merging boards from Firebase');
+
+      // Merge remote boards with local, preserving local comments
+      const mergedBoards = remoteBoards.map(remoteBoard => {
+        const localBoard = currentBoards.find(b => b.id === remoteBoard.id);
+        if (localBoard) {
+          // Merge to preserve any unsaved local comments
+          return mergeRemoteIntoLocal(localBoard, remoteBoard);
+        }
+        return remoteBoard;
+      });
+
+      store.setBoards(mergedBoards);
 
       // If active board was deleted, switch to first available board
-      const activeBoardStillExists = remoteBoards.find(b => b.id === store.activeBoard);
-      if (!activeBoardStillExists && remoteBoards.length > 0) {
-        store.switchBoard(remoteBoards[0].id);
+      const activeBoardStillExists = mergedBoards.find(b => b.id === store.activeBoard);
+      if (!activeBoardStillExists && mergedBoards.length > 0) {
+        store.switchBoard(mergedBoards[0].id);
       }
     }
   } catch (error) {

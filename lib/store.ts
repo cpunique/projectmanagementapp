@@ -570,6 +570,114 @@ export const useKanbanStore = create<KanbanStore>()(
         }));
       },
 
+      // Comment actions
+      addComment: (
+        boardId: string,
+        cardId: string,
+        authorId: string,
+        authorEmail: string,
+        content: string
+      ) => {
+        const newComment = {
+          id: nanoid(),
+          authorId,
+          authorEmail,
+          content,
+          createdAt: new Date().toISOString(),
+        };
+        set((state) => ({
+          boards: state.boards.map((b) =>
+            b.id === boardId
+              ? {
+                  ...b,
+                  updatedAt: new Date().toISOString(),
+                  columns: b.columns.map((c) => ({
+                    ...c,
+                    cards: c.cards.map((card) =>
+                      card.id === cardId
+                        ? {
+                            ...card,
+                            comments: [...(card.comments || []), newComment],
+                            updatedAt: new Date().toISOString(),
+                          }
+                        : card
+                    ),
+                  })),
+                }
+              : b
+          ),
+          hasUnsavedChanges: true,
+        }));
+      },
+
+      editComment: (
+        boardId: string,
+        cardId: string,
+        commentId: string,
+        content: string
+      ) => {
+        set((state) => ({
+          boards: state.boards.map((b) =>
+            b.id === boardId
+              ? {
+                  ...b,
+                  updatedAt: new Date().toISOString(),
+                  columns: b.columns.map((c) => ({
+                    ...c,
+                    cards: c.cards.map((card) =>
+                      card.id === cardId
+                        ? {
+                            ...card,
+                            comments: card.comments?.map((comment) =>
+                              comment.id === commentId
+                                ? {
+                                    ...comment,
+                                    content,
+                                    updatedAt: new Date().toISOString(),
+                                    isEdited: true,
+                                  }
+                                : comment
+                            ),
+                            updatedAt: new Date().toISOString(),
+                          }
+                        : card
+                    ),
+                  })),
+                }
+              : b
+          ),
+          hasUnsavedChanges: true,
+        }));
+      },
+
+      deleteComment: (boardId: string, cardId: string, commentId: string) => {
+        set((state) => ({
+          boards: state.boards.map((b) =>
+            b.id === boardId
+              ? {
+                  ...b,
+                  updatedAt: new Date().toISOString(),
+                  columns: b.columns.map((c) => ({
+                    ...c,
+                    cards: c.cards.map((card) =>
+                      card.id === cardId
+                        ? {
+                            ...card,
+                            comments: card.comments?.filter(
+                              (comment) => comment.id !== commentId
+                            ),
+                            updatedAt: new Date().toISOString(),
+                          }
+                        : card
+                    ),
+                  })),
+                }
+              : b
+          ),
+          hasUnsavedChanges: true,
+        }));
+      },
+
       // Due dates panel actions
       toggleDueDatePanel: () => set((state) => ({ dueDatePanelOpen: !state.dueDatePanelOpen })),
       setDueDatePanelOpen: (isOpen: boolean) => set({ dueDatePanelOpen: isOpen }),

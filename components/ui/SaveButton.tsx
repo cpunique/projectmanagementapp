@@ -3,10 +3,79 @@
 import { useState, useEffect } from 'react';
 import { useKanbanStore } from '@/lib/store';
 import { useAuth } from '@/lib/firebase/AuthContext';
-import { updateBoard, createBoard, setUserDefaultBoard } from '@/lib/firebase/firestore';
+import { updateBoard, createBoard, setUserDefaultBoard, getBoard } from '@/lib/firebase/firestore';
 import { cn } from '@/lib/utils';
+import { Board, Card, CardComment } from '@/types';
 
 type SaveState = 'idle' | 'saving' | 'saved';
+
+/**
+ * Merge comments from local and remote cards
+ * Uses comment ID to deduplicate, keeping the most recent version
+ */
+function mergeComments(localComments: CardComment[] = [], remoteComments: CardComment[] = []): CardComment[] {
+  const commentMap = new Map<string, CardComment>();
+
+  // Add remote comments first
+  for (const comment of remoteComments) {
+    commentMap.set(comment.id, comment);
+  }
+
+  // Add/update with local comments (local takes precedence for edits)
+  for (const comment of localComments) {
+    const existing = commentMap.get(comment.id);
+    if (!existing) {
+      // New local comment not in remote
+      commentMap.set(comment.id, comment);
+    } else {
+      // Comment exists in both - keep the one with more recent update
+      const localTime = new Date(comment.updatedAt || comment.createdAt).getTime();
+      const remoteTime = new Date(existing.updatedAt || existing.createdAt).getTime();
+      if (localTime >= remoteTime) {
+        commentMap.set(comment.id, comment);
+      }
+    }
+  }
+
+  // Sort by createdAt
+  return Array.from(commentMap.values()).sort(
+    (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+  );
+}
+
+/**
+ * Merge local board with remote board, preserving comments from both
+ */
+function mergeBoardWithRemote(localBoard: Board, remoteBoard: Board): Board {
+  // Create a map of remote cards by ID for quick lookup
+  const remoteCardMap = new Map<string, Card>();
+  for (const column of remoteBoard.columns) {
+    for (const card of column.cards) {
+      remoteCardMap.set(card.id, card);
+    }
+  }
+
+  // Merge comments into local board's cards
+  const mergedColumns = localBoard.columns.map(column => ({
+    ...column,
+    cards: column.cards.map(localCard => {
+      const remoteCard = remoteCardMap.get(localCard.id);
+      if (remoteCard) {
+        // Merge comments from both versions
+        return {
+          ...localCard,
+          comments: mergeComments(localCard.comments, remoteCard.comments),
+        };
+      }
+      return localCard;
+    }),
+  }));
+
+  return {
+    ...localBoard,
+    columns: mergedColumns,
+  };
+}
 
 const SaveButton = () => {
   const { user } = useAuth();
@@ -78,8 +147,17 @@ const SaveButton = () => {
         }
 
         if (boardWithOwner.ownerId) {
-          // Board already exists in Firebase, update it
-          await updateBoard(currentBoard.id, currentBoard);
+          // Board already exists in Firebase - fetch latest and merge comments
+          const remoteBoard = await getBoard(currentBoard.id);
+          let boardToSave = currentBoard;
+
+          if (remoteBoard) {
+            // Merge comments from both local and remote to prevent overwrites
+            boardToSave = mergeBoardWithRemote(currentBoard, remoteBoard);
+            console.log('[SaveButton] Merged local changes with remote board');
+          }
+
+          await updateBoard(currentBoard.id, boardToSave);
         } else {
           // New board not yet in Firebase - create it with ownerId
           const boardToCreate = { ...currentBoard, ownerId: user.uid };

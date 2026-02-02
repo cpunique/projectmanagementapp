@@ -5,6 +5,16 @@ export interface ChecklistItem {
   order: number;
 }
 
+export interface CardComment {
+  id: string;
+  authorId: string;
+  authorEmail: string;
+  content: string;
+  createdAt: string;
+  updatedAt?: string;
+  isEdited?: boolean;
+}
+
 export interface BoardCollaborator {
   userId: string;
   email: string;
@@ -30,6 +40,7 @@ export interface Card {
   checklist?: ChecklistItem[];
   aiPrompt?: string; // Generated AI implementation prompt
   status?: "active" | "descoped"; // Card status - defaults to 'active'
+  comments?: CardComment[]; // Thread of comments on this card
 }
 
 export interface Column {
@@ -120,6 +131,11 @@ export interface KanbanActions {
   addChecklistItem: (boardId: string, cardId: string, text: string) => void;
   deleteChecklistItem: (boardId: string, cardId: string, itemId: string) => void;
   toggleChecklistItem: (boardId: string, cardId: string, itemId: string) => void;
+
+  // Comment actions
+  addComment: (boardId: string, cardId: string, authorId: string, authorEmail: string, content: string) => void;
+  editComment: (boardId: string, cardId: string, commentId: string, content: string) => void;
+  deleteComment: (boardId: string, cardId: string, commentId: string) => void;
 
   // UI state actions
   toggleDarkMode: () => void;

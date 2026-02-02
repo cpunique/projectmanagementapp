@@ -3,10 +3,12 @@
 import { useState, useEffect } from 'react';
 import { nanoid } from 'nanoid';
 import { useKanbanStore } from '@/lib/store';
+import { useAuth } from '@/lib/firebase/AuthContext';
 import Modal from '@/components/ui/Modal';
 import Input from '@/components/ui/Input';
 import Button from '@/components/ui/Button';
 import RichTextEditor from '@/components/ui/RichTextEditor';
+import CommentThread from './CommentThread';
 import { Card, ChecklistItem } from '@/types';
 import { formatDate, getDefaultCardColor } from '@/lib/utils';
 import { CARD_COLORS, CARD_COLOR_NAMES } from '@/lib/constants';
@@ -19,10 +21,14 @@ interface CardModalProps {
 }
 
 const CardModal = ({ isOpen, onClose, card, boardId }: CardModalProps) => {
+  const { user } = useAuth();
   const updateCard = useKanbanStore((state) => state.updateCard);
   const addChecklistItem = useKanbanStore((state) => state.addChecklistItem);
   const deleteChecklistItem = useKanbanStore((state) => state.deleteChecklistItem);
   const toggleChecklistItem = useKanbanStore((state) => state.toggleChecklistItem);
+  const addComment = useKanbanStore((state) => state.addComment);
+  const editComment = useKanbanStore((state) => state.editComment);
+  const deleteComment = useKanbanStore((state) => state.deleteComment);
 
   // Detect actual theme from DOM instead of store (since store's darkMode is broken)
   const [actualDarkMode, setActualDarkMode] = useState(() => {
@@ -410,6 +416,29 @@ const CardModal = ({ isOpen, onClose, card, boardId }: CardModalProps) => {
           </div>
         </div>
       </div>
+
+      {/* Comments Section */}
+      {card && (
+        <CommentThread
+          comments={card.comments || []}
+          currentUserId={user?.uid || ''}
+          currentUserEmail={user?.email || ''}
+          boardId={boardId}
+          cardId={card.id}
+          onAddComment={(content) => {
+            if (user) {
+              addComment(boardId, card.id, user.uid, user.email || '', content);
+            }
+          }}
+          onEditComment={(commentId, content) => {
+            editComment(boardId, card.id, commentId, content);
+          }}
+          onDeleteComment={(commentId) => {
+            deleteComment(boardId, card.id, commentId);
+          }}
+          canComment={!!user}
+        />
+      )}
 
       {/* Action Buttons - Sticky Footer */}
       <div className="flex gap-3 justify-center pt-6 mt-6 border-t border-gray-200 dark:border-gray-700">

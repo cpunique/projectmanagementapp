@@ -6,6 +6,7 @@ import { motion } from 'framer-motion';
 import DOMPurify from 'dompurify';
 import { useKanbanStore } from '@/lib/store';
 import { useAuth } from '@/lib/firebase/AuthContext';
+import { useUnreadComments } from '@/lib/hooks/useUnreadComments';
 import { type Card as CardType } from '@/types';
 import { PRIORITY_LABELS, DESCOPED_COLUMN_KEYWORDS } from '@/lib/constants';
 import { formatDate, isOverdue, isLightColor, getDefaultCardColor } from '@/lib/utils';
@@ -26,6 +27,7 @@ interface CardProps {
 const Card = ({ card, boardId, columnId, onDragStart, onDragEnd, isDragging, canEdit }: CardProps) => {
   const { deleteCard, boards } = useKanbanStore();
   const { user } = useAuth();
+  const { getUnreadCount, markAsSeen } = useUnreadComments();
   const [isHovering, setIsHovering] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isAIModalOpen, setIsAIModalOpen] = useState(false);
@@ -88,6 +90,10 @@ const Card = ({ card, boardId, columnId, onDragStart, onDragEnd, isDragging, can
 
   // Check if card is descoped
   const isDescoped = card.status === 'descoped';
+
+  // Get unread comment count
+  const unreadCount = getUnreadCount(card.id, card.comments || []);
+  const totalComments = card.comments?.length || 0;
 
   // Handle right-click context menu
   const handleContextMenu = (e: React.MouseEvent) => {
@@ -276,7 +282,7 @@ const Card = ({ card, boardId, columnId, onDragStart, onDragEnd, isDragging, can
         )}
 
         {/* Metadata Footer */}
-        {(card.dueDate || hasNotes(card.notes)) && (
+        {(card.dueDate || hasNotes(card.notes) || totalComments > 0) && (
           <div className={`flex items-center gap-3 pt-2 mt-auto border-t ${isLight ? 'border-gray-100' : 'border-gray-600'}`}>
             {/* Due Date */}
             {card.dueDate && (
@@ -290,6 +296,32 @@ const Card = ({ card, boardId, columnId, onDragStart, onDragEnd, isDragging, can
                 </svg>
                 <span>{formatDate(card.dueDate)}</span>
               </div>
+            )}
+
+            {/* Comments Indicator */}
+            {totalComments > 0 && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsModalOpen(true);
+                }}
+                className={`flex items-center gap-1 text-xs pointer-events-auto transition-colors ${
+                  unreadCount > 0
+                    ? 'text-purple-600 dark:text-purple-400 font-medium'
+                    : metaColor
+                }`}
+                title={unreadCount > 0 ? `${unreadCount} new comment${unreadCount !== 1 ? 's' : ''}` : `${totalComments} comment${totalComments !== 1 ? 's' : ''}`}
+              >
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                </svg>
+                <span>{totalComments}</span>
+                {unreadCount > 0 && (
+                  <span className="ml-0.5 px-1.5 py-0.5 bg-purple-600 text-white text-[10px] font-bold rounded-full">
+                    {unreadCount}
+                  </span>
+                )}
+              </button>
             )}
 
             {/* Notes Indicator with Hover Tooltip */}
@@ -322,7 +354,13 @@ const Card = ({ card, boardId, columnId, onDragStart, onDragEnd, isDragging, can
       {typeof window !== 'undefined' && createPortal(
         <CardModal
           isOpen={isModalOpen}
-          onClose={() => setIsModalOpen(false)}
+          onClose={() => {
+            setIsModalOpen(false);
+            // Mark comments as seen when closing the modal
+            if (card.comments && card.comments.length > 0) {
+              markAsSeen(card.id);
+            }
+          }}
           card={card}
           boardId={boardId}
         />,
