@@ -159,9 +159,9 @@ const SaveButton = () => {
 
           await updateBoard(currentBoard.id, boardToSave);
         } else {
-          // New board not yet in Firebase - create it with ownerId
-          const boardToCreate = { ...currentBoard, ownerId: user.uid };
-          await createBoard(user.uid, boardToCreate);
+          // New board not yet in Firebase - create it with ownerId and ownerEmail
+          const boardToCreate = { ...currentBoard, ownerId: user.uid, ownerEmail: user.email || '' };
+          await createBoard(user.uid, boardToCreate, user.email || undefined);
           console.log('[SaveButton] Created new board in Firebase:', currentBoard.id);
         }
       }

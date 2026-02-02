@@ -12,6 +12,7 @@ import BoardSwitcher from '@/components/kanban/BoardSwitcher';
 import UserMenu from '@/components/auth/UserMenu';
 import SyncStatus from '@/components/ui/SyncStatus';
 import SaveButton from '@/components/ui/SaveButton';
+import NotificationBell from '@/components/ui/NotificationBell';
 
 const Header = () => {
   const { user } = useAuth();
@@ -115,6 +116,9 @@ const Header = () => {
           <div className="flex items-center gap-3">
             {/* Save Button */}
             <SaveButton />
+
+            {/* Notification Bell - Only show when logged in */}
+            {user && <NotificationBell />}
 
             {/* Admin Demo Edit Button - Only show when admin user */}
             {canEditDemo && (

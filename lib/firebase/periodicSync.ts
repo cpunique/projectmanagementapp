@@ -160,6 +160,12 @@ async function performPeriodicSync(user: User) {
   const store = useKanbanStore.getState();
   const currentBoards = store.boards;
 
+  // Skip sync if there are unsaved local changes - let auto-sync push them first
+  if (store.hasUnsavedChanges) {
+    console.log('[PeriodicSync] Skipping - has unsaved local changes');
+    return;
+  }
+
   try {
     // Fetch both owned and shared boards from Firebase
     const remoteBoards = await fetchAllUserBoards(user.uid);

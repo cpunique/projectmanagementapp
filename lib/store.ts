@@ -3,7 +3,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { nanoid } from 'nanoid';
-import type { Board, Card, Column, ChecklistItem, KanbanStore } from '@/types';
+import type { Board, Card, Column, ChecklistItem, KanbanStore, Notification } from '@/types';
 import {
   MAX_COLUMNS,
   DEFAULT_BOARD_ID,
@@ -126,6 +126,8 @@ export const useKanbanStore = create<KanbanStore>()(
       lastSyncTime: null,
       pendingOperations: 0,
       isOnline: typeof navigator !== 'undefined' ? navigator.onLine : true,
+      // Notifications
+      notifications: [],
 
       // Board actions
       addBoard: (name: string, description?: string) => {
@@ -576,15 +578,24 @@ export const useKanbanStore = create<KanbanStore>()(
         cardId: string,
         authorId: string,
         authorEmail: string,
-        content: string
+        content: string,
+        mentions?: { userId: string; email: string }[]
       ) => {
+        const commentId = nanoid();
         const newComment = {
-          id: nanoid(),
+          id: commentId,
           authorId,
           authorEmail,
           content,
           createdAt: new Date().toISOString(),
+          mentions,
         };
+
+        // Get board and card info before set() for Firebase notifications
+        const state = get();
+        const board = state.boards.find(b => b.id === boardId);
+        const card = board?.columns.flatMap(c => c.cards).find(c => c.id === cardId);
+
         set((state) => ({
           boards: state.boards.map((b) =>
             b.id === boardId
@@ -593,14 +604,14 @@ export const useKanbanStore = create<KanbanStore>()(
                   updatedAt: new Date().toISOString(),
                   columns: b.columns.map((c) => ({
                     ...c,
-                    cards: c.cards.map((card) =>
-                      card.id === cardId
+                    cards: c.cards.map((cardItem) =>
+                      cardItem.id === cardId
                         ? {
-                            ...card,
-                            comments: [...(card.comments || []), newComment],
+                            ...cardItem,
+                            comments: [...(cardItem.comments || []), newComment],
                             updatedAt: new Date().toISOString(),
                           }
-                        : card
+                        : cardItem
                     ),
                   })),
                 }
@@ -608,13 +619,34 @@ export const useKanbanStore = create<KanbanStore>()(
           ),
           hasUnsavedChanges: true,
         }));
+
+        // Create Firebase notifications for mentioned users (async, non-blocking)
+        console.log('[Store] addComment - mentions:', mentions, 'board:', board?.name, 'card:', card?.title);
+        if (mentions && mentions.length > 0 && board && card) {
+          console.log('[Store] Creating notifications for:', mentions.map(m => m.email));
+          import('@/lib/firebase/notifications').then(({ createMentionNotifications }) => {
+            createMentionNotifications(
+              mentions,
+              authorId,
+              authorEmail,
+              boardId,
+              board.name,
+              cardId,
+              card.title,
+              commentId
+            )
+              .then(() => console.log('[Store] Notifications created successfully'))
+              .catch(err => console.error('[Store] Failed to create mention notifications:', err));
+          });
+        }
       },
 
       editComment: (
         boardId: string,
         cardId: string,
         commentId: string,
-        content: string
+        content: string,
+        mentions?: { userId: string; email: string }[]
       ) => {
         set((state) => ({
           boards: state.boards.map((b) =>
@@ -633,6 +665,7 @@ export const useKanbanStore = create<KanbanStore>()(
                                 ? {
                                     ...comment,
                                     content,
+                                    mentions,
                                     updatedAt: new Date().toISOString(),
                                     isEdited: true,
                                   }
@@ -676,6 +709,31 @@ export const useKanbanStore = create<KanbanStore>()(
           ),
           hasUnsavedChanges: true,
         }));
+      },
+
+      // Notification actions
+      addNotification: (notification) => {
+        set((state) => ({
+          notifications: [...state.notifications, { ...notification, id: nanoid() }],
+        }));
+      },
+
+      markNotificationRead: (notificationId: string) => {
+        set((state) => ({
+          notifications: state.notifications.map((n) =>
+            n.id === notificationId ? { ...n, read: true } : n
+          ),
+        }));
+      },
+
+      markAllNotificationsRead: () => {
+        set((state) => ({
+          notifications: state.notifications.map((n) => ({ ...n, read: true })),
+        }));
+      },
+
+      clearNotifications: () => {
+        set({ notifications: [] });
       },
 
       // Due dates panel actions

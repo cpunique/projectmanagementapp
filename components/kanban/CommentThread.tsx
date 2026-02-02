@@ -1,8 +1,16 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
-import { CardComment } from '@/types';
+import { useState, useRef, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
+import { CardComment, MentionedUser, BoardCollaborator } from '@/types';
 import Comment from './Comment';
+import MentionAutocomplete from './MentionAutocomplete';
+
+interface MentionUser {
+  userId: string;
+  email: string;
+  isOwner?: boolean;
+}
 
 interface CommentThreadProps {
   comments: CardComment[];
@@ -10,10 +18,14 @@ interface CommentThreadProps {
   currentUserEmail: string;
   boardId: string;
   cardId: string;
-  onAddComment: (content: string) => void;
-  onEditComment: (commentId: string, content: string) => void;
+  onAddComment: (content: string, mentions?: MentionedUser[]) => void;
+  onEditComment: (commentId: string, content: string, mentions?: MentionedUser[]) => void;
   onDeleteComment: (commentId: string) => void;
-  canComment: boolean; // Can the current user add comments?
+  canComment: boolean;
+  // Board info for mentions
+  ownerId: string;
+  ownerEmail?: string;
+  collaborators?: BoardCollaborator[];
 }
 
 export default function CommentThread({
@@ -26,21 +38,88 @@ export default function CommentThread({
   onEditComment,
   onDeleteComment,
   canComment,
+  ownerId,
+  ownerEmail,
+  collaborators = [],
 }: CommentThreadProps) {
   const [newComment, setNewComment] = useState('');
   const [isExpanded, setIsExpanded] = useState(true);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const commentsEndRef = useRef<HTMLDivElement>(null);
 
+  // Mention state
+  const [showMentionMenu, setShowMentionMenu] = useState(false);
+  const [mentionQuery, setMentionQuery] = useState('');
+  const [mentionPosition, setMentionPosition] = useState({ top: 0, left: 0 });
+  const [mentionStartIndex, setMentionStartIndex] = useState(-1);
+  const [selectedMentionIndex, setSelectedMentionIndex] = useState(0);
+  const [trackedMentions, setTrackedMentions] = useState<MentionedUser[]>([]);
+
+  // Build list of mentionable users (owner + collaborators, excluding current user)
+  const mentionableUsers: MentionUser[] = [
+    // Add owner first if we have their email
+    ...(ownerEmail && ownerId !== currentUserId
+      ? [{ userId: ownerId, email: ownerEmail, isOwner: true }]
+      : []),
+    // Add collaborators
+    ...collaborators
+      .filter((c) => c.userId !== currentUserId)
+      .map((c) => ({ userId: c.userId, email: c.email })),
+  ];
+
   // Sort comments by creation time (oldest first)
   const sortedComments = [...comments].sort(
     (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
   );
 
+  // Filter mentionable users based on query
+  const filteredMentionUsers = mentionableUsers.filter((user) => {
+    const query = mentionQuery.toLowerCase();
+    const emailName = user.email.split('@')[0].toLowerCase();
+    return emailName.includes(query) || user.email.toLowerCase().includes(query);
+  });
+
+  // Extract mentions from content
+  const extractMentions = useCallback((content: string): MentionedUser[] => {
+    const mentions: MentionedUser[] = [];
+
+    // First, check tracked mentions (from autocomplete selection)
+    for (const tracked of trackedMentions) {
+      if (!mentions.some(m => m.userId === tracked.userId)) {
+        const displayName = tracked.email.split('@')[0];
+        if (content.includes(`@${displayName}`) || content.includes(`@${tracked.email}`)) {
+          mentions.push(tracked);
+        }
+      }
+    }
+
+    // Also check for any @username patterns that match mentionable users
+    // This handles cases where user typed manually or we need to match display names
+    const mentionPatternRegex = /@(\w+[\w.-]*)/g;
+    let match;
+
+    while ((match = mentionPatternRegex.exec(content)) !== null) {
+      const mentionText = match[1].toLowerCase();
+      // Find user by display name (part before @) or full email
+      const user = mentionableUsers.find(u => {
+        const displayName = u.email.split('@')[0].toLowerCase();
+        return displayName === mentionText || u.email.toLowerCase() === mentionText;
+      });
+      if (user && !mentions.some(m => m.userId === user.userId)) {
+        mentions.push({ userId: user.userId, email: user.email });
+      }
+    }
+
+    console.log('[CommentThread] Extracted mentions:', mentions, 'from content:', content);
+    return mentions;
+  }, [mentionableUsers, trackedMentions]);
+
   const handleSubmit = () => {
     if (newComment.trim()) {
-      onAddComment(newComment.trim());
+      const mentions = extractMentions(newComment);
+      onAddComment(newComment.trim(), mentions.length > 0 ? mentions : undefined);
       setNewComment('');
+      setTrackedMentions([]);
       // Scroll to bottom after adding comment
       setTimeout(() => {
         commentsEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -48,8 +127,118 @@ export default function CommentThread({
     }
   };
 
+  // Calculate cursor position for mention menu
+  const calculateMentionPosition = useCallback(() => {
+    if (!textareaRef.current) return { top: 0, left: 0 };
+
+    const textarea = textareaRef.current;
+    const rect = textarea.getBoundingClientRect();
+
+    // Get approximate position based on cursor
+    // This is a simplified calculation - for accurate positioning, you'd need a more complex solution
+    const lineHeight = 20;
+    const lines = textarea.value.substring(0, textarea.selectionStart).split('\n');
+    const currentLineIndex = lines.length - 1;
+    const currentLine = lines[currentLineIndex];
+
+    // Approximate character width (monospace assumption, adjusted for proportional)
+    const charWidth = 8;
+    const leftOffset = Math.min(currentLine.length * charWidth, textarea.clientWidth - 200);
+
+    return {
+      top: rect.top + (currentLineIndex + 1) * lineHeight + 24,
+      left: rect.left + Math.max(0, leftOffset),
+    };
+  }, []);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const value = e.target.value;
+    const cursorPos = e.target.selectionStart;
+    setNewComment(value);
+
+    // Check for @ trigger
+    const textBeforeCursor = value.substring(0, cursorPos);
+    const lastAtIndex = textBeforeCursor.lastIndexOf('@');
+
+    if (lastAtIndex !== -1) {
+      const textAfterAt = textBeforeCursor.substring(lastAtIndex + 1);
+      // Check if we're in a mention (no spaces after @, or at the very start)
+      const hasSpace = textAfterAt.includes(' ');
+      const charBeforeAt = lastAtIndex > 0 ? textBeforeCursor[lastAtIndex - 1] : ' ';
+      const isValidStart = charBeforeAt === ' ' || charBeforeAt === '\n' || lastAtIndex === 0;
+
+      if (!hasSpace && isValidStart && mentionableUsers.length > 0) {
+        setMentionQuery(textAfterAt);
+        setMentionStartIndex(lastAtIndex);
+        setMentionPosition(calculateMentionPosition());
+        setShowMentionMenu(true);
+        setSelectedMentionIndex(0);
+      } else {
+        setShowMentionMenu(false);
+      }
+    } else {
+      setShowMentionMenu(false);
+    }
+  };
+
+  const handleMentionSelect = (user: MentionUser) => {
+    if (mentionStartIndex === -1) return;
+
+    const displayName = user.email.split('@')[0];
+    const before = newComment.substring(0, mentionStartIndex);
+    const after = newComment.substring(textareaRef.current?.selectionStart || mentionStartIndex);
+
+    // Insert mention with display name
+    const newValue = `${before}@${displayName} ${after}`;
+    setNewComment(newValue);
+
+    // Track this mention
+    setTrackedMentions(prev => {
+      if (prev.some(m => m.userId === user.userId)) return prev;
+      return [...prev, { userId: user.userId, email: user.email }];
+    });
+
+    setShowMentionMenu(false);
+    setMentionStartIndex(-1);
+
+    // Focus back on textarea
+    setTimeout(() => {
+      if (textareaRef.current) {
+        const newCursorPos = before.length + displayName.length + 2; // +2 for @ and space
+        textareaRef.current.focus();
+        textareaRef.current.setSelectionRange(newCursorPos, newCursorPos);
+      }
+    }, 0);
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    if (showMentionMenu && filteredMentionUsers.length > 0) {
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        setSelectedMentionIndex(prev =>
+          prev < filteredMentionUsers.length - 1 ? prev + 1 : 0
+        );
+        return;
+      }
+      if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        setSelectedMentionIndex(prev =>
+          prev > 0 ? prev - 1 : filteredMentionUsers.length - 1
+        );
+        return;
+      }
+      if (e.key === 'Enter' || e.key === 'Tab') {
+        e.preventDefault();
+        handleMentionSelect(filteredMentionUsers[selectedMentionIndex]);
+        return;
+      }
+      if (e.key === 'Escape') {
+        setShowMentionMenu(false);
+        return;
+      }
+    }
+
+    if (e.key === 'Enter' && !e.shiftKey && !showMentionMenu) {
       e.preventDefault();
       handleSubmit();
     }
@@ -118,7 +307,7 @@ export default function CommentThread({
 
           {/* Add comment form */}
           {canComment ? (
-            <div className="flex gap-3 pt-2">
+            <div className="flex gap-3 pt-2 relative">
               {/* User avatar */}
               <div className="w-8 h-8 rounded-full bg-purple-500 flex items-center justify-center text-white text-xs font-medium flex-shrink-0">
                 {currentUserEmail.split('@')[0].slice(0, 2).toUpperCase()}
@@ -128,13 +317,22 @@ export default function CommentThread({
                 <textarea
                   ref={textareaRef}
                   value={newComment}
-                  onChange={(e) => setNewComment(e.target.value)}
+                  onChange={handleInputChange}
                   onKeyDown={handleKeyDown}
-                  placeholder="Write a comment... (Enter to send, Shift+Enter for new line)"
+                  placeholder={mentionableUsers.length > 0
+                    ? "Write a comment... Use @ to mention someone"
+                    : "Write a comment... (Enter to send, Shift+Enter for new line)"
+                  }
                   className="w-full px-3 py-2 text-sm border rounded-lg resize-none focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-600 placeholder-gray-400 dark:placeholder-gray-500"
                   rows={1}
                 />
-                <div className="flex justify-end mt-2">
+                <div className="flex justify-between items-center mt-2">
+                  {mentionableUsers.length > 0 && (
+                    <span className="text-xs text-gray-400 dark:text-gray-500">
+                      Type @ to mention
+                    </span>
+                  )}
+                  <div className="flex-1" />
                   <button
                     onClick={handleSubmit}
                     disabled={!newComment.trim()}
@@ -144,6 +342,20 @@ export default function CommentThread({
                   </button>
                 </div>
               </div>
+
+              {/* Mention autocomplete dropdown */}
+              {showMentionMenu && typeof window !== 'undefined' && createPortal(
+                <MentionAutocomplete
+                  isOpen={showMentionMenu}
+                  searchQuery={mentionQuery}
+                  collaborators={filteredMentionUsers}
+                  position={mentionPosition}
+                  onSelect={handleMentionSelect}
+                  onClose={() => setShowMentionMenu(false)}
+                  selectedIndex={selectedMentionIndex}
+                />,
+                document.body
+              )}
             </div>
           ) : (
             <p className="text-sm text-gray-500 dark:text-gray-400 italic py-2 text-center">

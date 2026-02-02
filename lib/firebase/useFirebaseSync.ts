@@ -44,13 +44,12 @@ export function useFirebaseSync() {
       console.error('[useFirebaseSync] Error during delayed initialization:', err);
     });
 
-    // AUTO-SYNC DISABLED: Using manual save button instead to avoid Firebase quota issues
-    // Subscribe to store changes for real-time sync
-    // const unsubscribeFromStore = subscribeToStoreChanges(user);
+    // Subscribe to store changes for real-time sync to Firebase
+    const unsubscribeFromStore = subscribeToStoreChanges(user);
 
     // Cleanup function
     return () => {
-      // unsubscribeFromStore?.();
+      unsubscribeFromStore?.();
       stopPeriodicSync();
       cleanupFirebaseSync();
     };

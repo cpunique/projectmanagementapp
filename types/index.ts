@@ -5,6 +5,11 @@ export interface ChecklistItem {
   order: number;
 }
 
+export interface MentionedUser {
+  userId: string;
+  email: string;
+}
+
 export interface CardComment {
   id: string;
   authorId: string;
@@ -13,6 +18,21 @@ export interface CardComment {
   createdAt: string;
   updatedAt?: string;
   isEdited?: boolean;
+  mentions?: MentionedUser[]; // Users mentioned with @
+}
+
+export interface Notification {
+  id: string;
+  type: 'mention';
+  boardId: string;
+  boardName: string;
+  cardId: string;
+  cardTitle: string;
+  commentId: string;
+  fromUserId: string;
+  fromUserEmail: string;
+  createdAt: string;
+  read: boolean;
 }
 
 export interface BoardCollaborator {
@@ -59,6 +79,7 @@ export interface Board {
   updatedAt: string;
   columns: Column[];
   ownerId: string; // User ID of the board creator
+  ownerEmail?: string; // Email of the board creator (for @mentions)
   sharedWith?: BoardCollaborator[]; // Array of collaborators (empty if not shared)
   sharedWithUserIds?: string[]; // Denormalized array of user IDs for Firestore rule checks
   editorUserIds?: string[]; // Denormalized array of editor user IDs for Firestore permission checks
@@ -91,6 +112,8 @@ export interface KanbanState {
   lastSyncTime: string | null; // ISO timestamp
   pendingOperations: number; // Count of pending operations when offline
   isOnline: boolean; // Network connectivity status
+  // Notifications
+  notifications: Notification[];
 }
 
 export interface KanbanActions {
@@ -133,9 +156,15 @@ export interface KanbanActions {
   toggleChecklistItem: (boardId: string, cardId: string, itemId: string) => void;
 
   // Comment actions
-  addComment: (boardId: string, cardId: string, authorId: string, authorEmail: string, content: string) => void;
-  editComment: (boardId: string, cardId: string, commentId: string, content: string) => void;
+  addComment: (boardId: string, cardId: string, authorId: string, authorEmail: string, content: string, mentions?: MentionedUser[]) => void;
+  editComment: (boardId: string, cardId: string, commentId: string, content: string, mentions?: MentionedUser[]) => void;
   deleteComment: (boardId: string, cardId: string, commentId: string) => void;
+
+  // Notification actions
+  addNotification: (notification: Omit<Notification, 'id'>) => void;
+  markNotificationRead: (notificationId: string) => void;
+  markAllNotificationsRead: () => void;
+  clearNotifications: () => void;
 
   // UI state actions
   toggleDarkMode: () => void;

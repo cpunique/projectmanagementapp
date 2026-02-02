@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { CardComment } from '@/types';
+import React, { useState, useMemo } from 'react';
+import { CardComment, MentionedUser } from '@/types';
 
 // Simple time ago formatter without external dependencies
 function formatTimeAgo(dateString: string): string {
@@ -27,7 +27,7 @@ function formatTimeAgo(dateString: string): string {
 interface CommentProps {
   comment: CardComment;
   currentUserId: string;
-  onEdit: (commentId: string, content: string) => void;
+  onEdit: (commentId: string, content: string, mentions?: MentionedUser[]) => void;
   onDelete: (commentId: string) => void;
   canModify: boolean; // Can the current user edit/delete this comment?
 }
@@ -93,6 +93,44 @@ export default function Comment({
 
   const timeAgo = formatTimeAgo(comment.createdAt);
 
+  // Render content with highlighted mentions
+  const renderedContent = useMemo(() => {
+    const content = comment.content;
+    // Match @username patterns (username is the part before @ in email)
+    const mentionRegex = /@(\w+[\w.-]*)/g;
+    const parts: (string | React.ReactElement)[] = [];
+    let lastIndex = 0;
+    let match;
+
+    while ((match = mentionRegex.exec(content)) !== null) {
+      // Add text before the mention
+      if (match.index > lastIndex) {
+        parts.push(content.substring(lastIndex, match.index));
+      }
+
+      // Add the highlighted mention
+      const mentionText = match[0];
+      const mentionKey = `mention-${match.index}`;
+      parts.push(
+        <span
+          key={mentionKey}
+          className="px-1 py-0.5 rounded bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 font-medium"
+        >
+          {mentionText}
+        </span>
+      );
+
+      lastIndex = match.index + match[0].length;
+    }
+
+    // Add remaining text
+    if (lastIndex < content.length) {
+      parts.push(content.substring(lastIndex));
+    }
+
+    return parts.length > 0 ? parts : content;
+  }, [comment.content]);
+
   return (
     <div className="flex gap-3 group">
       {/* Avatar */}
@@ -146,7 +184,7 @@ export default function Comment({
         ) : (
           <>
             <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap break-words">
-              {comment.content}
+              {renderedContent}
             </p>
 
             {/* Action buttons - only show for comment author */}

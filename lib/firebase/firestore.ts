@@ -56,7 +56,8 @@ function deepSanitize(obj: any): any {
  */
 export async function createBoard(
   userId: string,
-  board: Omit<Board, 'createdAt' | 'updatedAt'>
+  board: Omit<Board, 'createdAt' | 'updatedAt'>,
+  userEmail?: string
 ) {
   const boardRef = doc(getBoardsCollection(), board.id);
 
@@ -67,6 +68,7 @@ export async function createBoard(
     description: board.description || '',
     columns: board.columns,
     ownerId: userId,
+    ownerEmail: userEmail || '', // Store owner's email for @mentions
     sharedWith: [],
     sharedWithUserIds: [], // Denormalized for Firestore rule checks
     editorUserIds: [], // Denormalized for Firestore permission checks
@@ -116,8 +118,22 @@ export async function getBoard(boardId: string): Promise<Board | null> {
     return new Date().toISOString();
   };
 
+  // If ownerEmail is missing, try to fetch it from the users collection
+  let ownerEmail = data.ownerEmail;
+  if (!ownerEmail && data.ownerId) {
+    try {
+      const userDoc = await getDoc(doc(getDb(), 'users', data.ownerId));
+      if (userDoc.exists()) {
+        ownerEmail = userDoc.data().email || '';
+      }
+    } catch (error) {
+      console.warn('[getBoard] Failed to fetch owner email:', error);
+    }
+  }
+
   return {
     ...data,
+    ownerEmail,
     createdAt: convertTimestamp(data.createdAt),
     updatedAt: convertTimestamp(data.updatedAt),
   } as Board;
@@ -235,7 +251,37 @@ export async function getUserBoards(userId: string): Promise<Board[]> {
       console.log('[getUserBoards] Could not fetch shared boards (rules may be restricted):', sharedSnapshot.reason instanceof Error ? sharedSnapshot.reason.message : 'Unknown error');
     }
 
-    return Array.from(boardMap.values());
+    // Fetch owner emails for boards that don't have them (for @mentions feature)
+    const boards = Array.from(boardMap.values());
+    const boardsNeedingOwnerEmail = boards.filter(b => !b.ownerEmail && b.ownerId);
+
+    if (boardsNeedingOwnerEmail.length > 0) {
+      // Batch fetch owner emails
+      const uniqueOwnerIds = [...new Set(boardsNeedingOwnerEmail.map(b => b.ownerId))];
+      const ownerEmails = new Map<string, string>();
+
+      await Promise.all(
+        uniqueOwnerIds.map(async (ownerId) => {
+          try {
+            const userDoc = await getDoc(doc(getDb(), 'users', ownerId));
+            if (userDoc.exists()) {
+              ownerEmails.set(ownerId, userDoc.data().email || '');
+            }
+          } catch (error) {
+            console.warn('[getUserBoards] Failed to fetch owner email for', ownerId);
+          }
+        })
+      );
+
+      // Update boards with owner emails
+      boards.forEach(board => {
+        if (!board.ownerEmail && board.ownerId && ownerEmails.has(board.ownerId)) {
+          board.ownerEmail = ownerEmails.get(board.ownerId);
+        }
+      });
+    }
+
+    return boards;
   } catch (error) {
     console.error('getUserBoards error:', error instanceof Error ? error.message : String(error));
     throw error;

@@ -9,7 +9,7 @@ import Input from '@/components/ui/Input';
 import Button from '@/components/ui/Button';
 import RichTextEditor from '@/components/ui/RichTextEditor';
 import CommentThread from './CommentThread';
-import { Card, ChecklistItem } from '@/types';
+import { Card, ChecklistItem, MentionedUser } from '@/types';
 import { formatDate, getDefaultCardColor } from '@/lib/utils';
 import { CARD_COLORS, CARD_COLOR_NAMES } from '@/lib/constants';
 
@@ -29,6 +29,10 @@ const CardModal = ({ isOpen, onClose, card, boardId }: CardModalProps) => {
   const addComment = useKanbanStore((state) => state.addComment);
   const editComment = useKanbanStore((state) => state.editComment);
   const deleteComment = useKanbanStore((state) => state.deleteComment);
+  const boards = useKanbanStore((state) => state.boards);
+
+  // Get current board for owner and collaborator info
+  const currentBoard = boards.find((b) => b.id === boardId);
 
   // Detect actual theme from DOM instead of store (since store's darkMode is broken)
   const [actualDarkMode, setActualDarkMode] = useState(() => {
@@ -425,13 +429,16 @@ const CardModal = ({ isOpen, onClose, card, boardId }: CardModalProps) => {
           currentUserEmail={user?.email || ''}
           boardId={boardId}
           cardId={card.id}
-          onAddComment={(content) => {
+          ownerId={currentBoard?.ownerId || ''}
+          ownerEmail={currentBoard?.ownerEmail || ''}
+          collaborators={currentBoard?.sharedWith || []}
+          onAddComment={(content, mentions?: MentionedUser[]) => {
             if (user) {
-              addComment(boardId, card.id, user.uid, user.email || '', content);
+              addComment(boardId, card.id, user.uid, user.email || '', content, mentions);
             }
           }}
-          onEditComment={(commentId, content) => {
-            editComment(boardId, card.id, commentId, content);
+          onEditComment={(commentId, content, mentions?: MentionedUser[]) => {
+            editComment(boardId, card.id, commentId, content, mentions);
           }}
           onDeleteComment={(commentId) => {
             deleteComment(boardId, card.id, commentId);
