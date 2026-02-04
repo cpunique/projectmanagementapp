@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { useAuth } from '@/lib/firebase/AuthContext';
 import {
   updatePresence,
@@ -20,6 +20,7 @@ export function useBoardPresence(boardId: string | null, enabled: boolean = true
   const { user } = useAuth();
   const [onlineUsers, setOnlineUsers] = useState<string[]>([]);
   const heartbeatCleanupRef = useRef<(() => void) | null>(null);
+  const previousUserRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (!enabled || !boardId || !user?.uid) {
@@ -61,13 +62,27 @@ export function useBoardPresence(boardId: string | null, enabled: boolean = true
     }
   }, [boardId, user?.uid, user?.email, enabled]);
 
+  // Clean up presence when user logs out
+  useEffect(() => {
+    const currentUserId = user?.uid || null;
+    const previousUserId = previousUserRef.current;
+
+    // Detect logout: had a user before, no user now
+    if (previousUserId && !currentUserId) {
+      console.log('[useBoardPresence] User logged out, setting offline:', previousUserId);
+      setOffline(previousUserId);
+    }
+
+    previousUserRef.current = currentUserId;
+  }, [user?.uid]);
+
   // Set offline when user navigates away or closes tab
   useEffect(() => {
     if (!user?.uid) return;
 
     const handleBeforeUnload = () => {
       // Use sendBeacon for reliable offline status on tab close
-      // Falls back to synchronous setOffline if sendBeacon not available
+      // Note: This is a best-effort attempt - browser may not complete async operation
       setOffline(user.uid);
     };
 

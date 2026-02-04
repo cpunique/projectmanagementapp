@@ -119,17 +119,32 @@ export function subscribeToPresence(
       (snapshot) => {
         const onlineUserIds: string[] = [];
         const now = Date.now();
+        const STALE_THRESHOLD_MS = 2 * 60 * 1000; // 2 minutes
 
-        snapshot.docs.forEach((doc) => {
-          const data = doc.data() as UserPresence;
+        snapshot.docs.forEach((docSnap) => {
+          const data = docSnap.data() as UserPresence;
 
-          // Only count as online if last seen within 2 minutes
-          const lastSeenMs = data.lastSeen?.toMillis?.() || 0;
+          // Handle Firestore Timestamp - try multiple ways to get milliseconds
+          let lastSeenMs = 0;
+          if (data.lastSeen) {
+            if (typeof data.lastSeen.toMillis === 'function') {
+              lastSeenMs = data.lastSeen.toMillis();
+            } else if (data.lastSeen.seconds) {
+              // Fallback: Firestore Timestamp object with seconds/nanoseconds
+              lastSeenMs = data.lastSeen.seconds * 1000;
+            } else if (typeof data.lastSeen === 'number') {
+              lastSeenMs = data.lastSeen;
+            }
+          }
+
           const ageMs = now - lastSeenMs;
-          const isRecentlyActive = ageMs < 2 * 60 * 1000; // 2 minutes
+          const isRecentlyActive = lastSeenMs > 0 && ageMs < STALE_THRESHOLD_MS;
 
           if (data.status === 'online' && isRecentlyActive) {
             onlineUserIds.push(data.userId);
+          } else if (data.status === 'online' && !isRecentlyActive) {
+            // Log stale users for debugging
+            console.log(`[Presence] Filtering out stale user ${data.userId} (age: ${Math.round(ageMs / 1000)}s)`);
           }
         });
 
