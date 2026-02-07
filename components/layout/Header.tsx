@@ -170,16 +170,18 @@ const Header = () => {
             {/* User Menu */}
             <UserMenu />
 
-            {/* Demo Toggle */}
-            <Button
-              variant={demoMode ? 'primary' : 'outline'}
-              size="sm"
-              onClick={handleToggleDemoMode}
-              disabled={loadingDemo}
-              title={demoMode ? 'Disable demo mode' : 'Enable demo mode'}
-            >
-              {loadingDemo ? 'Loading...' : 'Demo'}
-            </Button>
+            {/* Demo Toggle - Only show for authenticated users */}
+            {user && (
+              <Button
+                variant={demoMode ? 'primary' : 'outline'}
+                size="sm"
+                onClick={handleToggleDemoMode}
+                disabled={loadingDemo}
+                title={demoMode ? 'Disable demo mode' : 'Enable demo mode'}
+              >
+                {loadingDemo ? 'Loading...' : 'Demo'}
+              </Button>
+            )}
 
             {/* Due Dates Panel Toggle - Desktop only (hidden on landing page) */}
             {activeBoard && (
