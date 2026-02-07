@@ -319,9 +319,16 @@ export function subscribeToStoreChanges(user: User) {
           for (const board of changedBoards) {
             const boardWithOwner = board as any;
 
-            // Handle demo board: only sync if admin user
+            // Handle demo board: only sync if admin user AND board has actual content
             if (board.id === 'default-board') {
               if (isAdmin(user)) {
+                // SAFEGUARD: Only save demo board if it has actual cards
+                // This prevents accidentally overwriting the demo board with an empty/basic board
+                const totalCards = board.columns.reduce((sum, col) => sum + (col.cards?.length || 0), 0);
+                if (totalCards === 0) {
+                  console.log('[Sync] Skipping demo board save - no cards (likely fresh/empty board)');
+                  continue;
+                }
                 try {
                   console.log('[Sync] Admin user editing demo board - saving to demo-configs/active');
                   await saveDemoConfig(board, user.uid);

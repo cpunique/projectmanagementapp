@@ -77,6 +77,13 @@ const Header = () => {
   const handleSaveDemoBoard = async () => {
     if (!user || !userIsAdmin || !board) return;
 
+    // SAFEGUARD: Prevent saving empty demo boards
+    const totalCards = board.columns.reduce((sum, col) => sum + (col.cards?.length || 0), 0);
+    if (totalCards === 0) {
+      alert('Cannot save an empty demo board. Please add some cards first.');
+      return;
+    }
+
     setSavingDemo(true);
     try {
       // Save to demo-configs collection (for landing page)

@@ -30,9 +30,10 @@ const KanbanBoard = () => {
   // Calculate user's permission level for this board
   const userRole = useMemo(() => {
     if (!board) return null;
-    // In demo mode, only admin can edit; others are viewers
+    // In demo mode, everyone can interact (changes are ephemeral for non-admin users)
+    // This allows visitors to "Try Dragging Cards!" as advertised
     if (demoMode) {
-      return isAdmin(user) ? 'owner' : 'viewer';
+      return 'editor'; // Everyone can edit in demo mode (admin saves persist, others don't)
     }
     if (!user) return null;
     if (board.ownerId === user.uid) return 'owner';
@@ -41,7 +42,8 @@ const KanbanBoard = () => {
   }, [user, board, demoMode]);
 
   const canEdit = userRole === 'owner' || userRole === 'editor';
-  const isViewOnly = userRole === 'viewer';
+  // Don't show "View Only" badge in demo mode - users CAN interact, changes just aren't persisted
+  const isViewOnly = userRole === 'viewer' && !demoMode;
 
   if (!board) {
     return (

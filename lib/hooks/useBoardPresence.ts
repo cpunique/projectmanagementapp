@@ -21,6 +21,8 @@ export function useBoardPresence(boardId: string | null, enabled: boolean = true
   const [onlineUsers, setOnlineUsers] = useState<string[]>([]);
   const heartbeatCleanupRef = useRef<(() => void) | null>(null);
   const previousUserRef = useRef<string | null>(null);
+  // Track if presence was ever actively tracked in this hook instance
+  const wasActivelyTrackingRef = useRef(false);
 
   useEffect(() => {
     if (!enabled || !boardId || !user?.uid) {
@@ -30,6 +32,9 @@ export function useBoardPresence(boardId: string | null, enabled: boolean = true
     }
 
     console.log('[useBoardPresence] Starting presence tracking for board:', boardId);
+
+    // Mark that we're actively tracking presence
+    wasActivelyTrackingRef.current = true;
 
     // Wrap in try-catch to prevent presence failures from breaking the app
     try {
@@ -68,9 +73,13 @@ export function useBoardPresence(boardId: string | null, enabled: boolean = true
     const previousUserId = previousUserRef.current;
 
     // Detect logout: had a user before, no user now
-    if (previousUserId && !currentUserId) {
+    // Only set offline if we were actually tracking presence for this user
+    // This prevents demo mode / landing page from triggering logout cleanup
+    if (previousUserId && !currentUserId && wasActivelyTrackingRef.current) {
       console.log('[useBoardPresence] User logged out, setting offline:', previousUserId);
       setOffline(previousUserId);
+      // Reset tracking flag after handling logout
+      wasActivelyTrackingRef.current = false;
     }
 
     previousUserRef.current = currentUserId;
