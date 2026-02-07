@@ -183,14 +183,16 @@ const KanbanBoard = () => {
                 🔒 View Only
               </span>
             )}
-            {/* Collaborator Avatars */}
-            <CollaboratorAvatarStack
-              ownerId={board.ownerId}
-              ownerEmail={board.ownerEmail}
-              collaborators={board.sharedWith}
-              onlineUsers={onlineUsers}
-              maxVisible={4}
-            />
+            {/* Collaborator Avatars - Hide in demo mode to protect privacy */}
+            {!demoMode && (
+              <CollaboratorAvatarStack
+                ownerId={board.ownerId}
+                ownerEmail={board.ownerEmail}
+                collaborators={board.sharedWith}
+                onlineUsers={onlineUsers}
+                maxVisible={4}
+              />
+            )}
           </div>
           <BoardHeader boardId={board.id} />
           <p className="text-gray-600 dark:text-gray-400 mt-1">
