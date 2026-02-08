@@ -127,23 +127,27 @@ const Card = ({ card, boardId, columnId, onDragStart, onDragEnd, isDragging, can
             setIsModalOpen(true);
           }
         }}
-        className={`group relative rounded-lg border cursor-pointer transition-all duration-200 ease-out w-60 flex flex-col ${
+        className={`group relative rounded-xl border cursor-pointer transition-all duration-200 ease-out w-60 flex flex-col ${
           isDragging ? 'opacity-50 scale-105' : isDescoped ? 'opacity-50 scale-100' : 'opacity-100 scale-100'
-        } ${isDescoped ? 'border-dashed border-gray-400 dark:border-gray-600' : 'border-gray-200 dark:border-gray-700'} hover:-translate-y-0.5 hover:shadow-md hover:border-gray-300 dark:hover:border-gray-600`}
+        } ${isDescoped ? 'border-dashed border-gray-400 dark:border-gray-600' : 'border-gray-200/50 dark:border-gray-700/50'}`}
         style={{
           padding: '1rem',
           gap: '0.5rem',
           backgroundColor: cardColor,
-          boxShadow: isDragging ? '0 10px 20px rgba(0, 0, 0, 0.2)' : '0 1px 3px rgba(0, 0, 0, 0.08)'
+          boxShadow: isDragging
+            ? '0 20px 40px rgba(0, 0, 0, 0.25), 0 10px 15px rgba(0, 0, 0, 0.15)'
+            : isHovering
+              ? '0 8px 25px rgba(0, 0, 0, 0.15), 0 4px 10px rgba(0, 0, 0, 0.1)'
+              : '0 2px 8px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04)'
         }}
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.9 }}
         transition={{
           layout: { type: 'spring', stiffness: 350, damping: 35 },
-          default: { duration: 0.25 }
+          default: { duration: 0.2 }
         }}
-        whileHover={{ y: -2 }}
+        whileHover={{ y: -4, scale: 1.02 }}
       >
         {/* Descoped Badge - Bottom Right */}
         {isDescoped && (
@@ -260,23 +264,45 @@ const Card = ({ card, boardId, columnId, onDragStart, onDragEnd, isDragging, can
           )}
         </div>
 
-        {/* Checklist Progress */}
+        {/* Checklist Progress Ring */}
         {card.checklist && card.checklist.length > 0 && (
-          <div className="flex items-center gap-2 pointer-events-none">
-            <svg className={`w-3.5 h-3.5 ${metaColor}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-            </svg>
-            <div className="flex-1">
-              <div className="flex items-center justify-between mb-1">
-                <span className={`text-xs ${descColor} font-medium`}>{completedItems}/{checklistItems.length}</span>
-                <span className={`text-xs ${metaColor}`}>{checklistProgress}%</span>
-              </div>
-              <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1">
-                <div
-                  className="bg-green-500 dark:bg-green-600 h-1 rounded-full transition-all duration-300"
-                  style={{ width: `${checklistProgress}%` }}
+          <div className="flex items-center gap-2.5 pointer-events-none">
+            {/* Circular Progress Ring */}
+            <div className="relative w-8 h-8 flex-shrink-0">
+              <svg className="w-8 h-8 transform -rotate-90" viewBox="0 0 36 36">
+                {/* Background circle */}
+                <circle
+                  className={isLight ? 'text-gray-200' : 'text-gray-600'}
+                  strokeWidth="3"
+                  stroke="currentColor"
+                  fill="transparent"
+                  r="15"
+                  cx="18"
+                  cy="18"
                 />
-              </div>
+                {/* Progress circle */}
+                <circle
+                  className={checklistProgress === 100 ? 'text-green-500' : 'text-purple-500'}
+                  strokeWidth="3"
+                  strokeLinecap="round"
+                  stroke="currentColor"
+                  fill="transparent"
+                  r="15"
+                  cx="18"
+                  cy="18"
+                  strokeDasharray={`${checklistProgress * 0.94} 100`}
+                  style={{ transition: 'stroke-dasharray 0.3s ease' }}
+                />
+              </svg>
+              {/* Percentage in center */}
+              <span className={`absolute inset-0 flex items-center justify-center text-[10px] font-bold ${textColor}`}>
+                {checklistProgress === 100 ? '✓' : `${checklistProgress}%`}
+              </span>
+            </div>
+            <div className="flex-1">
+              <span className={`text-xs ${descColor} font-medium`}>
+                {completedItems} of {checklistItems.length} done
+              </span>
             </div>
           </div>
         )}

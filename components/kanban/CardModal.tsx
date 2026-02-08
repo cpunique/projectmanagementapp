@@ -12,6 +12,7 @@ import CommentThread from './CommentThread';
 import { Card, ChecklistItem, MentionedUser } from '@/types';
 import { formatDate, getDefaultCardColor } from '@/lib/utils';
 import { CARD_COLORS, CARD_COLOR_NAMES } from '@/lib/constants';
+import { useToast } from '@/components/ui/Toast';
 
 interface CardModalProps {
   isOpen: boolean;
@@ -22,6 +23,7 @@ interface CardModalProps {
 
 const CardModal = ({ isOpen, onClose, card, boardId }: CardModalProps) => {
   const { user } = useAuth();
+  const { showToast } = useToast();
   const updateCard = useKanbanStore((state) => state.updateCard);
   const addChecklistItem = useKanbanStore((state) => state.addChecklistItem);
   const deleteChecklistItem = useKanbanStore((state) => state.deleteChecklistItem);
@@ -97,7 +99,7 @@ const CardModal = ({ isOpen, onClose, card, boardId }: CardModalProps) => {
       // Validate notes length
       const MAX_NOTES_LENGTH = 10000; // 10KB
       if (notes.length > MAX_NOTES_LENGTH) {
-        alert(`Notes cannot exceed ${MAX_NOTES_LENGTH} characters. Current: ${notes.length}`);
+        showToast(`Notes cannot exceed ${MAX_NOTES_LENGTH} characters. Current: ${notes.length}`, 'warning');
         return;
       }
 

@@ -7,6 +7,7 @@ import { type Column as ColumnType } from '@/types';
 import Card from './Card';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
+import { useToast } from '@/components/ui/Toast';
 
 interface ColumnProps {
   column: ColumnType;
@@ -44,6 +45,7 @@ const Column = ({
   canEdit,
 }: ColumnProps) => {
   const { addCard, updateColumn, deleteColumn, boards, reorderCards } = useKanbanStore();
+  const { showToast } = useToast();
   const currentBoard = boards.find((b) => b.id === boardId);
   const currentColumn = currentBoard?.columns.find((c) => c.id === column.id);
   const [isEditing, setIsEditing] = useState(false);
@@ -69,7 +71,7 @@ const Column = ({
     const board = boards.find((b) => b.id === boardId);
     // Check if board would be empty after deletion
     if (board && board.columns.length <= 1) {
-      alert('Cannot delete the last column');
+      showToast('Cannot delete the last column', 'warning');
       return;
     }
 

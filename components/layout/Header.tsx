@@ -13,9 +13,11 @@ import UserMenu from '@/components/auth/UserMenu';
 import SyncStatus from '@/components/ui/SyncStatus';
 import SaveButton from '@/components/ui/SaveButton';
 import NotificationBell from '@/components/ui/NotificationBell';
+import { useToast } from '@/components/ui/Toast';
 
 const Header = () => {
   const { user } = useAuth();
+  const { showToast } = useToast();
   const darkMode = useKanbanStore((state) => state.darkMode);
   const demoMode = useKanbanStore((state) => state.demoMode);
   const dueDatePanelOpen = useKanbanStore((state) => state.dueDatePanelOpen);
@@ -80,7 +82,7 @@ const Header = () => {
     // SAFEGUARD: Prevent saving empty demo boards
     const totalCards = board.columns.reduce((sum, col) => sum + (col.cards?.length || 0), 0);
     if (totalCards === 0) {
-      alert('Cannot save an empty demo board. Please add some cards first.');
+      showToast('Cannot save an empty demo board. Please add some cards first.', 'warning');
       return;
     }
 
@@ -90,11 +92,11 @@ const Header = () => {
       // The user's personal board is already being synced by the app's save mechanism
       await saveDemoConfig(board, user.uid);
 
-      alert('Demo board saved successfully! It will appear on the landing page for all users.');
+      showToast('Demo board saved! It will appear on the landing page.', 'success');
       setIsDemoEditMode(false);
     } catch (error) {
       console.error('Failed to save demo board:', error);
-      alert('Failed to save demo board. Check console for details.');
+      showToast('Failed to save demo board. Check console for details.', 'error');
     } finally {
       setSavingDemo(false);
     }

@@ -8,6 +8,7 @@ import { AuthProvider } from "@/lib/firebase/AuthContext";
 import { FirebaseWrapper } from "@/components/firebase/FirebaseWrapper";
 import ToSGateWrapper from "@/components/legal/ToSGateWrapper";
 import { UnsavedChangesWarning } from "@/components/dialogs/UnsavedChangesWarning";
+import { ToastProvider } from "@/components/ui/Toast";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -50,12 +51,14 @@ export default function RootLayout({
           <FirebaseWrapper>
             <ToSGateWrapper>
               <DarkModeProvider>
-                <UnsavedChangesWarning />
-                <Header />
-                <main className="flex-1">
-                  {children}
-                </main>
-                <Footer />
+                <ToastProvider>
+                  <UnsavedChangesWarning />
+                  <Header />
+                  <main className="flex-1">
+                    {children}
+                  </main>
+                  <Footer />
+                </ToastProvider>
               </DarkModeProvider>
             </ToSGateWrapper>
           </FirebaseWrapper>
