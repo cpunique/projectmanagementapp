@@ -7,16 +7,31 @@ import { aiPromptRatelimit } from '@/lib/ratelimit';
 // Instruction type definitions
 type InstructionType = 'development' | 'general' | 'event-planning' | 'documentation';
 
-// Formatting instruction for Word 365 style output
+// Formatting instruction for Word 365 style output (plain text, no markdown)
 const FORMATTING_INSTRUCTION = `
 
-FORMAT YOUR RESPONSE FOR EASY READING:
-- Use clear section headings (bold text, no markdown symbols like # or ##)
-- Use bullet points (•) for lists, not dashes or asterisks
-- Use numbered lists (1. 2. 3.) for sequential steps
-- Add blank lines between sections for readability
-- Keep paragraphs short and scannable
-- Do NOT use markdown formatting like **bold**, # headings, or \`code\` - write plain text that looks good in a document`;
+CRITICAL FORMATTING RULES - THIS IS PLAIN TEXT OUTPUT, NOT MARKDOWN:
+• NEVER use # or ## for headings - just write the heading text on its own line
+• NEVER wrap words in ** or * for emphasis - just write the words normally
+• NEVER use \`backticks\` for code or technical terms
+• Use bullet points (•) or dashes (-) for lists
+• Use numbered lists (1. 2. 3.) for sequential steps
+• Add blank lines between sections
+• Write section titles in ALL CAPS or on their own line, followed by a blank line
+
+EXAMPLE OF CORRECT FORMAT:
+PHASE 1: PREPARATION
+
+1. First step to complete
+2. Second step to complete
+
+Key Considerations
+• Important point one
+• Important point two
+
+EXAMPLE OF WRONG FORMAT (DO NOT DO THIS):
+## **Phase 1: Preparation**
+**First step** to complete`;
 
 // Type-specific system prompts
 const SYSTEM_PROMPTS: Record<InstructionType, string> = {
