@@ -13,6 +13,7 @@ import UserMenu from '@/components/auth/UserMenu';
 import SyncStatus from '@/components/ui/SyncStatus';
 import SaveButton from '@/components/ui/SaveButton';
 import NotificationBell from '@/components/ui/NotificationBell';
+import KeyboardShortcutsModal from '@/components/ui/KeyboardShortcutsModal';
 import { useToast } from '@/components/ui/Toast';
 
 const Header = () => {
@@ -31,6 +32,7 @@ const Header = () => {
   const [isDemoEditMode, setIsDemoEditMode] = useState(false);
   const [savingDemo, setSavingDemo] = useState(false);
   const [loadingDemo, setLoadingDemo] = useState(false);
+  const [showKeyboardShortcuts, setShowKeyboardShortcuts] = useState(false);
   const userIsAdmin = isAdmin(user);
   // Admin can save ANY board as the demo board (not restricted to default-board)
   const canEditDemo = userIsAdmin;
@@ -204,6 +206,18 @@ const Header = () => {
               </button>
             )}
 
+            {/* Keyboard Shortcuts Button */}
+            <button
+              onClick={() => setShowKeyboardShortcuts(true)}
+              className="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors text-gray-600 dark:text-gray-400"
+              title="Keyboard shortcuts (?)"
+              aria-label="Show keyboard shortcuts"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+              </svg>
+            </button>
+
             {/* Dark Mode Toggle */}
             <button
               onClick={toggleDarkMode}
@@ -243,6 +257,12 @@ const Header = () => {
           </div>
         </div>
       </Container>
+
+      {/* Keyboard Shortcuts Modal */}
+      <KeyboardShortcutsModal
+        isOpen={showKeyboardShortcuts}
+        onClose={() => setShowKeyboardShortcuts(false)}
+      />
     </header>
   );
 };

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useKanbanStore } from '@/lib/store';
 import { type Column as ColumnType } from '@/types';
@@ -26,6 +26,8 @@ interface ColumnProps {
   isDraggingColumn: boolean;
   isDropTarget: boolean;
   canEdit: boolean;
+  triggerAddCard?: boolean;
+  onTriggerAddCardHandled?: () => void;
 }
 
 const Column = ({
@@ -44,6 +46,8 @@ const Column = ({
   isDraggingColumn,
   isDropTarget,
   canEdit,
+  triggerAddCard,
+  onTriggerAddCardHandled,
 }: ColumnProps) => {
   const { addCard, updateColumn, deleteColumn, boards, reorderCards } = useKanbanStore();
   const { showToast } = useToast();
@@ -59,6 +63,14 @@ const Column = ({
   const isDescopedColumn = DESCOPED_COLUMN_KEYWORDS.some(
     keyword => column.title.toLowerCase().includes(keyword.toLowerCase())
   );
+
+  // Handle keyboard shortcut trigger for adding new card
+  useEffect(() => {
+    if (triggerAddCard && canEdit && !isDescopedColumn) {
+      setIsAddingCard(true);
+      onTriggerAddCardHandled?.();
+    }
+  }, [triggerAddCard, canEdit, isDescopedColumn, onTriggerAddCardHandled]);
 
   const handleRename = () => {
     if (!canEdit || !editTitle.trim() || editTitle === column.title) {

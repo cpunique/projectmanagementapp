@@ -8,9 +8,11 @@ import Container from '@/components/layout/Container';
 import BoardHeader from './BoardHeader';
 import { CollaboratorAvatarStack } from './CollaboratorAvatarStack';
 import { useBoardPresence } from '@/lib/hooks/useBoardPresence';
-import { useState, useMemo } from 'react';
+import { useKeyboardShortcuts } from '@/lib/hooks/useKeyboardShortcuts';
+import { useState, useMemo, useEffect } from 'react';
 import Input from '@/components/ui/Input';
 import Button from '@/components/ui/Button';
+import KeyboardShortcutsModal from '@/components/ui/KeyboardShortcutsModal';
 
 const KanbanBoard = () => {
   const { user } = useAuth();
@@ -21,8 +23,21 @@ const KanbanBoard = () => {
   const [dragOverColumnId, setDragOverColumnId] = useState<string | null>(null);
   const [isAddingColumn, setIsAddingColumn] = useState(false);
   const [newColumnTitle, setNewColumnTitle] = useState('');
+  const [triggerAddCardColumn, setTriggerAddCardColumn] = useState<string | null>(null);
+
+  // Keyboard shortcuts
+  const { showHelp, setShowHelp, triggerNewCard, resetTriggerNewCard } = useKeyboardShortcuts();
 
   const board = boards.find((b) => b.id === activeBoard);
+
+  // Handle keyboard shortcut to add new card in first column
+  useEffect(() => {
+    if (triggerNewCard && board && board.columns.length > 0) {
+      const firstColumn = board.columns[0];
+      setTriggerAddCardColumn(firstColumn.id);
+      resetTriggerNewCard();
+    }
+  }, [triggerNewCard, board, resetTriggerNewCard]);
 
   // Track online users for presence indicators
   const { onlineUsers } = useBoardPresence(board?.id || null, !!user && !!board);
@@ -230,6 +245,8 @@ const KanbanBoard = () => {
                 isDraggingColumn={draggedColumnId === column.id}
                 isDropTarget={dragOverColumnId === column.id}
                 canEdit={canEdit}
+                triggerAddCard={triggerAddCardColumn === column.id}
+                onTriggerAddCardHandled={() => setTriggerAddCardColumn(null)}
               />
             ))}
 
@@ -287,6 +304,9 @@ const KanbanBoard = () => {
           </div>
         </div>
       </div>
+
+      {/* Keyboard Shortcuts Modal */}
+      <KeyboardShortcutsModal isOpen={showHelp} onClose={() => setShowHelp(false)} />
     </div>
   );
 };
