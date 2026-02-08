@@ -177,12 +177,14 @@ const Card = ({ card, boardId, columnId, onDragStart, onDragEnd, isDragging, can
                   ? 'text-purple-600 dark:text-purple-400 hover:bg-purple-100 dark:hover:bg-purple-900/30 hover:text-purple-700 dark:hover:text-purple-300'
                   : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-purple-600 dark:text-gray-400 dark:hover:text-purple-400'
               }`}
-              title={isAIFeatureLocked && !card.aiPrompt ? "Sign up to generate instructions" : (card.aiPrompt ? "View instructions" : "Generate instructions")}
+              title={isAIFeatureLocked && !card.aiPrompt ? "Sign up to generate instructions" : (card.aiPrompt ? "View instructions (Pro)" : "Generate instructions (Pro)")}
             >
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
               </svg>
-              {isAIFeatureLocked && !card.aiPrompt && <span className="absolute -top-1 -right-1 w-2 h-2 bg-yellow-400 rounded-full border border-white" />}
+              {/* Pro badge */}
+              <span className="absolute -top-1.5 -right-2 text-[8px] font-bold text-purple-600 dark:text-purple-400 bg-purple-100 dark:bg-purple-900/50 px-1 rounded">Pro</span>
+              {isAIFeatureLocked && !card.aiPrompt && <span className="absolute -bottom-1 -right-1 w-2 h-2 bg-yellow-400 rounded-full border border-white" />}
             </button>
 
             {/* Edit Button - disabled for viewers */}

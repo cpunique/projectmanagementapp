@@ -3,6 +3,7 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { aiPromptRatelimit } from '@/lib/ratelimit';
+import { canAccessProFeaturesById, isProUserId } from '@/lib/features/featureGate';
 
 // Instruction type definitions
 type InstructionType = 'development' | 'general' | 'event-planning' | 'documentation';
@@ -86,29 +87,43 @@ export async function POST(request: Request) {
     // Extract user ID from token (simplified - in production use firebase-admin)
     const userId = idToken.substring(0, 28);
 
-    // 2. Rate limiting
-    const { success, limit, remaining, reset } = await aiPromptRatelimit.limit(userId);
-
-    if (!success) {
+    // 2. Check Pro feature access
+    if (!canAccessProFeaturesById(userId)) {
       return NextResponse.json(
-        {
-          error: `Rate limit exceeded. You can generate ${limit} prompts per hour. Try again in ${Math.ceil((reset - Date.now()) / 60000)} minutes.`,
-          limit,
-          remaining: 0,
-          reset: new Date(reset).toISOString()
-        },
-        {
-          status: 429,
-          headers: {
-            'X-RateLimit-Limit': limit.toString(),
-            'X-RateLimit-Remaining': '0',
-            'X-RateLimit-Reset': reset.toString()
-          }
-        }
+        { error: 'AI Instructions is a Pro feature. Upgrade to Pro to unlock unlimited AI-generated instructions.' },
+        { status: 403 }
       );
     }
 
-    // 3. Validate and sanitize input
+    // 3. Rate limiting (skip for Pro users)
+    const isProUser = isProUserId(userId);
+    let remaining = -1; // -1 indicates unlimited for Pro users
+
+    if (!isProUser) {
+      const rateResult = await aiPromptRatelimit.limit(userId);
+      remaining = rateResult.remaining;
+
+      if (!rateResult.success) {
+        return NextResponse.json(
+          {
+            error: `Rate limit exceeded. You can generate ${rateResult.limit} prompts per hour. Try again in ${Math.ceil((rateResult.reset - Date.now()) / 60000)} minutes.`,
+            limit: rateResult.limit,
+            remaining: 0,
+            reset: new Date(rateResult.reset).toISOString()
+          },
+          {
+            status: 429,
+            headers: {
+              'X-RateLimit-Limit': rateResult.limit.toString(),
+              'X-RateLimit-Remaining': '0',
+              'X-RateLimit-Reset': rateResult.reset.toString()
+            }
+          }
+        );
+      }
+    }
+
+    // 4. Validate and sanitize input
     const body = await request.json();
 
     const validationResult = GeneratePromptSchema.safeParse(body);
@@ -129,7 +144,7 @@ export async function POST(request: Request) {
 
     const data = validationResult.data;
 
-    // 4. Check API key
+    // 5. Check API key
     const apiKey = process.env.ANTHROPIC_API_KEY;
     if (!apiKey) {
       console.error('[AI Prompt] Missing ANTHROPIC_API_KEY');
@@ -139,7 +154,7 @@ export async function POST(request: Request) {
       );
     }
 
-    // 5. Build context prompt based on instruction type
+    // 6. Build context prompt based on instruction type
     const instructionType = data.instructionType as InstructionType;
     const systemPrompt = SYSTEM_PROMPTS[instructionType];
 
@@ -183,7 +198,7 @@ export async function POST(request: Request) {
       contextPrompt += `Priority Level: ${data.priority}\n\n`;
     }
 
-    // 6. Call Claude API using direct fetch
+    // 7. Call Claude API using direct fetch
     const model = process.env.NEXT_PUBLIC_CLAUDE_MODEL || 'claude-sonnet-4-20250514';
 
     // Instruction request based on type
@@ -239,7 +254,7 @@ ${instructionRequests[instructionType]}`;
         throw new Error(`API returned ${response.status}: ${message.error?.message || 'Unknown error'}`);
       }
 
-      // 7. Extract the response
+      // 8. Extract the response
       const generatedPrompt = message.content
         .filter((block: any) => block.type === 'text')
         .map((block: any) => block.text)
@@ -253,7 +268,7 @@ ${instructionRequests[instructionType]}`;
         );
       }
 
-      // 8. Return formatted response with rate limit info
+      // 9. Return formatted response with rate limit info
       return NextResponse.json(
         { prompt: generatedPrompt, remaining },
         {

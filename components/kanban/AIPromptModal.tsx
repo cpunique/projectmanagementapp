@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useKanbanStore } from '@/lib/store';
 import { useAuth } from '@/lib/firebase/AuthContext';
+import { canAccessProFeatures } from '@/lib/features/featureGate';
 import { type Card, type InstructionType } from '@/types';
 import Modal from '@/components/ui/Modal';
 import Button from '@/components/ui/Button';
@@ -44,6 +45,64 @@ const AIPromptModal = ({ isOpen, onClose, card, boardId }: AIPromptModalProps) =
   const [copied, setCopied] = useState(false);
 
   if (!isOpen) return null;
+
+  // Check if user has Pro access
+  const hasProAccess = canAccessProFeatures(user);
+
+  // Show Pro feature lock screen if user doesn't have access
+  if (!hasProAccess) {
+    return typeof window !== 'undefined'
+      ? createPortal(
+          <Modal isOpen={isOpen} onClose={onClose}>
+            <div className="w-full max-w-md">
+              {/* Header */}
+              <div className="sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex items-center justify-between">
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+                  Pro Feature
+                </h2>
+                <button
+                  onClick={onClose}
+                  className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 text-2xl leading-none"
+                >
+                  ✕
+                </button>
+              </div>
+
+              {/* Content */}
+              <div className="px-6 py-8 text-center">
+                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
+                  <span className="text-3xl">✨</span>
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                  AI Instructions is a Pro Feature
+                </h3>
+                <p className="text-gray-600 dark:text-gray-400 text-sm mb-6">
+                  Generate implementation instructions powered by AI to help you build faster.
+                  Upgrade to Pro to unlock this feature.
+                </p>
+                <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 text-left">
+                  <p className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">Pro includes:</p>
+                  <ul className="text-xs text-gray-600 dark:text-gray-400 space-y-1">
+                    <li>✓ Unlimited AI-generated instructions</li>
+                    <li>✓ Multiple instruction styles</li>
+                    <li>✓ Project context integration</li>
+                    <li>✓ Copy to clipboard & save to card</li>
+                  </ul>
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="sticky bottom-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 px-6 py-4 flex justify-center">
+                <Button onClick={onClose} variant="outline">
+                  Close
+                </Button>
+              </div>
+            </div>
+          </Modal>,
+          document.body
+        )
+      : null;
+  }
 
   const handleGenerate = async () => {
     setIsLoading(true);
@@ -125,9 +184,12 @@ const AIPromptModal = ({ isOpen, onClose, card, boardId }: AIPromptModalProps) =
           <div className="w-full max-w-2xl">
             {/* Header */}
             <div className="sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex items-center justify-between">
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-                {step === 1 ? 'Generate Instructions' : step === 2 ? 'Generating...' : 'Generated Instructions'}
-              </h2>
+              <div className="flex items-center gap-2">
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+                  {step === 1 ? 'Generate Instructions' : step === 2 ? 'Generating...' : 'Generated Instructions'}
+                </h2>
+                <span className="text-xs font-semibold text-purple-600 dark:text-purple-400 bg-purple-100 dark:bg-purple-900/50 px-2 py-0.5 rounded-full">Pro</span>
+              </div>
               <button
                 onClick={handleClose}
                 className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 text-2xl leading-none"
