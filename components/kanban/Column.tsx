@@ -26,6 +26,7 @@ interface ColumnProps {
   isDraggingColumn: boolean;
   isDropTarget: boolean;
   canEdit: boolean;
+  isFirstColumn?: boolean;
   triggerAddCard?: boolean;
   onTriggerAddCardHandled?: () => void;
 }
@@ -46,6 +47,7 @@ const Column = ({
   isDraggingColumn,
   isDropTarget,
   canEdit,
+  isFirstColumn = false,
   triggerAddCard,
   onTriggerAddCardHandled,
 }: ColumnProps) => {
@@ -365,8 +367,8 @@ const Column = ({
           </div>
         )}
 
-        {/* Add Task Button - appears right after cards or input (hidden for descoped columns) */}
-        {canEdit && !isAddingCard && !isDescopedColumn && (
+        {/* Add Task Button - only shown in first column (hidden for descoped columns) */}
+        {canEdit && !isAddingCard && !isDescopedColumn && isFirstColumn && (
           <div className="w-full flex justify-center">
             <button
               onClick={() => setIsAddingCard(true)}

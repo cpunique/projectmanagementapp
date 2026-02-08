@@ -227,7 +227,7 @@ const KanbanBoard = () => {
         {/* Columns Grid */}
         <div className="overflow-x-auto overflow-y-visible pb-4 h-[calc(100vh-200px)]">
           <div className="flex gap-4 min-w-min items-start h-full">
-            {board.columns.map((column) => (
+            {board.columns.map((column, index) => (
               <Column
                 key={column.id}
                 column={column}
@@ -245,6 +245,7 @@ const KanbanBoard = () => {
                 isDraggingColumn={draggedColumnId === column.id}
                 isDropTarget={dragOverColumnId === column.id}
                 canEdit={canEdit}
+                isFirstColumn={index === 0}
                 triggerAddCard={triggerAddCardColumn === column.id}
                 onTriggerAddCardHandled={() => setTriggerAddCardColumn(null)}
               />
