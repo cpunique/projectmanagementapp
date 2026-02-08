@@ -8,6 +8,7 @@ import Card from './Card';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import { useToast } from '@/components/ui/Toast';
+import { DESCOPED_COLUMN_KEYWORDS } from '@/lib/constants';
 
 interface ColumnProps {
   column: ColumnType;
@@ -53,6 +54,11 @@ const Column = ({
   const [isAddingCard, setIsAddingCard] = useState(false);
   const [newCardTitle, setNewCardTitle] = useState('');
   const [dropTargetCardId, setDropTargetCardId] = useState<string | null>(null);
+
+  // Check if this is a descoped column (shouldn't allow adding new tasks)
+  const isDescopedColumn = DESCOPED_COLUMN_KEYWORDS.some(
+    keyword => column.title.toLowerCase().includes(keyword.toLowerCase())
+  );
 
   const handleRename = () => {
     if (!canEdit || !editTitle.trim() || editTitle === column.title) {
@@ -347,8 +353,8 @@ const Column = ({
           </div>
         )}
 
-        {/* Add Task Button - appears right after cards or input */}
-        {canEdit && !isAddingCard && (
+        {/* Add Task Button - appears right after cards or input (hidden for descoped columns) */}
+        {canEdit && !isAddingCard && !isDescopedColumn && (
           <div className="w-full flex justify-center">
             <button
               onClick={() => setIsAddingCard(true)}

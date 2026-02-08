@@ -128,8 +128,8 @@ const Card = ({ card, boardId, columnId, onDragStart, onDragEnd, isDragging, can
           }
         }}
         className={`group relative rounded-xl border cursor-pointer transition-all duration-200 ease-out w-60 flex flex-col ${
-          isDragging ? 'opacity-50 scale-105' : isDescoped ? 'opacity-50 scale-100' : 'opacity-100 scale-100'
-        } ${isDescoped ? 'border-dashed border-gray-400 dark:border-gray-600' : 'border-gray-200/50 dark:border-gray-700/50'}`}
+          isDragging ? 'opacity-50 scale-105' : isDescoped ? 'opacity-60 grayscale-[30%]' : 'opacity-100'
+        } border-gray-200/50 dark:border-gray-700/50`}
         style={{
           padding: '1rem',
           gap: '0.5rem',
