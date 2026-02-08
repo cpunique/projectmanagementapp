@@ -43,6 +43,9 @@ export interface BoardCollaborator {
   addedBy: string; // userId of person who added them
 }
 
+// Instruction types for AI prompt generation
+export type InstructionType = 'development' | 'general' | 'event-planning' | 'documentation';
+
 export interface Card {
   id: string;
   title: string;
@@ -75,6 +78,7 @@ export interface Board {
   id: string;
   name: string;
   description?: string; // Optional board description for context
+  purpose?: InstructionType; // Board's default AI instruction type
   createdAt: string;
   updatedAt: string;
   columns: Column[];
@@ -122,6 +126,7 @@ export interface KanbanActions {
   deleteBoard: (boardId: string) => void;
   updateBoard: (boardId: string, name: string) => void;
   updateBoardDescription: (boardId: string, description: string) => void;
+  updateBoardPurpose: (boardId: string, purpose: InstructionType) => void;
   switchBoard: (boardId: string) => void;
   setDefaultBoard: (boardId: string | null) => void;
   exportBoards: (boardId?: string) => string; // JSON string

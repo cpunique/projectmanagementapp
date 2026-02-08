@@ -66,6 +66,7 @@ export async function createBoard(
     id: board.id,
     name: board.name,
     description: board.description || '',
+    purpose: board.purpose || 'development', // Default to development for AI prompts
     columns: board.columns,
     ownerId: userId,
     ownerEmail: userEmail || '', // Store owner's email for @mentions

@@ -3,7 +3,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { nanoid } from 'nanoid';
-import type { Board, Card, Column, ChecklistItem, KanbanStore, Notification } from '@/types';
+import type { Board, Card, Column, ChecklistItem, KanbanStore, Notification, InstructionType } from '@/types';
 import {
   MAX_COLUMNS,
   DEFAULT_BOARD_ID,
@@ -192,6 +192,17 @@ export const useKanbanStore = create<KanbanStore>()(
           boards: state.boards.map((b) =>
             b.id === boardId
               ? { ...b, description, updatedAt: new Date().toISOString() }
+              : b
+          ),
+          hasUnsavedChanges: true,
+        }));
+      },
+
+      updateBoardPurpose: (boardId: string, purpose: InstructionType) => {
+        set((state) => ({
+          boards: state.boards.map((b) =>
+            b.id === boardId
+              ? { ...b, purpose, updatedAt: new Date().toISOString() }
               : b
           ),
           hasUnsavedChanges: true,

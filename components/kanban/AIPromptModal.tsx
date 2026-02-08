@@ -5,9 +5,17 @@ import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useKanbanStore } from '@/lib/store';
 import { useAuth } from '@/lib/firebase/AuthContext';
-import { type Card } from '@/types';
+import { type Card, type InstructionType } from '@/types';
 import Modal from '@/components/ui/Modal';
 import Button from '@/components/ui/Button';
+
+// Instruction type options
+const INSTRUCTION_OPTIONS: { value: InstructionType; label: string; icon: string; description: string }[] = [
+  { value: 'development', label: 'Development', icon: '💻', description: 'Technical implementation instructions for developers' },
+  { value: 'general', label: 'General Tasks', icon: '📋', description: 'Simple actionable steps anyone can follow' },
+  { value: 'event-planning', label: 'Event Planning', icon: '📅', description: 'Timelines, logistics, and preparation steps' },
+  { value: 'documentation', label: 'Documentation', icon: '📝', description: 'Guides, explanations, and how-tos' },
+];
 
 interface AIPromptModalProps {
   isOpen: boolean;
@@ -23,6 +31,7 @@ const AIPromptModal = ({ isOpen, onClose, card, boardId }: AIPromptModalProps) =
   const { user } = useAuth();
   const board = boards.find((b) => b.id === boardId);
   const [step, setStep] = useState<Step>(card.aiPrompt ? 3 : 1);
+  const [instructionType, setInstructionType] = useState<InstructionType>(board?.purpose || 'development');
   const [includeDescription, setIncludeDescription] = useState(!!card.description);
   const [includeNotes, setIncludeNotes] = useState(!!card.notes);
   const [includeChecklist, setIncludeChecklist] = useState(!!(card.checklist && card.checklist.length > 0));
@@ -49,6 +58,7 @@ const AIPromptModal = ({ isOpen, onClose, card, boardId }: AIPromptModalProps) =
 
       const payload = {
         cardTitle: card.title,
+        instructionType,
         ...(includeDescription && card.description && { description: card.description }),
         ...(includeNotes && card.notes && { notes: card.notes }),
         ...(includeChecklist && card.checklist && { checklist: card.checklist }),
@@ -69,14 +79,14 @@ const AIPromptModal = ({ isOpen, onClose, card, boardId }: AIPromptModalProps) =
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-        throw new Error(errorData.error || 'Failed to generate prompt');
+        throw new Error(errorData.error || 'Failed to generate instructions');
       }
 
       const data = await response.json();
       setGeneratedPrompt(data.prompt);
       setStep(3);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred while generating the prompt');
+      setError(err instanceof Error ? err.message : 'An error occurred while generating instructions');
     } finally {
       setIsLoading(false);
     }
@@ -116,7 +126,7 @@ const AIPromptModal = ({ isOpen, onClose, card, boardId }: AIPromptModalProps) =
             {/* Header */}
             <div className="sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex items-center justify-between">
               <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-                {step === 1 ? 'Configure AI Prompt' : step === 2 ? 'Generating...' : 'AI Generated Prompt'}
+                {step === 1 ? 'Generate Instructions' : step === 2 ? 'Generating...' : 'Generated Instructions'}
               </h2>
               <button
                 onClick={handleClose}
@@ -138,8 +148,32 @@ const AIPromptModal = ({ isOpen, onClose, card, boardId }: AIPromptModalProps) =
                     exit={{ opacity: 0, y: -10 }}
                     className="space-y-4"
                   >
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
-                      Select which card information to include in the AI prompt:
+                    {/* Instruction Type Selector */}
+                    <div className="mb-6">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Instruction Style
+                      </label>
+                      <select
+                        value={instructionType}
+                        onChange={(e) => setInstructionType(e.target.value as InstructionType)}
+                        className="w-full px-4 py-2.5 border-2 border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:border-purple-500 focus:ring-4 focus:ring-purple-100 dark:focus:ring-purple-900/30 hover:border-gray-400 dark:hover:border-gray-500 transition-all duration-200 shadow-sm focus:shadow-md"
+                      >
+                        {INSTRUCTION_OPTIONS.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.icon} {option.label} - {option.description}
+                          </option>
+                        ))}
+                      </select>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1.5">
+                        {board?.purpose === instructionType
+                          ? '(Board default)'
+                          : `Board default: ${INSTRUCTION_OPTIONS.find(o => o.value === (board?.purpose || 'development'))?.label || 'Development'}`
+                        }
+                      </p>
+                    </div>
+
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                      Select which card information to include:
                     </p>
 
                     <div className="space-y-3">
@@ -342,7 +376,7 @@ const AIPromptModal = ({ isOpen, onClose, card, boardId }: AIPromptModalProps) =
                     Cancel
                   </Button>
                   <Button onClick={handleGenerate} isLoading={isLoading} disabled={isLoading}>
-                    Generate Prompt
+                    Generate
                   </Button>
                 </>
               )}

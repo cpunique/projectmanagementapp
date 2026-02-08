@@ -4,9 +4,39 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { aiPromptRatelimit } from '@/lib/ratelimit';
 
+// Instruction type definitions
+type InstructionType = 'development' | 'general' | 'event-planning' | 'documentation';
+
+// Formatting instruction for Word 365 style output
+const FORMATTING_INSTRUCTION = `
+
+FORMAT YOUR RESPONSE FOR EASY READING:
+- Use clear section headings (bold text, no markdown symbols like # or ##)
+- Use bullet points (•) for lists, not dashes or asterisks
+- Use numbered lists (1. 2. 3.) for sequential steps
+- Add blank lines between sections for readability
+- Keep paragraphs short and scannable
+- Do NOT use markdown formatting like **bold**, # headings, or \`code\` - write plain text that looks good in a document`;
+
+// Type-specific system prompts
+const SYSTEM_PROMPTS: Record<InstructionType, string> = {
+  development:
+    'You are a helpful assistant that converts feature requests into clear implementation instructions for developers. Focus on what needs to be built and why, breaking it down into logical, actionable coding steps. Include technical considerations where relevant.' + FORMATTING_INSTRUCTION,
+
+  general:
+    'You are a helpful assistant that converts tasks into clear, actionable steps anyone can follow. Keep language simple and non-technical. Focus on practical actions organized in logical order that lead to completing the task.' + FORMATTING_INSTRUCTION,
+
+  'event-planning':
+    'You are a helpful assistant that creates event plans and itineraries. Include timelines, logistics, preparation steps, and key deadlines. Organize information chronologically with clear action items. Consider venue, attendees, materials, and contingency planning.' + FORMATTING_INSTRUCTION,
+
+  documentation:
+    'You are a helpful assistant that creates clear documentation and guides. Explain concepts thoroughly, provide step-by-step instructions, include context and examples where helpful. Structure information for easy reference and understanding.' + FORMATTING_INSTRUCTION,
+};
+
 // Input validation schema
 const GeneratePromptSchema = z.object({
   cardTitle: z.string().min(1, 'Card title is required').max(200, 'Card title too long'),
+  instructionType: z.enum(['development', 'general', 'event-planning', 'documentation']).optional().default('development'),
   description: z.string().max(1000, 'Description too long').optional(),
   notes: z.string().max(2000, 'Notes too long').optional(),
   checklist: z.array(z.object({
@@ -94,8 +124,19 @@ export async function POST(request: Request) {
       );
     }
 
-    // 5. Build context prompt
-    let contextPrompt = `Feature Request: ${data.cardTitle}\n\n`;
+    // 5. Build context prompt based on instruction type
+    const instructionType = data.instructionType as InstructionType;
+    const systemPrompt = SYSTEM_PROMPTS[instructionType];
+
+    // Use appropriate header based on instruction type
+    const contextHeaders: Record<InstructionType, string> = {
+      development: 'Feature Request',
+      general: 'Task',
+      'event-planning': 'Event',
+      documentation: 'Topic',
+    };
+
+    let contextPrompt = `${contextHeaders[instructionType]}: ${data.cardTitle}\n\n`;
 
     if (data.description) {
       contextPrompt += `Description: ${data.description}\n\n`;
@@ -110,7 +151,8 @@ export async function POST(request: Request) {
     }
 
     if (data.checklist && data.checklist.length > 0) {
-      contextPrompt += `Requirements Checklist:\n`;
+      const checklistHeader = instructionType === 'event-planning' ? 'Event Checklist' : 'Requirements';
+      contextPrompt += `${checklistHeader}:\n`;
       data.checklist.forEach(item => {
         const status = item.completed ? '✓' : '○';
         contextPrompt += `${status} ${item.text}\n`;
@@ -129,11 +171,27 @@ export async function POST(request: Request) {
     // 6. Call Claude API using direct fetch
     const model = process.env.NEXT_PUBLIC_CLAUDE_MODEL || 'claude-sonnet-4-20250514';
 
-    const userMessage = `You are a helpful assistant that converts feature requests into clear, simple implementation instructions for developers. Keep the language friendly and straightforward, not overly technical. Focus on what needs to be built and why, breaking it down into logical, actionable steps. Be concise but thorough.
+    // Instruction request based on type
+    const instructionRequests: Record<InstructionType, string> = {
+      development: 'Please provide implementation instructions for this feature.',
+      general: 'Please provide clear, actionable steps to complete this task.',
+      'event-planning': 'Please provide an event plan with timeline, logistics, and preparation steps.',
+      documentation: 'Please provide clear documentation and a guide for this topic.',
+    };
+
+    // Token limits based on instruction type - event planning needs more for detailed itineraries
+    const maxTokensByType: Record<InstructionType, number> = {
+      development: 2048,
+      general: 2048,
+      'event-planning': 4096, // Itineraries need more detail
+      documentation: 3072,   // Documentation can be lengthy
+    };
+
+    const userMessage = `${systemPrompt}
 
 ${contextPrompt}
 
-Please provide implementation instructions for this feature.`;
+${instructionRequests[instructionType]}`;
 
     try {
 
@@ -146,7 +204,7 @@ Please provide implementation instructions for this feature.`;
         },
         body: JSON.stringify({
           model,
-          max_tokens: 1024,
+          max_tokens: maxTokensByType[instructionType],
           messages: [
             {
               role: 'user',
@@ -175,7 +233,7 @@ Please provide implementation instructions for this feature.`;
       if (!generatedPrompt) {
         console.error('[AI Prompt] No text content in API response');
         return NextResponse.json(
-          { error: 'No prompt was generated. Please try again.' },
+          { error: 'No instructions were generated. Please try again.' },
           { status: 500 }
         );
       }
@@ -241,7 +299,7 @@ Please provide implementation instructions for this feature.`;
     // Return error with debug headers
     return NextResponse.json(
       {
-        error: 'Failed to generate prompt. Please try again.',
+        error: 'Failed to generate instructions. Please try again.',
         debugMessage: errorMessage,
         debugType: error?.constructor?.name,
       },
