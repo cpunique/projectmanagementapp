@@ -53,8 +53,8 @@ const AIPromptModal = ({ isOpen, onClose, card, boardId }: AIPromptModalProps) =
   if (!hasProAccess) {
     return typeof window !== 'undefined'
       ? createPortal(
-          <Modal isOpen={isOpen} onClose={onClose}>
-            <div className="w-full max-w-md">
+          <Modal isOpen={isOpen} onClose={onClose} contentClassName="max-w-sm">
+            <div className="w-full">
               {/* Header */}
               <div className="sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex items-center justify-between">
                 <h2 className="text-xl font-bold text-gray-900 dark:text-white">
