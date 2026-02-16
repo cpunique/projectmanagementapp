@@ -16,6 +16,7 @@ import {
   getUserUIPreferences,
   setUserUIPreferences,
 } from './firestore';
+import { saveBoards, loadBoards, clearBoards, enqueueSyncOperation, getPendingCount } from '@/lib/db';
 import type { Board } from '@/types';
 
 // Track active subscriptions to prevent memory leaks
@@ -35,6 +36,22 @@ export async function initializeFirebaseSync(user: User) {
 
     // Set syncing state
     store.setSyncState('syncing');
+
+    // Load cached boards from IndexedDB as an immediate fallback
+    // This provides instant display while Firebase loads
+    try {
+      const cachedBoards = await loadBoards();
+      if (cachedBoards.length > 0) {
+        store.setBoards(cachedBoards);
+        // Use the stored default or active board if it exists in cache, otherwise first board
+        const preferredId = store.defaultBoardId || store.activeBoard;
+        const preferredBoard = preferredId ? cachedBoards.find(b => b.id === preferredId) : null;
+        store.switchBoard(preferredBoard ? preferredBoard.id : cachedBoards[0].id);
+        console.log('[Sync] Loaded', cachedBoards.length, 'boards from IndexedDB cache');
+      }
+    } catch (error) {
+      console.warn('[Sync] Failed to load boards from IndexedDB:', error);
+    }
 
     // CRITICAL FIX: Clear localStorage boards on every login
     // This prevents boards from previous user account being migrated
@@ -94,6 +111,11 @@ export async function initializeFirebaseSync(user: User) {
     if (userBoards.length > 0) {
       // User has boards in Firebase - use those
       store.setBoards(userBoards);
+
+      // Update IndexedDB cache with fresh Firebase data
+      saveBoards(userBoards).catch(err =>
+        console.warn('[Sync] Failed to cache boards to IndexedDB:', err)
+      );
 
       // Check if there's a board query parameter that should override default selection
       // This handles navigation from recovery tools and deep links
@@ -217,6 +239,9 @@ export function cleanupFirebaseSync() {
   const store = useKanbanStore.getState();
   store.setBoards([]);
 
+  // Clear IndexedDB to prevent cross-account data leakage
+  clearBoards().catch(err => console.error('[Sync] Failed to clear IndexedDB:', err));
+
   // Reset UI preferences to defaults when user logs out
   // This ensures the landing page always shows with dueDatePanelOpen: false (landing page default)
   store.setDueDatePanelOpen(false);
@@ -312,9 +337,30 @@ export function subscribeToStoreChanges(user: User) {
 
       // Only sync if there are actual changes
       if (changedBoards.length > 0 || defaultBoardChanged) {
+        // Persist all boards to IndexedDB immediately (no debounce)
+        if (changedBoards.length > 0) {
+          saveBoards(state.boards).catch(err =>
+            console.error('[Sync] Failed to persist boards to IndexedDB:', err)
+          );
+        }
+
         // Debounce the sync to avoid too many Firebase calls
         clearTimeout(syncTimeout);
         syncTimeout = setTimeout(async () => {
+          // If offline, enqueue all changed boards and skip Firebase
+          if (!navigator.onLine) {
+            for (const board of changedBoards) {
+              if (board.id !== 'default-board' && (board as any).ownerId) {
+                await enqueueSyncOperation(board.id, board).catch(err =>
+                  console.error('[Sync] Failed to enqueue operation:', err)
+                );
+              }
+            }
+            const pending = await getPendingCount().catch(() => 0);
+            useKanbanStore.getState().setPendingOperations(pending);
+            return;
+          }
+
           // Only sync the boards that actually changed
           for (const board of changedBoards) {
             const boardWithOwner = board as any;
@@ -344,12 +390,13 @@ export function subscribeToStoreChanges(user: User) {
               try {
                 await updateBoard(board.id, board);
               } catch (error: any) {
-                // Handle quota exceeded errors gracefully
-                if (error?.code === 'resource-exhausted') {
-                  console.warn(`Firebase quota exceeded for board ${board.id}. Changes are saved locally and will sync later.`);
-                } else {
-                  console.error(`Failed to sync board ${board.id} to Firebase:`, error);
-                }
+                // Enqueue failed writes for retry
+                console.warn(`[Sync] Firebase write failed for board ${board.id}, queueing for retry:`, error?.code || error);
+                await enqueueSyncOperation(board.id, board).catch(err =>
+                  console.error('[Sync] Failed to enqueue operation:', err)
+                );
+                const pending = await getPendingCount().catch(() => 0);
+                useKanbanStore.getState().setPendingOperations(pending);
               }
             } else {
               console.warn(`Board ${board.id} has no ownerId, skipping Firebase sync`);

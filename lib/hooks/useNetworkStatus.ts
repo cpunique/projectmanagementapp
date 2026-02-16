@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import { useKanbanStore } from '@/lib/store';
+import { processQueue } from '@/lib/syncQueue';
 
 /**
  * Hook to monitor network connectivity and update store
@@ -20,6 +21,10 @@ export function useNetworkStatus() {
       // Reset sync state from 'offline' to 'idle' when connection is restored
       // This clears the offline indicator and allows normal sync to resume
       setSyncState('idle');
+      // Drain any queued sync operations
+      processQueue().catch(err =>
+        console.error('[NetworkStatus] Failed to process queue on reconnect:', err)
+      );
     };
 
     const handleOffline = () => {

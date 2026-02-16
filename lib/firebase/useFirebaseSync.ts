@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { useAuth } from './AuthContext';
 import { initializeFirebaseSync, cleanupFirebaseSync, subscribeToStoreChanges } from './storeSync';
 import { startPeriodicSync, stopPeriodicSync } from './periodicSync';
+import { startQueueProcessor, stopQueueProcessor, processQueue } from '@/lib/syncQueue';
 
 /**
  * Hook to manage Firebase sync lifecycle
@@ -38,6 +39,12 @@ export function useFirebaseSync() {
       // Start periodic sync for collaborative boards (every 15 seconds)
       // This checks for updates from other users on shared boards
       startPeriodicSync(user, 15000);
+
+      // Start sync queue processor and drain any pending operations from last session
+      startQueueProcessor();
+      processQueue().catch(err =>
+        console.error('[useFirebaseSync] Failed to process initial queue:', err)
+      );
     };
 
     delayAndSync().catch(err => {
@@ -51,6 +58,7 @@ export function useFirebaseSync() {
     return () => {
       unsubscribeFromStore?.();
       stopPeriodicSync();
+      stopQueueProcessor();
       cleanupFirebaseSync();
     };
   }, [user, loading, requiresToSAcceptance]);

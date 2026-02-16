@@ -3,12 +3,14 @@
 import { useEffect } from 'react';
 import { useAuth } from '@/lib/firebase/AuthContext';
 import { useKanbanStore } from '@/lib/store';
+import { retrySyncQueue } from '@/lib/syncQueue';
 
 export default function SyncStatus() {
   const { user } = useAuth();
   const syncState = useKanbanStore((state) => state.syncState);
   const isOnline = useKanbanStore((state) => state.isOnline);
   const pendingOperations = useKanbanStore((state) => state.pendingOperations);
+  const syncProgress = useKanbanStore((state) => state.syncProgress);
   const setSyncState = useKanbanStore((state) => state.setSyncState);
 
   // Auto-hide synced status after 2 seconds
@@ -59,13 +61,20 @@ export default function SyncStatus() {
   const getStatusText = () => {
     switch (syncState) {
       case 'syncing':
+        if (syncProgress) {
+          return `Syncing ${syncProgress.completed}/${syncProgress.total}`;
+        }
         return 'Syncing...';
       case 'synced':
         return 'Synced';
       case 'offline':
-        return pendingOperations > 0 ? `Offline - ${pendingOperations} pending` : 'Offline';
+        return pendingOperations > 0
+          ? `Offline (${pendingOperations} queued)`
+          : 'Offline';
       case 'error':
-        return 'Sync failed';
+        return pendingOperations > 0
+          ? `Sync failed (${pendingOperations} queued)`
+          : 'Sync failed';
       default:
         return '';
     }
@@ -75,6 +84,15 @@ export default function SyncStatus() {
     <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium ${getStatusStyles()}`}>
       {getStatusIcon()}
       <span>{getStatusText()}</span>
+      {syncState === 'error' && (
+        <button
+          onClick={() => retrySyncQueue()}
+          className="ml-1 underline hover:no-underline"
+          title="Retry failed sync operations"
+        >
+          Retry
+        </button>
+      )}
     </div>
   );
 }

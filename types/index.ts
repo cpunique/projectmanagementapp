@@ -116,6 +116,7 @@ export interface KanbanState {
   lastSyncTime: string | null; // ISO timestamp
   pendingOperations: number; // Count of pending operations when offline
   isOnline: boolean; // Network connectivity status
+  syncProgress?: { completed: number; total: number }; // Queue processing progress
   // Notifications
   notifications: Notification[];
 }
@@ -206,6 +207,7 @@ export interface KanbanActions {
   setIsOnline: (isOnline: boolean) => void;
   incrementPendingOperations: () => void;
   decrementPendingOperations: () => void;
+  setSyncProgress: (progress: { completed: number; total: number } | undefined) => void;
 }
 
 export type KanbanStore = KanbanState & KanbanActions;
