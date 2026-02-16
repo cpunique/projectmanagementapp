@@ -30,6 +30,10 @@ const Header = () => {
   const zoomLevel = useKanbanStore((state) => state.zoomLevel);
   const setZoomLevel = useKanbanStore((state) => state.setZoomLevel);
 
+  // Prevent hydration mismatch from persisted Zustand state
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
+
   // Admin demo board state
   const [isDemoEditMode, setIsDemoEditMode] = useState(false);
   const [savingDemo, setSavingDemo] = useState(false);
@@ -232,7 +236,7 @@ const Header = () => {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
                 </svg>
               </button>
-              <span className="text-xs text-gray-500 dark:text-gray-400 w-8 text-center tabular-nums">{zoomLevel}%</span>
+              <span className="text-xs text-gray-500 dark:text-gray-400 w-8 text-center tabular-nums">{mounted ? zoomLevel : 80}%</span>
               <button
                 onClick={() => setZoomLevel(zoomLevel + 10)}
                 disabled={zoomLevel >= 150}
@@ -253,7 +257,7 @@ const Header = () => {
               title={darkMode ? 'Light mode' : 'Dark mode'}
               aria-label={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
             >
-              {darkMode ? '☀️' : '🌙'}
+              {mounted ? (darkMode ? '☀️' : '🌙') : '🌙'}
             </button>
 
             {/* Admin Tools - Only show for admin users */}

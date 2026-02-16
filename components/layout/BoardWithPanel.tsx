@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { useKanbanStore } from '@/lib/store';
 import { DueDatePanel } from '@/components/kanban/DueDatePanel';
 import { DueDatePanelToggleButton } from '@/components/ui/DueDatePanelToggleButton';
@@ -10,6 +11,8 @@ interface BoardWithPanelProps {
 
 export function BoardWithPanel({ children }: BoardWithPanelProps) {
   const { dueDatePanelOpen, boards, activeBoard } = useKanbanStore();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
 
   // Calculate total cards with due dates for badge
   const board = boards.find((b) => b.id === activeBoard);
@@ -35,7 +38,7 @@ export function BoardWithPanel({ children }: BoardWithPanelProps) {
         <DueDatePanelToggleButton badge={cardsWithDueDates} />
 
         {/* Backdrop when panel is open on mobile */}
-        {dueDatePanelOpen && (
+        {mounted && dueDatePanelOpen && (
           <div
             className="fixed inset-0 top-16 bg-black/50 z-20 md:hidden"
             onClick={() => useKanbanStore.getState().toggleDueDatePanel()}
@@ -43,7 +46,7 @@ export function BoardWithPanel({ children }: BoardWithPanelProps) {
         )}
 
         {/* Panel on mobile */}
-        {dueDatePanelOpen && <DueDatePanel />}
+        {mounted && dueDatePanelOpen && <DueDatePanel />}
       </div>
     </div>
   );
