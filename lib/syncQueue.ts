@@ -6,8 +6,9 @@ import {
   getPendingCount,
   db,
 } from '@/lib/db';
-import { updateBoard } from '@/lib/firebase/firestore';
+import { updateBoard, getBoardUpdatedAt, getBoard } from '@/lib/firebase/firestore';
 import { useKanbanStore } from '@/lib/store';
+import { getBoardRemoteVersion, setBoardRemoteVersion } from '@/lib/firebase/storeSync';
 
 const MAX_RETRIES = 5;
 const BASE_DELAY_MS = 2000; // 2s, 4s, 8s, 16s, 32s
@@ -48,7 +49,29 @@ export async function processQueue(): Promise<void> {
 
     try {
       await markOperationInProgress(op.id!);
+
+      // Conflict detection: check if remote changed while we were offline
+      const lastKnown = getBoardRemoteVersion(op.boardId);
+      if (lastKnown) {
+        const remoteUpdatedAt = await getBoardUpdatedAt(op.boardId);
+        if (remoteUpdatedAt && new Date(remoteUpdatedAt).getTime() > new Date(lastKnown).getTime()) {
+          console.warn(`[SyncQueue] Conflict detected for board ${op.boardId}`);
+          const remoteBoard = await getBoard(op.boardId);
+          if (remoteBoard) {
+            store.setConflictState({
+              boardId: op.boardId,
+              localBoard: op.boardData,
+              remoteBoard,
+            });
+            // Leave in queue — user must resolve conflict first
+            await db.syncQueue.update(op.id!, { status: 'pending' });
+            continue;
+          }
+        }
+      }
+
       await updateBoard(op.boardId, op.boardData);
+      setBoardRemoteVersion(op.boardId, new Date().toISOString());
       await removeOperation(op.id!);
       completed++;
 

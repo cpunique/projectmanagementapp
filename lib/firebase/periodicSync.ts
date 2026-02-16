@@ -2,6 +2,7 @@ import { User } from 'firebase/auth';
 import { useKanbanStore } from '@/lib/store';
 import { isAdmin } from '@/lib/admin/isAdmin';
 import { getUserBoards, getBoard } from './firestore';
+import { setBoardRemoteVersion } from './storeSync';
 import { getDocs, query, where, collection, getFirestore } from 'firebase/firestore';
 import type { Board, Card, CardComment } from '@/types';
 
@@ -226,6 +227,13 @@ async function performPeriodicSync(user: User) {
       });
 
       store.setBoards(mergedBoards);
+
+      // Update remote version tracking for conflict detection
+      for (const board of remoteBoards) {
+        if (board.updatedAt) {
+          setBoardRemoteVersion(board.id, board.updatedAt);
+        }
+      }
 
       // If active board was deleted, switch to first available board
       const activeBoardStillExists = mergedBoards.find(b => b.id === store.activeBoard);

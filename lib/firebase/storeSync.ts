@@ -15,6 +15,8 @@ import {
   recoverCorruptedBoards,
   getUserUIPreferences,
   setUserUIPreferences,
+  getBoardUpdatedAt,
+  getBoard,
 } from './firestore';
 import { saveBoards, loadBoards, clearBoards, clearPreferences, enqueueSyncOperation, getPendingCount, savePreference, loadPreference } from '@/lib/db';
 import type { Board } from '@/types';
@@ -24,6 +26,17 @@ const activeSubscriptions = new Map<string, () => void>();
 
 // Flag to prevent syncing TO Firebase when changes come FROM Firebase
 let isSyncingFromFirebase = false;
+
+// Track last known remote updatedAt per board for conflict detection
+const boardRemoteVersions = new Map<string, string>();
+
+export function getBoardRemoteVersion(boardId: string): string | undefined {
+  return boardRemoteVersions.get(boardId);
+}
+
+export function setBoardRemoteVersion(boardId: string, updatedAt: string): void {
+  boardRemoteVersions.set(boardId, updatedAt);
+}
 
 /**
  * Initialize Firebase sync for a user
@@ -120,6 +133,13 @@ export async function initializeFirebaseSync(user: User) {
       saveBoards(userBoards).catch(err =>
         console.warn('[Sync] Failed to cache boards to IndexedDB:', err)
       );
+
+      // Populate remote version tracking for conflict detection
+      for (const board of userBoards) {
+        if (board.updatedAt) {
+          boardRemoteVersions.set(board.id, board.updatedAt);
+        }
+      }
 
       // Check if there's a board query parameter that should override default selection
       // This handles navigation from recovery tools and deep links
@@ -256,6 +276,10 @@ export function cleanupFirebaseSync() {
   // Clear IndexedDB to prevent cross-account data leakage
   clearBoards().catch(err => console.error('[Sync] Failed to clear IndexedDB:', err));
   clearPreferences().catch(err => console.error('[Sync] Failed to clear preferences:', err));
+
+  // Clear conflict detection state
+  boardRemoteVersions.clear();
+  store.setConflictState(undefined);
 
   // Reset UI preferences to defaults when user logs out
   // This ensures the landing page always shows with dueDatePanelOpen: false (landing page default)
@@ -403,7 +427,28 @@ export function subscribeToStoreChanges(user: User) {
 
             if (boardWithOwner.ownerId) {
               try {
+                // Conflict detection: check if remote has changed since we last fetched
+                const lastKnown = boardRemoteVersions.get(board.id);
+                if (lastKnown) {
+                  const remoteUpdatedAt = await getBoardUpdatedAt(board.id);
+                  if (remoteUpdatedAt && new Date(remoteUpdatedAt).getTime() > new Date(lastKnown).getTime()) {
+                    // Remote has been updated by someone else — conflict!
+                    console.warn(`[Sync] Conflict detected for board ${board.id}: remote=${remoteUpdatedAt}, lastKnown=${lastKnown}`);
+                    const remoteBoard = await getBoard(board.id);
+                    if (remoteBoard) {
+                      useKanbanStore.getState().setConflictState({
+                        boardId: board.id,
+                        localBoard: structuredClone(board),
+                        remoteBoard,
+                      });
+                      continue; // Skip this board's write — user must resolve
+                    }
+                  }
+                }
+
                 await updateBoard(board.id, board);
+                // Update tracked version after successful write
+                boardRemoteVersions.set(board.id, new Date().toISOString());
               } catch (error: any) {
                 // Enqueue failed writes for retry
                 console.warn(`[Sync] Firebase write failed for board ${board.id}, queueing for retry:`, error?.code || error);

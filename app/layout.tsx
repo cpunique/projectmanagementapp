@@ -8,6 +8,7 @@ import { AuthProvider } from "@/lib/firebase/AuthContext";
 import { FirebaseWrapper } from "@/components/firebase/FirebaseWrapper";
 import ToSGateWrapper from "@/components/legal/ToSGateWrapper";
 import { UnsavedChangesWarning } from "@/components/dialogs/UnsavedChangesWarning";
+import ConflictDialog from "@/components/dialogs/ConflictDialog";
 import { ToastProvider } from "@/components/ui/Toast";
 import ZoomWrapper from "@/components/layout/ZoomWrapper";
 import StoreHydration from "@/components/providers/StoreHydration";
@@ -58,6 +59,7 @@ export default function RootLayout({
                   <ToastProvider>
                     <StoreHydration />
                     <UnsavedChangesWarning />
+                    <ConflictDialog />
                     <Header />
                     <main className="flex-1 flex flex-col min-h-0">
                       <ZoomWrapper>

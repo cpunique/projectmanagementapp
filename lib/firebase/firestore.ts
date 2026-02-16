@@ -141,6 +141,26 @@ export async function getBoard(boardId: string): Promise<Board | null> {
 }
 
 /**
+ * Get only the updatedAt timestamp for a board (lightweight conflict check)
+ */
+export async function getBoardUpdatedAt(boardId: string): Promise<string | null> {
+  try {
+    const boardRef = doc(getBoardsCollection(), boardId);
+    const boardSnap = await getDoc(boardRef);
+    if (!boardSnap.exists()) return null;
+    const ts = boardSnap.data().updatedAt;
+    if (!ts) return null;
+    if (typeof ts.toDate === 'function') return ts.toDate().toISOString();
+    if (typeof ts === 'string') return ts;
+    if (ts.seconds !== undefined) return new Date(ts.seconds * 1000).toISOString();
+    return null;
+  } catch (error) {
+    console.error('[getBoardUpdatedAt] Failed:', error);
+    return null;
+  }
+}
+
+/**
  * Update a board with exponential backoff retry for quota errors
  * Sanitizes undefined values since Firebase rejects them
  */

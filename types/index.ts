@@ -119,6 +119,8 @@ export interface KanbanState {
   pendingOperations: number; // Count of pending operations when offline
   isOnline: boolean; // Network connectivity status
   syncProgress?: { completed: number; total: number }; // Queue processing progress
+  // Conflict detection
+  conflictState?: { boardId: string; localBoard: Board; remoteBoard: Board };
   // Notifications
   notifications: Notification[];
 }
@@ -213,6 +215,7 @@ export interface KanbanActions {
   incrementPendingOperations: () => void;
   decrementPendingOperations: () => void;
   setSyncProgress: (progress: { completed: number; total: number } | undefined) => void;
+  setConflictState: (conflict: { boardId: string; localBoard: Board; remoteBoard: Board } | undefined) => void;
 }
 
 export type KanbanStore = KanbanState & KanbanActions;

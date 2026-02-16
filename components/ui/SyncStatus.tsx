@@ -11,6 +11,7 @@ export default function SyncStatus() {
   const isOnline = useKanbanStore((state) => state.isOnline);
   const pendingOperations = useKanbanStore((state) => state.pendingOperations);
   const syncProgress = useKanbanStore((state) => state.syncProgress);
+  const conflictState = useKanbanStore((state) => state.conflictState);
   const setSyncState = useKanbanStore((state) => state.setSyncState);
 
   // Auto-hide synced status after 2 seconds
@@ -24,7 +25,7 @@ export default function SyncStatus() {
   }, [syncState, setSyncState]);
 
   // Don't show sync status if user is not authenticated
-  if (!user || syncState === 'idle') {
+  if (!user || (syncState === 'idle' && !conflictState)) {
     return null;
   }
 
@@ -79,6 +80,16 @@ export default function SyncStatus() {
         return '';
     }
   };
+
+  // Conflict state overrides normal sync display
+  if (conflictState) {
+    return (
+      <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20">
+        <span>⚠</span>
+        <span>Conflict detected</span>
+      </div>
+    );
+  }
 
   return (
     <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium ${getStatusStyles()}`}>

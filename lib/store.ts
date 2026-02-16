@@ -128,6 +128,8 @@ export const useKanbanStore = create<KanbanStore>()(
       pendingOperations: 0,
       isOnline: typeof navigator !== 'undefined' ? navigator.onLine : true,
       syncProgress: undefined,
+      // Conflict detection
+      conflictState: undefined,
       // Notifications
       notifications: [],
 
@@ -900,6 +902,7 @@ export const useKanbanStore = create<KanbanStore>()(
       incrementPendingOperations: () => set((state) => ({ pendingOperations: state.pendingOperations + 1 })),
       decrementPendingOperations: () => set((state) => ({ pendingOperations: Math.max(0, state.pendingOperations - 1) })),
       setSyncProgress: (progress) => set({ syncProgress: progress }),
+      setConflictState: (conflict) => set({ conflictState: conflict }),
     }),
     {
       name: 'kanban-store',
