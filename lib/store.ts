@@ -932,6 +932,9 @@ export const useKanbanStore = create<KanbanStore>()(
         }
         return persistedState;
       },
+      // Skip automatic rehydration during SSR to prevent hydration mismatches.
+      // Rehydration is triggered manually by StoreHydration component after mount.
+      skipHydration: true,
     }
   )
 );

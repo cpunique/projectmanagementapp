@@ -10,6 +10,7 @@ import ToSGateWrapper from "@/components/legal/ToSGateWrapper";
 import { UnsavedChangesWarning } from "@/components/dialogs/UnsavedChangesWarning";
 import { ToastProvider } from "@/components/ui/Toast";
 import ZoomWrapper from "@/components/layout/ZoomWrapper";
+import StoreHydration from "@/components/providers/StoreHydration";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -53,6 +54,7 @@ export default function RootLayout({
             <ToSGateWrapper>
               <DarkModeProvider>
                 <ToastProvider>
+                  <StoreHydration />
                   <UnsavedChangesWarning />
                   <Header />
                   <main className="flex-1 flex flex-col min-h-0">
