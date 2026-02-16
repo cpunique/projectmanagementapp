@@ -9,6 +9,7 @@ import { FirebaseWrapper } from "@/components/firebase/FirebaseWrapper";
 import ToSGateWrapper from "@/components/legal/ToSGateWrapper";
 import { UnsavedChangesWarning } from "@/components/dialogs/UnsavedChangesWarning";
 import { ToastProvider } from "@/components/ui/Toast";
+import ZoomWrapper from "@/components/layout/ZoomWrapper";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -54,8 +55,10 @@ export default function RootLayout({
                 <ToastProvider>
                   <UnsavedChangesWarning />
                   <Header />
-                  <main className="flex-1">
-                    {children}
+                  <main className="flex-1 flex flex-col min-h-0">
+                    <ZoomWrapper>
+                      {children}
+                    </ZoomWrapper>
                   </main>
                   <Footer />
                 </ToastProvider>

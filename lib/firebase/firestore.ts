@@ -418,36 +418,38 @@ export async function setUserDefaultBoard(userId: string, boardId: string | null
 /**
  * Get user's UI preferences (dueDatePanelOpen, etc.)
  */
-export async function getUserUIPreferences(userId: string): Promise<{ dueDatePanelOpen?: boolean }> {
+export async function getUserUIPreferences(userId: string): Promise<{ dueDatePanelOpen?: boolean; zoomLevel?: number; darkMode?: boolean }> {
   try {
     const userRef = doc(getUsersCollection(), userId);
     const userSnap = await getDoc(userRef);
 
     if (!userSnap.exists()) {
       console.log('[getUserUIPreferences] User document does not exist yet');
-      return { dueDatePanelOpen: true };
+      return { dueDatePanelOpen: true, zoomLevel: 80 };
     }
 
     const data = userSnap.data();
     return {
       dueDatePanelOpen: data.dueDatePanelOpen !== undefined ? data.dueDatePanelOpen : true,
+      zoomLevel: data.zoomLevel !== undefined ? data.zoomLevel : 80,
+      darkMode: data.darkMode,
     };
   } catch (error: any) {
     // Don't crash if user doc isn't readable - use defaults
     // This can happen during auth initialization or with emulator
     if (error?.code === 'permission-denied') {
       console.warn('[getUserUIPreferences] Permission denied reading user doc (may be normal during init)', error.message);
-      return { dueDatePanelOpen: true };
+      return { dueDatePanelOpen: true, zoomLevel: 80 };
     }
     console.error('[getUserUIPreferences] Failed to get user UI preferences:', error);
-    return { dueDatePanelOpen: true };
+    return { dueDatePanelOpen: true, zoomLevel: 80 };
   }
 }
 
 /**
  * Set user's UI preferences (dueDatePanelOpen, etc.)
  */
-export async function setUserUIPreferences(userId: string, preferences: { dueDatePanelOpen?: boolean }) {
+export async function setUserUIPreferences(userId: string, preferences: { dueDatePanelOpen?: boolean; zoomLevel?: number; darkMode?: boolean }) {
   try {
     const userRef = doc(getUsersCollection(), userId);
     await setDoc(userRef, { ...preferences }, { merge: true });

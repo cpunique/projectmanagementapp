@@ -27,6 +27,8 @@ const Header = () => {
   const toggleDueDatePanel = useKanbanStore((state) => state.toggleDueDatePanel);
   const activeBoard = useKanbanStore((state) => state.activeBoard);
   const boards = useKanbanStore((state) => state.boards);
+  const zoomLevel = useKanbanStore((state) => state.zoomLevel);
+  const setZoomLevel = useKanbanStore((state) => state.setZoomLevel);
 
   // Admin demo board state
   const [isDemoEditMode, setIsDemoEditMode] = useState(false);
@@ -38,17 +40,16 @@ const Header = () => {
   const canEditDemo = userIsAdmin;
   const setDemoMode = useKanbanStore((state) => state.setDemoMode);
 
-  // Save UI preferences to Firebase when dueDatePanelOpen changes
+  // Save UI preferences to Firebase when they change
   useEffect(() => {
     if (user) {
-      // Debounce to avoid too many writes
       const timer = setTimeout(() => {
-        setUserUIPreferences(user.uid, { dueDatePanelOpen });
+        setUserUIPreferences(user.uid, { dueDatePanelOpen, zoomLevel, darkMode });
       }, 1000);
 
       return () => clearTimeout(timer);
     }
-  }, [dueDatePanelOpen, user]);
+  }, [dueDatePanelOpen, zoomLevel, darkMode, user]);
 
   // Calculate badge count for due dates
   const board = boards.find((b) => b.id === activeBoard);
@@ -217,6 +218,33 @@ const Header = () => {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
               </svg>
             </button>
+
+            {/* Zoom Control */}
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setZoomLevel(zoomLevel - 10)}
+                disabled={zoomLevel <= 50}
+                className="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors text-gray-600 dark:text-gray-400 disabled:opacity-30"
+                title="Zoom out"
+                aria-label="Zoom out"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
+                </svg>
+              </button>
+              <span className="text-xs text-gray-500 dark:text-gray-400 w-8 text-center tabular-nums">{zoomLevel}%</span>
+              <button
+                onClick={() => setZoomLevel(zoomLevel + 10)}
+                disabled={zoomLevel >= 150}
+                className="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors text-gray-600 dark:text-gray-400 disabled:opacity-30"
+                title="Zoom in"
+                aria-label="Zoom in"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+              </button>
+            </div>
 
             {/* Dark Mode Toggle */}
             <button

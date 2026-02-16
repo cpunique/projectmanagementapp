@@ -120,6 +120,7 @@ export const useKanbanStore = create<KanbanStore>()(
       filters: {},
       dueDatePanelOpen: true,
       dueDatePanelWidth: 320,
+      zoomLevel: 80,
       hasUnsavedChanges: false,
       // Sync state
       syncState: 'idle',
@@ -756,6 +757,12 @@ export const useKanbanStore = create<KanbanStore>()(
         const MAX_WIDTH = 600;
         const constrainedWidth = Math.max(MIN_WIDTH, Math.min(MAX_WIDTH, width));
         set({ dueDatePanelWidth: constrainedWidth });
+      },
+
+      // Zoom actions
+      setZoomLevel: (level: number) => {
+        const clamped = Math.max(50, Math.min(150, level));
+        set({ zoomLevel: clamped });
       },
 
       // UI state actions

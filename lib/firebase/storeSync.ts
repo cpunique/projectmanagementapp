@@ -148,8 +148,15 @@ export async function initializeFirebaseSync(user: User) {
       // Load UI preferences
       const uiPreferences = await getUserUIPreferences(user.uid);
       if (uiPreferences.dueDatePanelOpen !== undefined) {
-        // Set to the saved preference value directly
         store.setDueDatePanelOpen(uiPreferences.dueDatePanelOpen);
+      }
+      if (uiPreferences.zoomLevel !== undefined) {
+        store.setZoomLevel(uiPreferences.zoomLevel);
+      }
+      if (uiPreferences.darkMode !== undefined) {
+        if (uiPreferences.darkMode !== store.darkMode) {
+          store.toggleDarkMode();
+        }
       }
 
       // Disable demo mode if enabled - but DON'T use toggleDemoMode() because that would

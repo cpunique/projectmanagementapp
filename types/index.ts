@@ -109,6 +109,8 @@ export interface KanbanState {
   // Due dates panel state
   dueDatePanelOpen: boolean;
   dueDatePanelWidth: number;
+  // Page zoom level (percentage, default 80)
+  zoomLevel: number;
   // Unsaved changes tracking
   hasUnsavedChanges: boolean;
   // Sync state tracking
@@ -184,6 +186,9 @@ export interface KanbanActions {
   toggleDueDatePanel: () => void;
   setDueDatePanelOpen: (isOpen: boolean) => void;
   setDueDatePanelWidth: (width: number) => void;
+
+  // Zoom actions
+  setZoomLevel: (level: number) => void;
 
   // History actions
   undo: () => void;
