@@ -2,6 +2,12 @@ import type { NextConfig } from "next";
 
 // Build configuration with security headers and fixes for TypeScript and ESLint
 const nextConfig: NextConfig = {
+  // Strip all console.* calls in production builds
+  // Prevents information leakage in browser DevTools and improves performance
+  compiler: {
+    removeConsole: process.env.NODE_ENV === 'production',
+  },
+
   // Using webpack bundler instead of Turbopack
   eslint: {
     // Disable ESLint during build to allow deployment
