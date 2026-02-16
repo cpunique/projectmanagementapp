@@ -12,12 +12,26 @@ export interface SyncOperation {
   lastError?: string;
 }
 
+interface Preference {
+  key: string;
+  value: string;
+}
+
 class KanbanDB extends Dexie {
   boards!: Table<Board, string>;
   syncQueue!: Table<SyncOperation, number>;
+  preferences!: Table<Preference, string>;
 
   constructor() {
     super('kanban-db');
+    this.version(2).stores({
+      boards: 'id',
+      syncQueue: '++id, boardId, status, timestamp',
+      preferences: 'key',
+    }).upgrade(() => {
+      // No data migration needed — new table
+    });
+    // Keep v1 schema for Dexie upgrade path
     this.version(1).stores({
       boards: 'id',
       syncQueue: '++id, boardId, status, timestamp',
@@ -43,6 +57,21 @@ export async function clearBoards(): Promise<void> {
 
 export async function saveBoard(board: Board): Promise<void> {
   await db.boards.put(board);
+}
+
+// --- Preferences ---
+
+export async function savePreference(key: string, value: string): Promise<void> {
+  await db.preferences.put({ key, value });
+}
+
+export async function loadPreference(key: string): Promise<string | null> {
+  const pref = await db.preferences.get(key);
+  return pref?.value ?? null;
+}
+
+export async function clearPreferences(): Promise<void> {
+  await db.preferences.clear();
 }
 
 // --- Sync Queue ---

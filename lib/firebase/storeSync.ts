@@ -16,7 +16,7 @@ import {
   getUserUIPreferences,
   setUserUIPreferences,
 } from './firestore';
-import { saveBoards, loadBoards, clearBoards, enqueueSyncOperation, getPendingCount } from '@/lib/db';
+import { saveBoards, loadBoards, clearBoards, clearPreferences, enqueueSyncOperation, getPendingCount, savePreference, loadPreference } from '@/lib/db';
 import type { Board } from '@/types';
 
 // Track active subscriptions to prevent memory leaks
@@ -43,11 +43,15 @@ export async function initializeFirebaseSync(user: User) {
       const cachedBoards = await loadBoards();
       if (cachedBoards.length > 0) {
         store.setBoards(cachedBoards);
-        // Use the stored default or active board if it exists in cache, otherwise first board
-        const preferredId = store.defaultBoardId || store.activeBoard;
+        // Load default board ID from IndexedDB (survives browser restart)
+        const cachedDefaultId = await loadPreference('defaultBoardId');
+        const preferredId = cachedDefaultId || store.defaultBoardId || store.activeBoard;
         const preferredBoard = preferredId ? cachedBoards.find(b => b.id === preferredId) : null;
+        if (cachedDefaultId) {
+          store.setDefaultBoard(cachedDefaultId);
+        }
         store.switchBoard(preferredBoard ? preferredBoard.id : cachedBoards[0].id);
-        console.log('[Sync] Loaded', cachedBoards.length, 'boards from IndexedDB cache');
+        console.log('[Sync] Loaded', cachedBoards.length, 'boards from IndexedDB cache, default:', cachedDefaultId);
       }
     } catch (error) {
       console.warn('[Sync] Failed to load boards from IndexedDB:', error);
@@ -135,10 +139,13 @@ export async function initializeFirebaseSync(user: User) {
         if (defaultBoardId && defaultBoard) {
           store.setDefaultBoard(defaultBoardId);
           store.switchBoard(defaultBoardId);
+          // Cache to IndexedDB for instant load on next visit
+          savePreference('defaultBoardId', defaultBoardId).catch(() => {});
         } else if (defaultBoardId && !defaultBoard) {
           console.warn(`[Sync] Default board ID "${defaultBoardId}" not found, clearing preference`);
           await setUserDefaultBoard(user.uid, null);
           store.setDefaultBoard(null);
+          savePreference('defaultBoardId', '').catch(() => {});
           store.switchBoard(userBoards[0].id);
         } else {
           store.switchBoard(userBoards[0].id);
@@ -248,6 +255,7 @@ export function cleanupFirebaseSync() {
 
   // Clear IndexedDB to prevent cross-account data leakage
   clearBoards().catch(err => console.error('[Sync] Failed to clear IndexedDB:', err));
+  clearPreferences().catch(err => console.error('[Sync] Failed to clear preferences:', err));
 
   // Reset UI preferences to defaults when user logs out
   // This ensures the landing page always shows with dueDatePanelOpen: false (landing page default)
@@ -412,6 +420,8 @@ export function subscribeToStoreChanges(user: User) {
 
           // Sync default board preference if changed
           if (defaultBoardChanged) {
+            // Cache locally for instant load on next visit
+            savePreference('defaultBoardId', state.defaultBoardId || '').catch(() => {});
             try {
               await setUserDefaultBoard(user.uid, state.defaultBoardId);
             } catch (error) {
