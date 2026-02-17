@@ -84,8 +84,20 @@ export async function POST(request: Request) {
       );
     }
 
-    // Extract user ID from token (simplified - in production use firebase-admin)
-    const userId = idToken.substring(0, 28);
+    // Decode the JWT payload to extract the user ID (sub claim)
+    // Firebase ID tokens are JWTs: header.payload.signature
+    let userId: string;
+    try {
+      const payloadBase64 = idToken.split('.')[1];
+      const payload = JSON.parse(Buffer.from(payloadBase64, 'base64').toString());
+      userId = payload.sub;
+      if (!userId) throw new Error('No sub claim');
+    } catch {
+      return NextResponse.json(
+        { error: 'Invalid authentication token' },
+        { status: 401 }
+      );
+    }
 
     // 2. Check Pro feature access
     if (!canAccessProFeaturesById(userId)) {

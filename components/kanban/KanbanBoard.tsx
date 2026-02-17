@@ -3,6 +3,7 @@
 import { useKanbanStore } from '@/lib/store';
 import { useAuth } from '@/lib/firebase/AuthContext';
 import { isAdmin } from '@/lib/admin/isAdmin';
+import dynamic from 'next/dynamic';
 import Column from './Column';
 import Container from '@/components/layout/Container';
 import BoardHeader from './BoardHeader';
@@ -12,7 +13,8 @@ import { useKeyboardShortcuts } from '@/lib/hooks/useKeyboardShortcuts';
 import { useState, useMemo, useEffect } from 'react';
 import Input from '@/components/ui/Input';
 import Button from '@/components/ui/Button';
-import KeyboardShortcutsModal from '@/components/ui/KeyboardShortcutsModal';
+
+const KeyboardShortcutsModal = dynamic(() => import('@/components/ui/KeyboardShortcutsModal'), { ssr: false });
 
 const KanbanBoard = () => {
   const { user } = useAuth();

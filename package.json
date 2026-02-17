@@ -6,6 +6,7 @@
     "dev": "next dev",
     "dev:clean": "node scripts/clean-and-dev.js",
     "build": "next build",
+    "analyze": "ANALYZE=true next build",
     "start": "next start",
     "lint": "eslint"
   },
@@ -34,6 +35,7 @@
     "zustand": "^5.0.9"
   },
   "devDependencies": {
+    "@next/bundle-analyzer": "^16.1.6",
     "@tailwindcss/typography": "^0.5.19",
     "@types/node": "^20",
     "@types/react": "^19",

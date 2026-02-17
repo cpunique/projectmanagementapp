@@ -1,11 +1,13 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import dynamic from 'next/dynamic';
 import { Card } from '@/types';
 import { formatDate, isOverdue } from '@/lib/utils';
 import { PRIORITY_COLORS, PRIORITY_LABELS } from '@/lib/constants';
 import { useState } from 'react';
-import CardModal from './CardModal';
+
+const CardModal = dynamic(() => import('./CardModal'), { ssr: false });
 
 interface DueDateCardItemProps {
   card: Card;

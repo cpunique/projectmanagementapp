@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import dynamic from 'next/dynamic';
 import { useKanbanStore } from '@/lib/store';
 import { useAuth } from '@/lib/firebase/AuthContext';
 import { setUserDefaultBoard } from '@/lib/firebase/firestore';
@@ -9,8 +10,9 @@ import Dropdown from '@/components/ui/Dropdown';
 import Button from '@/components/ui/Button';
 import Modal from '@/components/ui/Modal';
 import Input from '@/components/ui/Input';
-import CloneBoardModal from '@/components/kanban/CloneBoardModal';
-import ShareBoardModal from '@/components/kanban/ShareBoardModal';
+
+const CloneBoardModal = dynamic(() => import('@/components/kanban/CloneBoardModal'), { ssr: false });
+const ShareBoardModal = dynamic(() => import('@/components/kanban/ShareBoardModal'), { ssr: false });
 
 const BoardSwitcher = () => {
   const { user } = useAuth();

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import dynamic from 'next/dynamic';
 import { useKanbanStore } from '@/lib/store';
 import { useAuth } from '@/lib/firebase/AuthContext';
 import { setUserUIPreferences } from '@/lib/firebase/firestore';
@@ -13,8 +14,9 @@ import UserMenu from '@/components/auth/UserMenu';
 import SyncStatus from '@/components/ui/SyncStatus';
 import SaveButton from '@/components/ui/SaveButton';
 import NotificationBell from '@/components/ui/NotificationBell';
-import KeyboardShortcutsModal from '@/components/ui/KeyboardShortcutsModal';
 import { useToast } from '@/components/ui/Toast';
+
+const KeyboardShortcutsModal = dynamic(() => import('@/components/ui/KeyboardShortcutsModal'), { ssr: false });
 
 const Header = () => {
   const { user } = useAuth();

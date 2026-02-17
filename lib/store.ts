@@ -913,27 +913,25 @@ export const useKanbanStore = create<KanbanStore>()(
       // demoMode is temporary state that should only exist during landing page session
       // Only persistent client-side UI state (darkMode, filters, etc.) should be in localStorage
       partialize: (state) => {
-        const { boards, activeBoard, defaultBoardId, demoMode, ...rest } = state;
+        // Exclude Firebase-managed state and transient state from localStorage
+        const { boards, activeBoard, defaultBoardId, demoMode, conflictState, ...rest } = state;
         return rest;
       },
-      migrate: (persistedState: any, version: number) => {
-        // Apply migrations for all versions
-        if (version === 1) {
-          // CRITICAL SECURITY FIX: Don't restore boards from localStorage
-          // Boards are NOT persisted to localStorage - they come from Firebase
-          // This ensures no cross-account data leakage when switching users
-          //
-          // However, we still restore UI state (demoMode, filters, etc.)
-          // The default board will be created on first store access if needed
-
-          return {
-            ...persistedState,
-            boards: [], // Don't restore boards - they come from Firebase or demo mode
-            activeBoard: null, // Will be set after Firebase loads boards or demo initializes
-            defaultBoardId: null, // Will be loaded from Firestore later
-          };
-        }
-        return persistedState;
+      merge: (persistedState, currentState) => {
+        // Shallow merge persisted UI state into current state
+        // CRITICAL: Never overwrite Firebase-managed fields (boards, activeBoard, defaultBoardId)
+        // These are set by initializeFirebaseSync and must not be reset by rehydration
+        const persisted = (persistedState || {}) as Partial<KanbanStore>;
+        return {
+          ...currentState,
+          ...persisted,
+          // Always preserve Firebase-managed fields from current state
+          boards: currentState.boards,
+          activeBoard: currentState.activeBoard,
+          defaultBoardId: currentState.defaultBoardId,
+          demoMode: currentState.demoMode,
+          conflictState: currentState.conflictState,
+        };
       },
       // Skip automatic rehydration during SSR to prevent hydration mismatches.
       // Rehydration is triggered manually by StoreHydration component after mount.

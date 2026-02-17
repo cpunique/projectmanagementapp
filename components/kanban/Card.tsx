@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { motion } from 'framer-motion';
+import dynamic from 'next/dynamic';
 import DOMPurify from 'dompurify';
 import { useKanbanStore } from '@/lib/store';
 import { useAuth } from '@/lib/firebase/AuthContext';
@@ -10,9 +11,10 @@ import { useUnreadComments } from '@/lib/hooks/useUnreadComments';
 import { type Card as CardType } from '@/types';
 import { PRIORITY_LABELS, DESCOPED_COLUMN_KEYWORDS } from '@/lib/constants';
 import { formatDate, isOverdue, isLightColor, getDefaultCardColor } from '@/lib/utils';
-import CardModal from './CardModal';
-import AIPromptModal from './AIPromptModal';
 import CardContextMenu from './CardContextMenu';
+
+const CardModal = dynamic(() => import('./CardModal'), { ssr: false });
+const AIPromptModal = dynamic(() => import('./AIPromptModal'), { ssr: false });
 
 interface CardProps {
   card: CardType;

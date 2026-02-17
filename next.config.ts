@@ -1,4 +1,9 @@
 import type { NextConfig } from "next";
+import withBundleAnalyzer from '@next/bundle-analyzer';
+
+const analyzeBundles = withBundleAnalyzer({
+  enabled: process.env.ANALYZE === 'true',
+});
 
 // Build configuration with security headers and fixes for TypeScript and ESLint
 const nextConfig: NextConfig = {
@@ -67,4 +72,4 @@ const nextConfig: NextConfig = {
   }
 };
 
-export default nextConfig;
+export default analyzeBundles(nextConfig);
