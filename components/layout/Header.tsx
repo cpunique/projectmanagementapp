@@ -43,15 +43,19 @@ const Header = () => {
   const setDemoMode = useKanbanStore((state) => state.setDemoMode);
 
   // Save UI preferences to Firebase when they change
+  // CRITICAL: Only save AFTER sync is complete. During init, the store has default values
+  // (dark mode, 80% zoom) that would overwrite the user's real preferences in Firestore
+  // before initializeFirebaseSync has a chance to load them.
+  const syncState = useKanbanStore((state) => state.syncState);
   useEffect(() => {
-    if (user) {
+    if (user && syncState === 'synced') {
       const timer = setTimeout(() => {
         setUserUIPreferences(user.uid, { dueDatePanelOpen, zoomLevel, darkMode });
       }, 1000);
 
       return () => clearTimeout(timer);
     }
-  }, [dueDatePanelOpen, zoomLevel, darkMode, user]);
+  }, [dueDatePanelOpen, zoomLevel, darkMode, user, syncState]);
 
   // Calculate badge count for due dates
   const board = boards.find((b) => b.id === activeBoard);
@@ -188,6 +192,20 @@ const Header = () => {
               >
                 {loadingDemo ? 'Loading...' : 'Demo'}
               </Button>
+            )}
+
+            {/* Activity Feed Toggle - Desktop only (hidden on landing page) */}
+            {activeBoard && (
+              <button
+                onClick={() => useKanbanStore.getState().toggleActivityPanel()}
+                className="hidden md:flex relative p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors text-gray-600 dark:text-gray-400"
+                title={useKanbanStore.getState().activityPanelOpen ? 'Hide activity' : 'Show activity'}
+                aria-label="Toggle activity panel"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </button>
             )}
 
             {/* Due Dates Panel Toggle - Desktop only (hidden on landing page) */}

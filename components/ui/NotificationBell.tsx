@@ -10,24 +10,10 @@ import {
   clearAllNotifications,
 } from '@/lib/firebase/notifications';
 import { Notification } from '@/types';
+import { formatTimeAgo } from '@/lib/utils/formatTimeAgo';
 
 interface NotificationBellProps {
   onNavigateToCard?: (boardId: string, cardId: string) => void;
-}
-
-function formatTimeAgo(dateString: string): string {
-  const date = new Date(dateString);
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  const diffMin = Math.floor(diffMs / 60000);
-  const diffHour = Math.floor(diffMin / 60);
-  const diffDay = Math.floor(diffHour / 24);
-
-  if (diffMin < 1) return 'just now';
-  if (diffMin < 60) return `${diffMin}m ago`;
-  if (diffHour < 24) return `${diffHour}h ago`;
-  if (diffDay < 7) return `${diffDay}d ago`;
-  return date.toLocaleDateString();
 }
 
 export default function NotificationBell({ onNavigateToCard }: NotificationBellProps) {

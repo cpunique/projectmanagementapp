@@ -21,6 +21,34 @@ export interface CardComment {
   mentions?: MentionedUser[]; // Users mentioned with @
 }
 
+// Activity Feed types
+export type ActivityEventType =
+  | 'card_added'
+  | 'card_deleted'
+  | 'card_moved'
+  | 'card_updated'
+  | 'comment_added'
+  | 'column_added'
+  | 'column_deleted'
+  | 'board_shared';
+
+export interface ActivityEntry {
+  id: string;
+  boardId: string;
+  eventType: ActivityEventType;
+  actorId: string;
+  actorEmail: string;
+  createdAt: string;
+  cardId?: string;
+  cardTitle?: string;
+  columnTitle?: string;
+  fromColumnTitle?: string;
+  toColumnTitle?: string;
+  fieldChanged?: string;
+  commentSnippet?: string;
+  targetEmail?: string; // for board_shared events
+}
+
 export interface Notification {
   id: string;
   type: 'mention';
@@ -108,6 +136,8 @@ export interface KanbanState {
   _userBoardsBackup?: Board[];
   // Due dates panel state
   dueDatePanelOpen: boolean;
+  // Activity feed panel state
+  activityPanelOpen: boolean;
   dueDatePanelWidth: number;
   // Page zoom level (percentage, default 80)
   zoomLevel: number;
@@ -178,6 +208,7 @@ export interface KanbanActions {
 
   // UI state actions
   toggleDarkMode: () => void;
+  setDarkMode: (darkMode: boolean) => void;
   toggleDemoMode: () => void;
   setDemoMode: (enabled: boolean, customDemoBoard?: Board) => void;
   setSearchQuery: (query: string) => void;
@@ -188,6 +219,10 @@ export interface KanbanActions {
   toggleDueDatePanel: () => void;
   setDueDatePanelOpen: (isOpen: boolean) => void;
   setDueDatePanelWidth: (width: number) => void;
+
+  // Activity panel actions
+  toggleActivityPanel: () => void;
+  setActivityPanelOpen: (isOpen: boolean) => void;
 
   // Zoom actions
   setZoomLevel: (level: number) => void;

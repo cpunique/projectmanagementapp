@@ -27,6 +27,11 @@ const activeSubscriptions = new Map<string, () => void>();
 // Flag to prevent syncing TO Firebase when changes come FROM Firebase
 let isSyncingFromFirebase = false;
 
+/** Set the isSyncingFromFirebase flag (used by periodicSync to suppress subscription writes) */
+export function setIsSyncingFromFirebase(value: boolean) {
+  isSyncingFromFirebase = value;
+}
+
 // Track last known remote updatedAt per board for conflict detection
 const boardRemoteVersions = new Map<string, string>();
 
@@ -181,9 +186,7 @@ export async function initializeFirebaseSync(user: User) {
         store.setZoomLevel(uiPreferences.zoomLevel);
       }
       if (uiPreferences.darkMode !== undefined) {
-        if (uiPreferences.darkMode !== store.darkMode) {
-          store.toggleDarkMode();
-        }
+        store.setDarkMode(uiPreferences.darkMode);
       }
 
       // Disable demo mode if enabled - but DON'T use toggleDemoMode() because that would
@@ -281,9 +284,12 @@ export function cleanupFirebaseSync() {
   boardRemoteVersions.clear();
   store.setConflictState(undefined);
 
-  // Reset UI preferences to defaults when user logs out
-  // This ensures the landing page always shows with dueDatePanelOpen: false (landing page default)
+  // Reset all user-specific state when user logs out
+  // This prevents preference bleed between accounts on the same browser
+  store.setDefaultBoard(null);
   store.setDueDatePanelOpen(false);
+  store.setDarkMode(true);      // Default: dark mode
+  store.setZoomLevel(80);       // Default: 80%
 
   console.log('[Sync] Cleanup complete - all subscriptions cancelled, boards cleared');
 }
@@ -335,7 +341,14 @@ async function syncActionToFirebase(userId: string) {
 export function subscribeToStoreChanges(user: User) {
   let syncTimeout: NodeJS.Timeout;
   let lastBoardsMap = new Map<string, string>();
-  let lastDefaultBoardId: string | null = null;
+  // Initialize from current store state to avoid false change detection on first fire.
+  // Without this, lastDefaultBoardId=null would mismatch a store value set during init.
+  const currentState = useKanbanStore.getState();
+  let lastDefaultBoardId: string | null = currentState.defaultBoardId;
+  // Pre-populate board tracking map to avoid syncing all boards on first subscription fire
+  currentState.boards.forEach((board) => {
+    lastBoardsMap.set(board.id, JSON.stringify(board));
+  });
 
   return useKanbanStore.subscribe(
     (state) => {
@@ -427,6 +440,12 @@ export function subscribeToStoreChanges(user: User) {
 
             if (boardWithOwner.ownerId) {
               try {
+                // Skip conflict check if a conflict dialog is already showing
+                const currentConflict = useKanbanStore.getState().conflictState;
+                if (currentConflict) {
+                  continue; // Don't write or re-check while user is resolving a conflict
+                }
+
                 // Conflict detection: check if remote has changed since we last fetched
                 const lastKnown = boardRemoteVersions.get(board.id);
                 if (lastKnown) {

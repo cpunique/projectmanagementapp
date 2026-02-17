@@ -112,6 +112,25 @@ service cloud.firestore {
     }
 
     // ============================================
+    // Board Activities Subcollection Rules
+    // ============================================
+
+    match /boards/{boardId}/activities/{activityId} {
+      // Read: Anyone who can read the board can read its activities
+      allow read: if isAuthenticated() &&
+                    (get(/databases/$(database)/documents/boards/$(boardId)).data.ownerId == request.auth.uid ||
+                     (get(/databases/$(database)/documents/boards/$(boardId)).data.sharedWithUserIds != null &&
+                      request.auth.uid in get(/databases/$(database)/documents/boards/$(boardId)).data.sharedWithUserIds));
+
+      // Create: Authenticated user logging their own activity
+      allow create: if isAuthenticated() &&
+                      request.resource.data.actorId == request.auth.uid;
+
+      // Activities are immutable — no updates or deletes
+      allow update, delete: if false;
+    }
+
+    // ============================================
     // Demo Configs Collection Rules
     // ============================================
 

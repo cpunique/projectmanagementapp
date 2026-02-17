@@ -119,6 +119,7 @@ export const useKanbanStore = create<KanbanStore>()(
       searchQuery: '',
       filters: {},
       dueDatePanelOpen: true,
+      activityPanelOpen: false,
       dueDatePanelWidth: 320,
       zoomLevel: 80,
       hasUnsavedChanges: false,
@@ -267,9 +268,18 @@ export const useKanbanStore = create<KanbanStore>()(
             hasUnsavedChanges: true,
           };
         });
+
+        import('@/lib/firebase/activities').then(({ logActivity }) => {
+          logActivity(boardId, { eventType: 'column_added', columnTitle: title }).catch(() => {});
+        }).catch(() => {});
       },
 
       deleteColumn: (boardId: string, columnId: string) => {
+        const state = get();
+        const board = state.boards.find(b => b.id === boardId);
+        const column = board?.columns.find(c => c.id === columnId);
+        const columnTitle = column?.title || 'Untitled';
+
         set((state) => ({
           boards: state.boards.map((b) =>
             b.id === boardId
@@ -281,6 +291,10 @@ export const useKanbanStore = create<KanbanStore>()(
           ),
           hasUnsavedChanges: true,
         }));
+
+        import('@/lib/firebase/activities').then(({ logActivity }) => {
+          logActivity(boardId, { eventType: 'column_deleted', columnTitle }).catch(() => {});
+        }).catch(() => {});
       },
 
       updateColumn: (boardId: string, columnId: string, title: string) => {
@@ -320,6 +334,9 @@ export const useKanbanStore = create<KanbanStore>()(
 
       // Card actions
       addCard: (boardId: string, columnId: string, cardData) => {
+        const state = get();
+        const board = state.boards.find(b => b.id === boardId);
+        const column = board?.columns.find(c => c.id === columnId);
         set((state) => ({
           boards: state.boards.map((b) =>
             b.id === boardId
@@ -349,9 +366,23 @@ export const useKanbanStore = create<KanbanStore>()(
           ),
           hasUnsavedChanges: true,
         }));
+        // Log activity (async, non-blocking)
+        import('@/lib/firebase/activities').then(({ logActivity }) => {
+          logActivity(boardId, {
+            eventType: 'card_added',
+            cardTitle: cardData.title || 'Untitled',
+            columnTitle: column?.title,
+          }).catch(() => {});
+        }).catch(() => {});
       },
 
       deleteCard: (boardId: string, cardId: string) => {
+        // Capture card info before deletion for activity log
+        const state = get();
+        const board = state.boards.find(b => b.id === boardId);
+        const card = board?.columns.flatMap(c => c.cards).find(c => c.id === cardId);
+        const cardTitle = card?.title || 'Untitled';
+
         set((state) => ({
           boards: state.boards.map((b) =>
             b.id === boardId
@@ -366,9 +397,18 @@ export const useKanbanStore = create<KanbanStore>()(
           ),
           hasUnsavedChanges: true,
         }));
+
+        import('@/lib/firebase/activities').then(({ logActivity }) => {
+          logActivity(boardId, { eventType: 'card_deleted', cardTitle }).catch(() => {});
+        }).catch(() => {});
       },
 
       updateCard: (boardId: string, cardId: string, cardData) => {
+        // Capture old card state for activity logging (title, priority, dueDate changes)
+        const preState = get();
+        const preBoard = preState.boards.find(b => b.id === boardId);
+        const preCard = preBoard?.columns.flatMap(c => c.cards).find(c => c.id === cardId);
+
         set((state) => ({
           boards: state.boards.map((b) =>
             b.id === boardId
@@ -391,6 +431,25 @@ export const useKanbanStore = create<KanbanStore>()(
           ),
           hasUnsavedChanges: true,
         }));
+
+        // Log activity for meaningful field changes (title, priority, dueDate)
+        if (preCard && boardId !== 'default-board') {
+          const fieldsChanged: string[] = [];
+          if (cardData.title !== undefined && cardData.title !== preCard.title) fieldsChanged.push('title');
+          if (cardData.priority !== undefined && cardData.priority !== preCard.priority) fieldsChanged.push('priority');
+          if (cardData.dueDate !== undefined && cardData.dueDate !== preCard.dueDate) fieldsChanged.push('due date');
+
+          if (fieldsChanged.length > 0) {
+            import('@/lib/firebase/activities').then(({ logActivity }) => {
+              logActivity(boardId, {
+                eventType: 'card_updated',
+                cardId,
+                cardTitle: cardData.title || preCard.title || 'Untitled',
+                fieldChanged: fieldsChanged.join(', '),
+              }).catch(() => {});
+            }).catch(() => {});
+          }
+        }
       },
 
       moveCard: (
@@ -400,6 +459,13 @@ export const useKanbanStore = create<KanbanStore>()(
         toColumnId: string,
         newOrder: number
       ) => {
+        // Capture info for activity log before the move
+        const preState = get();
+        const preBoard = preState.boards.find(b => b.id === boardId);
+        const fromCol = preBoard?.columns.find(c => c.id === fromColumnId);
+        const toCol = preBoard?.columns.find(c => c.id === toColumnId);
+        const movingCard = fromCol?.cards.find(c => c.id === cardId);
+
         set((state) => {
           let card: Card | null = null;
 
@@ -464,6 +530,19 @@ export const useKanbanStore = create<KanbanStore>()(
             hasUnsavedChanges: true,
           };
         });
+
+        // Log card move activity (only for cross-column moves)
+        if (fromColumnId !== toColumnId && movingCard) {
+          import('@/lib/firebase/activities').then(({ logActivity }) => {
+            logActivity(boardId, {
+              eventType: 'card_moved',
+              cardId,
+              cardTitle: movingCard.title,
+              fromColumnTitle: fromCol?.title,
+              toColumnTitle: toCol?.title,
+            }).catch(() => {});
+          }).catch(() => {});
+        }
       },
 
       reorderCards: (boardId: string, columnId: string, cardIds: string[]) => {
@@ -654,6 +733,16 @@ export const useKanbanStore = create<KanbanStore>()(
               .catch(err => console.error('[Store] Failed to create mention notifications:', err));
           });
         }
+
+        // Log activity
+        import('@/lib/firebase/activities').then(({ logActivity }) => {
+          logActivity(boardId, {
+            eventType: 'comment_added',
+            cardId,
+            cardTitle: card?.title,
+            commentSnippet: content.replace(/<[^>]*>/g, '').substring(0, 100),
+          }).catch(() => {});
+        }).catch(() => {});
       },
 
       editComment: (
@@ -751,6 +840,10 @@ export const useKanbanStore = create<KanbanStore>()(
         set({ notifications: [] });
       },
 
+      // Activity panel actions
+      toggleActivityPanel: () => set((state) => ({ activityPanelOpen: !state.activityPanelOpen })),
+      setActivityPanelOpen: (isOpen: boolean) => set({ activityPanelOpen: isOpen }),
+
       // Due dates panel actions
       toggleDueDatePanel: () => set((state) => ({ dueDatePanelOpen: !state.dueDatePanelOpen })),
       setDueDatePanelOpen: (isOpen: boolean) => set({ dueDatePanelOpen: isOpen }),
@@ -769,6 +862,7 @@ export const useKanbanStore = create<KanbanStore>()(
 
       // UI state actions
       toggleDarkMode: () => set((state) => ({ darkMode: !state.darkMode })),
+      setDarkMode: (darkMode) => set({ darkMode }),
       toggleDemoMode: () =>
         set((state) => {
           const newDemoMode = !state.demoMode;
@@ -914,7 +1008,7 @@ export const useKanbanStore = create<KanbanStore>()(
       // Only persistent client-side UI state (darkMode, filters, etc.) should be in localStorage
       partialize: (state) => {
         // Exclude Firebase-managed state and transient state from localStorage
-        const { boards, activeBoard, defaultBoardId, demoMode, conflictState, ...rest } = state;
+        const { boards, activeBoard, defaultBoardId, demoMode, conflictState, activityPanelOpen, ...rest } = state;
         return rest;
       },
       merge: (persistedState, currentState) => {
@@ -931,6 +1025,7 @@ export const useKanbanStore = create<KanbanStore>()(
           defaultBoardId: currentState.defaultBoardId,
           demoMode: currentState.demoMode,
           conflictState: currentState.conflictState,
+          activityPanelOpen: currentState.activityPanelOpen,
         };
       },
       // Skip automatic rehydration during SSR to prevent hydration mismatches.

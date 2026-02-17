@@ -24,11 +24,12 @@ export default function ConflictDialog() {
       // Force-write local version to Firebase
       await updateBoard(boardId, localBoard);
       setBoardRemoteVersion(boardId, new Date().toISOString());
-      setConflictState(undefined);
     } catch (error) {
       console.error('[ConflictDialog] Failed to force-write local changes:', error);
     } finally {
+      // Always dismiss — even on error, don't trap the user in a modal they can't escape
       setResolving(false);
+      setConflictState(undefined);
     }
   };
 
@@ -42,12 +43,17 @@ export default function ConflictDialog() {
       // Update IndexedDB with remote version
       const updatedBoards = store.boards.map(b => b.id === boardId ? remoteBoard : b);
       saveBoards(updatedBoards).catch(() => {});
-      setConflictState(undefined);
     } catch (error) {
       console.error('[ConflictDialog] Failed to load remote version:', error);
     } finally {
       setResolving(false);
+      setConflictState(undefined);
     }
+  };
+
+  const handleDismiss = () => {
+    // Dismiss without action — keeps current local state, will re-check on next sync
+    setConflictState(undefined);
   };
 
   // Count differences for summary
@@ -57,7 +63,7 @@ export default function ConflictDialog() {
   return (
     <Modal
       isOpen={true}
-      onClose={() => {}} // Prevent closing without resolution
+      onClose={handleDismiss}
       title="Sync Conflict Detected"
       contentClassName="max-w-lg"
     >

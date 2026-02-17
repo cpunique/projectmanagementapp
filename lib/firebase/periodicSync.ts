@@ -2,7 +2,7 @@ import { User } from 'firebase/auth';
 import { useKanbanStore } from '@/lib/store';
 import { isAdmin } from '@/lib/admin/isAdmin';
 import { getUserBoards, getBoard } from './firestore';
-import { setBoardRemoteVersion } from './storeSync';
+import { setBoardRemoteVersion, setIsSyncingFromFirebase } from './storeSync';
 import { getDocs, query, where, collection, getFirestore } from 'firebase/firestore';
 import type { Board, Card, CardComment } from '@/types';
 
@@ -226,19 +226,27 @@ async function performPeriodicSync(user: User) {
         return remoteBoard;
       });
 
-      store.setBoards(mergedBoards);
+      // Suppress the store subscription while we update from remote data.
+      // Without this, the subscription detects the board changes and tries to write
+      // them BACK to Firebase, creating a feedback loop and re-triggering conflict detection.
+      setIsSyncingFromFirebase(true);
+      try {
+        store.setBoards(mergedBoards);
 
-      // Update remote version tracking for conflict detection
-      for (const board of remoteBoards) {
-        if (board.updatedAt) {
-          setBoardRemoteVersion(board.id, board.updatedAt);
+        // Update remote version tracking for conflict detection
+        for (const board of remoteBoards) {
+          if (board.updatedAt) {
+            setBoardRemoteVersion(board.id, board.updatedAt);
+          }
         }
-      }
 
-      // If active board was deleted, switch to first available board
-      const activeBoardStillExists = mergedBoards.find(b => b.id === store.activeBoard);
-      if (!activeBoardStillExists && mergedBoards.length > 0) {
-        store.switchBoard(mergedBoards[0].id);
+        // If active board was deleted, switch to first available board
+        const activeBoardStillExists = mergedBoards.find(b => b.id === store.activeBoard);
+        if (!activeBoardStillExists && mergedBoards.length > 0) {
+          store.switchBoard(mergedBoards[0].id);
+        }
+      } finally {
+        setIsSyncingFromFirebase(false);
       }
     }
   } catch (error) {

@@ -18,9 +18,17 @@ export function useDefaultBoardSaver() {
   const activeBoard = useKanbanStore((state) => state.activeBoard);
   const defaultBoardId = useKanbanStore((state) => state.defaultBoardId);
   const demoMode = useKanbanStore((state) => state.demoMode);
+  const syncState = useKanbanStore((state) => state.syncState);
 
   useEffect(() => {
     if (!user || !activeBoard) return;
+
+    // CRITICAL: Don't auto-save until Firebase sync initialization is fully complete.
+    // During init, activeBoard changes multiple times as boards load from IndexedDB/Firebase.
+    // Saving during this window overwrites the user's real default with whatever board loaded first.
+    if (syncState !== 'synced') {
+      return;
+    }
 
     // CRITICAL: Skip auto-save in demo mode - demo board is ephemeral
     if (demoMode) {
@@ -29,14 +37,12 @@ export function useDefaultBoardSaver() {
 
     // CRITICAL: Never save the demo board ID ('default-board') as default - it doesn't exist in Firebase
     if (activeBoard === 'default-board') {
-      console.log('[DefaultBoardSaver] Skipping auto-save - active board is demo board');
       return;
     }
 
     // CRITICAL: Only auto-save the active board as default if there's NO explicit default set
     // If the user has manually set a default (via star icon), respect that choice
     if (defaultBoardId !== null) {
-      console.log('[DefaultBoardSaver] Skipping auto-save - user has explicitly set default:', defaultBoardId);
       return;
     }
 
@@ -48,10 +54,9 @@ export function useDefaultBoardSaver() {
         console.log('[DefaultBoardSaver] Auto-saved active board as default (no explicit default set):', activeBoard);
       } catch (error) {
         console.error('[DefaultBoardSaver] Failed to save default board:', error);
-        // Don't throw - this is a non-critical operation
       }
     };
 
     saveDefaultBoard();
-  }, [user?.uid, activeBoard, defaultBoardId, demoMode]);
+  }, [user?.uid, activeBoard, defaultBoardId, demoMode, syncState]);
 }

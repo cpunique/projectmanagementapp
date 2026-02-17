@@ -721,6 +721,12 @@ export async function shareBoardWithUser(
     await updateDoc(boardRef, updateData);
 
     console.log('[Collaboration] Board shared with:', userEmail, '(uid:', userId, ') role:', role);
+
+    // Log activity (async, non-blocking)
+    import('@/lib/firebase/activities').then(({ logActivity }) => {
+      logActivity(boardId, { eventType: 'board_shared', targetEmail: userEmail }).catch(() => {});
+    }).catch(() => {});
+
     return { success: true };
   } catch (error: any) {
     console.error('[Collaboration] Failed to share board:', error);

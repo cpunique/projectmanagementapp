@@ -30,14 +30,26 @@ export function useFirebaseSync() {
 
     console.log('[useFirebaseSync] Initializing Firebase sync for user:', user.uid);
 
+    // Track subscription so cleanup can unsubscribe even if init is still running
+    let unsubscribeFromStore: (() => void) | undefined;
+    let cancelled = false;
+
     // Add a small delay to ensure Firebase auth is fully settled
     // This prevents permission errors during initial sync on first login
     const delayAndSync = async () => {
       await new Promise(resolve => setTimeout(resolve, 500));
+      if (cancelled) return;
+
       await initializeFirebaseSync(user);
+      if (cancelled) return;
+
+      // CRITICAL: Start the store subscription AFTER init completes.
+      // Starting it before init caused a race condition where the subscription
+      // would detect false "changes" (lastDefaultBoardId=null vs store value)
+      // and sync stale/wrong values to Firestore before init could load the real ones.
+      unsubscribeFromStore = subscribeToStoreChanges(user);
 
       // Start periodic sync for collaborative boards (every 15 seconds)
-      // This checks for updates from other users on shared boards
       startPeriodicSync(user, 15000);
 
       // Start sync queue processor and drain any pending operations from last session
@@ -51,11 +63,9 @@ export function useFirebaseSync() {
       console.error('[useFirebaseSync] Error during delayed initialization:', err);
     });
 
-    // Subscribe to store changes for real-time sync to Firebase
-    const unsubscribeFromStore = subscribeToStoreChanges(user);
-
     // Cleanup function
     return () => {
+      cancelled = true;
       unsubscribeFromStore?.();
       stopPeriodicSync();
       stopQueueProcessor();
