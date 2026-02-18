@@ -35,6 +35,13 @@ export function setIsSyncingFromFirebase(value: boolean) {
 // Track last known remote updatedAt per board for conflict detection
 const boardRemoteVersions = new Map<string, string>();
 
+// Track base board snapshots for 3-way merge conflict resolution
+const boardBaseVersions = new Map<string, Board>();
+
+export function getBoardBaseVersion(boardId: string): Board | undefined {
+  return boardBaseVersions.get(boardId);
+}
+
 export function getBoardRemoteVersion(boardId: string): string | undefined {
   return boardRemoteVersions.get(boardId);
 }
@@ -139,11 +146,12 @@ export async function initializeFirebaseSync(user: User) {
         console.warn('[Sync] Failed to cache boards to IndexedDB:', err)
       );
 
-      // Populate remote version tracking for conflict detection
+      // Populate remote version tracking and base snapshots for conflict detection
       for (const board of userBoards) {
         if (board.updatedAt) {
           boardRemoteVersions.set(board.id, board.updatedAt);
         }
+        boardBaseVersions.set(board.id, structuredClone(board));
       }
 
       // Check if there's a board query parameter that should override default selection
@@ -282,6 +290,7 @@ export function cleanupFirebaseSync() {
 
   // Clear conflict detection state
   boardRemoteVersions.clear();
+  boardBaseVersions.clear();
   store.setConflictState(undefined);
 
   // Reset all user-specific state when user logs out
@@ -455,10 +464,12 @@ export function subscribeToStoreChanges(user: User) {
                     console.warn(`[Sync] Conflict detected for board ${board.id}: remote=${remoteUpdatedAt}, lastKnown=${lastKnown}`);
                     const remoteBoard = await getBoard(board.id);
                     if (remoteBoard) {
+                      const baseBoard = boardBaseVersions.get(board.id);
                       useKanbanStore.getState().setConflictState({
                         boardId: board.id,
                         localBoard: structuredClone(board),
                         remoteBoard,
+                        baseBoard: baseBoard ? structuredClone(baseBoard) : undefined,
                       });
                       continue; // Skip this board's write — user must resolve
                     }
@@ -466,8 +477,9 @@ export function subscribeToStoreChanges(user: User) {
                 }
 
                 await updateBoard(board.id, board);
-                // Update tracked version after successful write
+                // Update tracked version and base snapshot after successful write
                 boardRemoteVersions.set(board.id, new Date().toISOString());
+                boardBaseVersions.set(board.id, structuredClone(board));
               } catch (error: any) {
                 // Enqueue failed writes for retry
                 console.warn(`[Sync] Firebase write failed for board ${board.id}, queueing for retry:`, error?.code || error);

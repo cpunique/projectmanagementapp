@@ -6,6 +6,8 @@ import { updateBoard } from '@/lib/firebase/firestore';
 import { setBoardRemoteVersion } from '@/lib/firebase/storeSync';
 import { saveBoards } from '@/lib/db';
 import Modal from '@/components/ui/Modal';
+import ConflictMergePanel from './ConflictMergePanel';
+import type { Board } from '@/types';
 
 export default function ConflictDialog() {
   const conflictState = useKanbanStore((state) => state.conflictState);
@@ -14,20 +16,57 @@ export default function ConflictDialog() {
 
   if (!conflictState) return null;
 
-  const { boardId, localBoard, remoteBoard } = conflictState;
+  const { boardId, localBoard, remoteBoard, baseBoard } = conflictState;
 
+  // When baseBoard exists, show the enhanced field-level merge UI
+  if (baseBoard) {
+    return (
+      <Modal
+        isOpen={true}
+        onClose={() => setConflictState(undefined)}
+        title="Merge Conflicts"
+        contentClassName="max-w-2xl"
+      >
+        <ConflictMergePanel
+          baseBoard={baseBoard}
+          localBoard={localBoard}
+          remoteBoard={remoteBoard}
+          resolving={resolving}
+          onResolve={async (mergedBoard: Board) => {
+            setResolving(true);
+            try {
+              await updateBoard(boardId, mergedBoard);
+              const store = useKanbanStore.getState();
+              store.updateBoardFromFirebase(boardId, mergedBoard);
+              setBoardRemoteVersion(boardId, mergedBoard.updatedAt);
+              const updatedBoards = store.boards.map((b) =>
+                b.id === boardId ? mergedBoard : b
+              );
+              saveBoards(updatedBoards).catch(() => {});
+            } catch (error) {
+              console.error('[ConflictDialog] Failed to save merged board:', error);
+            } finally {
+              setResolving(false);
+              setConflictState(undefined);
+            }
+          }}
+          onCancel={() => setConflictState(undefined)}
+        />
+      </Modal>
+    );
+  }
+
+  // Fallback: simple keep-mine / use-remote dialog (no base board available)
   const remoteTime = new Date(remoteBoard.updatedAt).toLocaleString();
 
   const handleKeepMine = async () => {
     setResolving(true);
     try {
-      // Force-write local version to Firebase
       await updateBoard(boardId, localBoard);
       setBoardRemoteVersion(boardId, new Date().toISOString());
     } catch (error) {
       console.error('[ConflictDialog] Failed to force-write local changes:', error);
     } finally {
-      // Always dismiss — even on error, don't trap the user in a modal they can't escape
       setResolving(false);
       setConflictState(undefined);
     }
@@ -36,11 +75,9 @@ export default function ConflictDialog() {
   const handleUseRemote = async () => {
     setResolving(true);
     try {
-      // Replace local board with remote version
       const store = useKanbanStore.getState();
       store.updateBoardFromFirebase(boardId, remoteBoard);
       setBoardRemoteVersion(boardId, remoteBoard.updatedAt);
-      // Update IndexedDB with remote version
       const updatedBoards = store.boards.map(b => b.id === boardId ? remoteBoard : b);
       saveBoards(updatedBoards).catch(() => {});
     } catch (error) {
@@ -52,11 +89,9 @@ export default function ConflictDialog() {
   };
 
   const handleDismiss = () => {
-    // Dismiss without action — keeps current local state, will re-check on next sync
     setConflictState(undefined);
   };
 
-  // Count differences for summary
   const localCardCount = localBoard.columns.reduce((sum, col) => sum + col.cards.length, 0);
   const remoteCardCount = remoteBoard.columns.reduce((sum, col) => sum + col.cards.length, 0);
 
@@ -84,7 +119,6 @@ export default function ConflictDialog() {
           </div>
         </div>
 
-        {/* Summary of differences */}
         <div className="grid grid-cols-2 gap-3 text-sm">
           <div className="p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
             <div className="font-medium text-blue-700 dark:text-blue-300">Your version</div>
@@ -100,7 +134,6 @@ export default function ConflictDialog() {
           </div>
         </div>
 
-        {/* Action buttons */}
         <div className="flex gap-3 pt-2">
           <button
             onClick={handleKeepMine}
