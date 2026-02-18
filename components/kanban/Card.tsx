@@ -330,8 +330,18 @@ const Card = ({ card, boardId, columnId, onDragStart, onDragEnd, isDragging, can
         )}
 
         {/* Metadata Footer */}
-        {(card.dueDate || hasNotes(card.notes) || totalComments > 0) && (
+        {(card.dueDate || hasNotes(card.notes) || totalComments > 0 || (card.attachments && card.attachments.length > 0)) && (
           <div className={`flex items-center gap-3 pt-2 mt-auto border-t ${isLight ? 'border-gray-100' : 'border-gray-600'}`}>
+            {/* Attachments Indicator */}
+            {card.attachments && card.attachments.length > 0 && (
+              <div className={`flex items-center gap-1 text-xs pointer-events-none ${metaColor}`}>
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                </svg>
+                <span>{card.attachments.length}</span>
+              </div>
+            )}
+
             {/* Due Date */}
             {card.dueDate && (
               <div className={`flex items-center gap-1 text-xs pointer-events-none ${

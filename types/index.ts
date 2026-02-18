@@ -74,6 +74,17 @@ export interface BoardCollaborator {
 // Instruction types for AI prompt generation
 export type InstructionType = 'development' | 'general' | 'event-planning' | 'documentation';
 
+export interface CardAttachment {
+  id: string;
+  fileName: string;
+  fileType: string; // MIME type
+  fileSize: number; // bytes
+  storagePath: string; // Firebase Storage path
+  downloadUrl: string;
+  uploadedBy: string; // userId
+  uploadedAt: string; // ISO timestamp
+}
+
 export interface Card {
   id: string;
   title: string;
@@ -92,6 +103,7 @@ export interface Card {
   aiPrompt?: string; // Generated AI implementation prompt
   status?: "active" | "descoped"; // Card status - defaults to 'active'
   comments?: CardComment[]; // Thread of comments on this card
+  attachments?: CardAttachment[]; // File attachments
 }
 
 export interface Column {
