@@ -157,7 +157,7 @@ export interface KanbanState {
 
 export interface KanbanActions {
   // Board actions
-  addBoard: (name: string, description?: string) => void;
+  addBoard: (name: string, description?: string, templateColumns?: { title: string; order: number }[]) => void;
   deleteBoard: (boardId: string) => void;
   updateBoard: (boardId: string, name: string) => void;
   updateBoardDescription: (boardId: string, description: string) => void;

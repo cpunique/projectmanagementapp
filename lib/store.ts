@@ -135,14 +135,15 @@ export const useKanbanStore = create<KanbanStore>()(
       notifications: [],
 
       // Board actions
-      addBoard: (name: string, description?: string) => {
+      addBoard: (name: string, description?: string, templateColumns?: { title: string; order: number }[]) => {
+        const columnsSource = templateColumns || DEFAULT_COLUMNS;
         const newBoard: Board = {
           id: nanoid(),
           name,
           description: description || '',
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
-          columns: DEFAULT_COLUMNS.map((col) => ({
+          columns: columnsSource.map((col) => ({
             id: nanoid(),
             title: col.title,
             order: col.order,

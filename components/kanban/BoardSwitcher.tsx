@@ -10,6 +10,9 @@ import Dropdown from '@/components/ui/Dropdown';
 import Button from '@/components/ui/Button';
 import Modal from '@/components/ui/Modal';
 import Input from '@/components/ui/Input';
+import BoardTemplateSelector from './BoardTemplateSelector';
+import { BOARD_TEMPLATES, type BoardTemplate } from '@/lib/boardTemplates';
+import { downloadBoardAsJSON } from '@/lib/utils/exportBoard';
 
 const CloneBoardModal = dynamic(() => import('@/components/kanban/CloneBoardModal'), { ssr: false });
 const ShareBoardModal = dynamic(() => import('@/components/kanban/ShareBoardModal'), { ssr: false });
@@ -34,13 +37,17 @@ const BoardSwitcher = () => {
   const [boardToClone, setBoardToClone] = useState<string | null>(null);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [boardToShare, setBoardToShare] = useState<string | null>(null);
+  const [selectedTemplate, setSelectedTemplate] = useState<BoardTemplate>(BOARD_TEMPLATES[0]);
 
   const currentBoard = boards.find((b) => b.id === activeBoard);
 
   const handleCreateBoard = () => {
     if (newBoardName.trim()) {
-      addBoard(newBoardName);
+      // Use selected template columns (blank template uses defaults via the store)
+      const templateCols = selectedTemplate.id === 'blank' ? undefined : selectedTemplate.columns;
+      addBoard(newBoardName, undefined, templateCols);
       setNewBoardName('');
+      setSelectedTemplate(BOARD_TEMPLATES[0]);
       setIsCreateModalOpen(false);
     }
   };
@@ -168,6 +175,21 @@ const BoardSwitcher = () => {
                         onClick={(e) => {
                           e.stopPropagation();
                           e.preventDefault();
+                          downloadBoardAsJSON(board);
+                        }}
+                        className="text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-700 p-1 rounded text-sm"
+                        title="Export board as JSON"
+                      >
+                        ↓
+                      </button>
+                      <button
+                        onMouseDown={(e) => {
+                          e.stopPropagation();
+                          e.preventDefault();
+                        }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          e.preventDefault();
                           setBoardToClone(board.id);
                           setIsCloneModalOpen(true);
                         }}
@@ -259,8 +281,10 @@ const BoardSwitcher = () => {
         onClose={() => {
           setIsCreateModalOpen(false);
           setNewBoardName('');
+          setSelectedTemplate(BOARD_TEMPLATES[0]);
         }}
         title="Create New Board"
+        contentClassName="max-w-lg"
       >
         <div className="space-y-4">
           <Input
@@ -275,6 +299,18 @@ const BoardSwitcher = () => {
               }
             }}
           />
+
+          {/* Template Selection */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Choose a template
+            </label>
+            <BoardTemplateSelector
+              selected={selectedTemplate.id}
+              onSelect={setSelectedTemplate}
+            />
+          </div>
+
           <div className="flex gap-2 justify-end">
             <Button
               variant="outline"
@@ -282,6 +318,7 @@ const BoardSwitcher = () => {
               onClick={() => {
                 setIsCreateModalOpen(false);
                 setNewBoardName('');
+                setSelectedTemplate(BOARD_TEMPLATES[0]);
               }}
             >
               Cancel
