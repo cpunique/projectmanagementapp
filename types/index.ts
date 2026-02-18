@@ -150,6 +150,8 @@ export interface KanbanState {
   dueDatePanelOpen: boolean;
   // Activity feed panel state
   activityPanelOpen: boolean;
+  // Analytics panel state
+  analyticsPanelOpen: boolean;
   dueDatePanelWidth: number;
   // Page zoom level (percentage, default 80)
   zoomLevel: number;
@@ -235,6 +237,10 @@ export interface KanbanActions {
   // Activity panel actions
   toggleActivityPanel: () => void;
   setActivityPanelOpen: (isOpen: boolean) => void;
+
+  // Analytics panel actions
+  toggleAnalyticsPanel: () => void;
+  setAnalyticsPanelOpen: (isOpen: boolean) => void;
 
   // Zoom actions
   setZoomLevel: (level: number) => void;

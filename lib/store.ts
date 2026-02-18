@@ -120,6 +120,7 @@ export const useKanbanStore = create<KanbanStore>()(
       filters: {},
       dueDatePanelOpen: true,
       activityPanelOpen: false,
+      analyticsPanelOpen: false,
       dueDatePanelWidth: 320,
       zoomLevel: 80,
       hasUnsavedChanges: false,
@@ -845,6 +846,10 @@ export const useKanbanStore = create<KanbanStore>()(
       toggleActivityPanel: () => set((state) => ({ activityPanelOpen: !state.activityPanelOpen })),
       setActivityPanelOpen: (isOpen: boolean) => set({ activityPanelOpen: isOpen }),
 
+      // Analytics panel actions
+      toggleAnalyticsPanel: () => set((state) => ({ analyticsPanelOpen: !state.analyticsPanelOpen })),
+      setAnalyticsPanelOpen: (isOpen: boolean) => set({ analyticsPanelOpen: isOpen }),
+
       // Due dates panel actions
       toggleDueDatePanel: () => set((state) => ({ dueDatePanelOpen: !state.dueDatePanelOpen })),
       setDueDatePanelOpen: (isOpen: boolean) => set({ dueDatePanelOpen: isOpen }),
@@ -1009,7 +1014,7 @@ export const useKanbanStore = create<KanbanStore>()(
       // Only persistent client-side UI state (darkMode, filters, etc.) should be in localStorage
       partialize: (state) => {
         // Exclude Firebase-managed state and transient state from localStorage
-        const { boards, activeBoard, defaultBoardId, demoMode, conflictState, activityPanelOpen, ...rest } = state;
+        const { boards, activeBoard, defaultBoardId, demoMode, conflictState, activityPanelOpen, analyticsPanelOpen, ...rest } = state;
         return rest;
       },
       merge: (persistedState, currentState) => {
@@ -1027,6 +1032,7 @@ export const useKanbanStore = create<KanbanStore>()(
           demoMode: currentState.demoMode,
           conflictState: currentState.conflictState,
           activityPanelOpen: currentState.activityPanelOpen,
+          analyticsPanelOpen: currentState.analyticsPanelOpen,
         };
       },
       // Skip automatic rehydration during SSR to prevent hydration mismatches.

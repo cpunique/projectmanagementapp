@@ -6,13 +6,14 @@ import { DueDatePanel } from '@/components/kanban/DueDatePanel';
 import { DueDatePanelToggleButton } from '@/components/ui/DueDatePanelToggleButton';
 
 const ActivityFeedPanel = dynamic(() => import('@/components/kanban/ActivityFeedPanel'), { ssr: false });
+const AnalyticsPanel = dynamic(() => import('@/components/kanban/AnalyticsPanel'), { ssr: false });
 
 interface BoardWithPanelProps {
   children: React.ReactNode;
 }
 
 export function BoardWithPanel({ children }: BoardWithPanelProps) {
-  const { dueDatePanelOpen, activityPanelOpen, boards, activeBoard } = useKanbanStore();
+  const { dueDatePanelOpen, activityPanelOpen, analyticsPanelOpen, boards, activeBoard } = useKanbanStore();
 
   // Calculate total cards with due dates for badge
   const board = boards.find((b) => b.id === activeBoard);
@@ -30,6 +31,7 @@ export function BoardWithPanel({ children }: BoardWithPanelProps) {
       {/* Side Panels - Desktop (animations handled within components) */}
       <div className="hidden md:flex">
         <ActivityFeedPanel />
+        <AnalyticsPanel />
         <DueDatePanel />
       </div>
 
@@ -39,12 +41,13 @@ export function BoardWithPanel({ children }: BoardWithPanelProps) {
         <DueDatePanelToggleButton badge={cardsWithDueDates} />
 
         {/* Backdrop when panel is open on mobile */}
-        {(dueDatePanelOpen || activityPanelOpen) && (
+        {(dueDatePanelOpen || activityPanelOpen || analyticsPanelOpen) && (
           <div
             className="fixed inset-0 top-16 bg-black/50 z-20 md:hidden"
             onClick={() => {
               if (dueDatePanelOpen) useKanbanStore.getState().toggleDueDatePanel();
               if (activityPanelOpen) useKanbanStore.getState().setActivityPanelOpen(false);
+              if (analyticsPanelOpen) useKanbanStore.getState().setAnalyticsPanelOpen(false);
             }}
           />
         )}
@@ -52,6 +55,7 @@ export function BoardWithPanel({ children }: BoardWithPanelProps) {
         {/* Panels on mobile */}
         {dueDatePanelOpen && <DueDatePanel />}
         {activityPanelOpen && <ActivityFeedPanel />}
+        {analyticsPanelOpen && <AnalyticsPanel />}
       </div>
     </div>
   );

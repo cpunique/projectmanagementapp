@@ -19,6 +19,7 @@ import { useUnreadActivityCount } from '@/lib/hooks/useUnreadActivityCount';
 import { useToast } from '@/components/ui/Toast';
 
 const KeyboardShortcutsModal = dynamic(() => import('@/components/ui/KeyboardShortcutsModal'), { ssr: false });
+const HealthDashboard = dynamic(() => import('@/components/ui/HealthDashboard'), { ssr: false });
 
 const Header = () => {
   const { user } = useAuth();
@@ -39,6 +40,7 @@ const Header = () => {
   const [savingDemo, setSavingDemo] = useState(false);
   const [loadingDemo, setLoadingDemo] = useState(false);
   const [showKeyboardShortcuts, setShowKeyboardShortcuts] = useState(false);
+  const [showHealthDashboard, setShowHealthDashboard] = useState(false);
   const userIsAdmin = isAdmin(user);
   // Admin can save ANY board as the demo board (not restricted to default-board)
   const canEditDemo = userIsAdmin;
@@ -181,8 +183,20 @@ const Header = () => {
               </div>
             )}
 
-            {/* Sync Status */}
-            <SyncStatus />
+            {/* Sync Status + Health Dashboard */}
+            <div className="flex items-center gap-1">
+              <SyncStatus />
+              <button
+                onClick={() => setShowHealthDashboard(true)}
+                className="p-1.5 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors text-gray-500 dark:text-gray-400"
+                title="System health"
+                aria-label="Show system health dashboard"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </button>
+            </div>
 
             {/* User Menu */}
             <UserMenu />
@@ -216,6 +230,20 @@ const Header = () => {
                     {unreadActivityCount > 9 ? '9+' : unreadActivityCount}
                   </span>
                 )}
+              </button>
+            )}
+
+            {/* Analytics Panel Toggle - Desktop only */}
+            {activeBoard && (
+              <button
+                onClick={() => useKanbanStore.getState().toggleAnalyticsPanel()}
+                className="hidden md:flex relative p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors text-gray-600 dark:text-gray-400"
+                title={useKanbanStore.getState().analyticsPanelOpen ? 'Hide analytics' : 'Show analytics'}
+                aria-label="Toggle analytics panel"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
               </button>
             )}
 
@@ -321,6 +349,12 @@ const Header = () => {
       <KeyboardShortcutsModal
         isOpen={showKeyboardShortcuts}
         onClose={() => setShowKeyboardShortcuts(false)}
+      />
+
+      {/* Health Dashboard Modal */}
+      <HealthDashboard
+        isOpen={showHealthDashboard}
+        onClose={() => setShowHealthDashboard(false)}
       />
     </header>
   );
