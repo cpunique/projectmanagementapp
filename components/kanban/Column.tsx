@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useKanbanStore } from '@/lib/store';
 import { type Column as ColumnType } from '@/types';
@@ -9,6 +9,7 @@ import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import { useToast } from '@/components/ui/Toast';
 import { DESCOPED_COLUMN_KEYWORDS } from '@/lib/constants';
+import { filterCards, hasActiveFilters } from '@/lib/utils/searchFilter';
 
 interface ColumnProps {
   column: ColumnType;
@@ -52,9 +53,18 @@ const Column = ({
   onTriggerAddCardHandled,
 }: ColumnProps) => {
   const { addCard, updateColumn, deleteColumn, boards, reorderCards } = useKanbanStore();
+  const searchQuery = useKanbanStore((state) => state.searchQuery);
+  const filters = useKanbanStore((state) => state.filters);
   const { showToast } = useToast();
   const currentBoard = boards.find((b) => b.id === boardId);
   const currentColumn = currentBoard?.columns.find((c) => c.id === column.id);
+
+  // Filter cards based on search query and active filters
+  const visibleCards = useMemo(
+    () => filterCards(currentColumn?.cards || [], searchQuery, filters),
+    [currentColumn?.cards, searchQuery, filters]
+  );
+  const isFiltering = hasActiveFilters(searchQuery, filters);
   const [isEditing, setIsEditing] = useState(false);
   const [editTitle, setEditTitle] = useState(column.title);
   const [isAddingCard, setIsAddingCard] = useState(false);
@@ -273,7 +283,10 @@ const Column = ({
 
         {/* Task Count - below column name */}
         <div className="text-xs text-gray-600 dark:text-gray-400 font-medium">
-          {currentColumn?.cards.length || 0} task{(currentColumn?.cards.length || 0) !== 1 ? 's' : ''}
+          {isFiltering
+            ? `${visibleCards.length} of ${currentColumn?.cards.length || 0} task${(currentColumn?.cards.length || 0) !== 1 ? 's' : ''}`
+            : `${currentColumn?.cards.length || 0} task${(currentColumn?.cards.length || 0) !== 1 ? 's' : ''}`
+          }
         </div>
       </div>
 
@@ -287,8 +300,17 @@ const Column = ({
           </div>
         )}
 
+        {/* Show message when filtering hides all cards in a non-empty column */}
+        {isFiltering && visibleCards.length === 0 && (currentColumn?.cards.length || 0) > 0 && (
+          <div className="text-center py-4 px-4">
+            <p className="text-gray-400 dark:text-gray-500 text-xs italic">
+              No matching cards
+            </p>
+          </div>
+        )}
+
         <AnimatePresence mode="popLayout">
-          {currentColumn?.cards.map((card) => (
+          {visibleCards.map((card) => (
             <motion.div
               key={card.id}
               layout

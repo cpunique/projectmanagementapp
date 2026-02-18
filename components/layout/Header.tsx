@@ -14,6 +14,8 @@ import UserMenu from '@/components/auth/UserMenu';
 import SyncStatus from '@/components/ui/SyncStatus';
 import SaveButton from '@/components/ui/SaveButton';
 import NotificationBell from '@/components/ui/NotificationBell';
+import SearchBar from '@/components/ui/SearchBar';
+import { useUnreadActivityCount } from '@/lib/hooks/useUnreadActivityCount';
 import { useToast } from '@/components/ui/Toast';
 
 const KeyboardShortcutsModal = dynamic(() => import('@/components/ui/KeyboardShortcutsModal'), { ssr: false });
@@ -40,6 +42,7 @@ const Header = () => {
   const userIsAdmin = isAdmin(user);
   // Admin can save ANY board as the demo board (not restricted to default-board)
   const canEditDemo = userIsAdmin;
+  const unreadActivityCount = useUnreadActivityCount(activeBoard);
   const setDemoMode = useKanbanStore((state) => state.setDemoMode);
 
   // Save UI preferences to Firebase when they change
@@ -132,6 +135,9 @@ const Header = () => {
 
           {/* Controls */}
           <div className="flex items-center gap-3">
+            {/* Search */}
+            {activeBoard && <SearchBar />}
+
             {/* Save Button */}
             <SaveButton />
 
@@ -205,6 +211,11 @@ const Header = () => {
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
+                {unreadActivityCount > 0 && (
+                  <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-purple-600 text-white text-xs font-bold flex items-center justify-center">
+                    {unreadActivityCount > 9 ? '9+' : unreadActivityCount}
+                  </span>
+                )}
               </button>
             )}
 

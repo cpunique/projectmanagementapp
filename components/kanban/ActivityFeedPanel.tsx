@@ -6,6 +6,7 @@ import { useKanbanStore } from '@/lib/store';
 import { useAuth } from '@/lib/firebase/AuthContext';
 import { subscribeToActivities } from '@/lib/firebase/activities';
 import { formatTimeAgo } from '@/lib/utils/formatTimeAgo';
+import { markActivitiesSeen } from '@/lib/hooks/useUnreadActivityCount';
 import { type ActivityEntry, type ActivityEventType } from '@/types';
 
 const EVENT_ICONS: Record<ActivityEventType, string> = {
@@ -71,6 +72,8 @@ export default function ActivityFeedPanel() {
     }
 
     setLoading(true);
+    // Mark activities as seen when panel is opened
+    markActivitiesSeen(activeBoard).catch(() => {});
     const unsubscribe = subscribeToActivities(activeBoard, (newActivities) => {
       setActivities(newActivities);
       setLoading(false);

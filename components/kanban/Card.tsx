@@ -26,8 +26,26 @@ interface CardProps {
   canEdit: boolean;
 }
 
+// Highlight matching text in search results
+function HighlightText({ text, query }: { text: string; query: string }) {
+  if (!query.trim()) return <>{text}</>;
+  const parts = text.split(new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi'));
+  return (
+    <>
+      {parts.map((part, i) =>
+        part.toLowerCase() === query.toLowerCase() ? (
+          <mark key={i} className="bg-yellow-200 dark:bg-yellow-700/60 text-inherit rounded-sm px-0.5">{part}</mark>
+        ) : (
+          part
+        )
+      )}
+    </>
+  );
+}
+
 const Card = ({ card, boardId, columnId, onDragStart, onDragEnd, isDragging, canEdit }: CardProps) => {
   const { deleteCard, boards } = useKanbanStore();
+  const searchQuery = useKanbanStore((state) => state.searchQuery);
   const { user } = useAuth();
   const { getUnreadCount, markAsSeen } = useUnreadComments();
   const [isHovering, setIsHovering] = useState(false);
@@ -225,7 +243,7 @@ const Card = ({ card, boardId, columnId, onDragStart, onDragEnd, isDragging, can
 
         {/* Card Title */}
         <h4 className={`font-semibold text-sm ${textColor} pr-16 line-clamp-2 leading-tight pointer-events-none`}>
-          {card.title}
+          <HighlightText text={card.title} query={searchQuery} />
         </h4>
 
         {/* Description Preview */}
