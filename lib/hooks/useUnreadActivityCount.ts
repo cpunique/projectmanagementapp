@@ -2,15 +2,18 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/firebase/AuthContext';
+import { useKanbanStore } from '@/lib/store';
 import { subscribeToActivities } from '@/lib/firebase/activities';
 import { savePreference, loadPreference } from '@/lib/db';
 
 /**
  * Hook that returns the count of unseen activity entries for the active board.
  * Compares activity timestamps against a per-board "last seen" timestamp stored in IndexedDB.
+ * Re-subscribes when the activity panel is toggled so that the count resets after viewing.
  */
 export function useUnreadActivityCount(boardId: string | null): number {
   const { user } = useAuth();
+  const activityPanelOpen = useKanbanStore((s) => s.activityPanelOpen);
   const [count, setCount] = useState(0);
 
   useEffect(() => {
@@ -20,32 +23,34 @@ export function useUnreadActivityCount(boardId: string | null): number {
     }
 
     const key = `activity-last-seen-${boardId}`;
-    let lastSeen: string | null = null;
+    let cancelled = false;
+    let unsubscribe: (() => void) | null = null;
 
-    // Load last-seen, then subscribe to activities
+    // Load last-seen FIRST, then subscribe — avoids race condition
+    // where the subscription callback fires before loadPreference resolves.
+    // Also re-runs when activityPanelOpen changes so we reload the updated
+    // lastSeen timestamp after markActivitiesSeen writes to IndexedDB.
     loadPreference(key)
-      .then((ts) => {
-        lastSeen = ts;
-      })
-      .catch(() => {
-        // IndexedDB unavailable — treat all as unseen
+      .catch(() => null as string | null)
+      .then((lastSeen) => {
+        if (cancelled) return;
+
+        unsubscribe = subscribeToActivities(boardId, (activities) => {
+          if (cancelled) return;
+          const unseen = activities.filter((a) => {
+            if (a.actorId === user.uid) return false;
+            if (!lastSeen) return true; // Never opened panel
+            return a.createdAt > lastSeen;
+          }).length;
+          setCount(unseen);
+        });
       });
 
-    const unsubscribe = subscribeToActivities(boardId, (activities) => {
-      if (!lastSeen) {
-        // Never opened the panel — count all activities from others
-        const unseen = activities.filter((a) => a.actorId !== user.uid).length;
-        setCount(unseen);
-        return;
-      }
-      const unseen = activities.filter(
-        (a) => a.createdAt > lastSeen! && a.actorId !== user.uid
-      ).length;
-      setCount(unseen);
-    });
-
-    return () => unsubscribe();
-  }, [boardId, user?.uid]);
+    return () => {
+      cancelled = true;
+      unsubscribe?.();
+    };
+  }, [boardId, user?.uid, activityPanelOpen]);
 
   return count;
 }

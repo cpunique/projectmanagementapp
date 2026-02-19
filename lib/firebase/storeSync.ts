@@ -185,17 +185,37 @@ export async function initializeFirebaseSync(user: User) {
         }
       }
 
-      // Load UI preferences
+      // Load UI preferences from dedicated localStorage keys (set by Header.tsx).
+      // These survive Zustand persist rehydration/cleanup cycles unlike the kanban-store key.
+      // Only fall back to Firestore when dedicated keys don't exist (fresh device/cleared storage).
       const uiPreferences = await getUserUIPreferences(user.uid);
+
+      const savedDarkMode = localStorage.getItem('kanban-ui-darkMode');
+      const savedZoomLevel = localStorage.getItem('kanban-ui-zoomLevel');
+
+      if (savedDarkMode !== null) {
+        store.setDarkMode(JSON.parse(savedDarkMode));
+      } else if (uiPreferences.darkMode !== undefined) {
+        store.setDarkMode(uiPreferences.darkMode);
+      }
+
+      if (savedZoomLevel !== null) {
+        store.setZoomLevel(JSON.parse(savedZoomLevel));
+      } else if (uiPreferences.zoomLevel !== undefined) {
+        store.setZoomLevel(uiPreferences.zoomLevel);
+      }
+
       if (uiPreferences.dueDatePanelOpen !== undefined) {
         store.setDueDatePanelOpen(uiPreferences.dueDatePanelOpen);
       }
-      if (uiPreferences.zoomLevel !== undefined) {
-        store.setZoomLevel(uiPreferences.zoomLevel);
-      }
-      if (uiPreferences.darkMode !== undefined) {
-        store.setDarkMode(uiPreferences.darkMode);
-      }
+
+      // Sync local values back to Firestore so other devices get the latest
+      const currentStore = useKanbanStore.getState();
+      setUserUIPreferences(user.uid, {
+        darkMode: currentStore.darkMode,
+        zoomLevel: currentStore.zoomLevel,
+        dueDatePanelOpen: currentStore.dueDatePanelOpen,
+      }).catch(() => {});
 
       // Disable demo mode if enabled - but DON'T use toggleDemoMode() because that would
       // restore the old _userBoardsBackup and overwrite the boards we just loaded from Firebase
@@ -293,12 +313,13 @@ export function cleanupFirebaseSync() {
   boardBaseVersions.clear();
   store.setConflictState(undefined);
 
-  // Reset all user-specific state when user logs out
-  // This prevents preference bleed between accounts on the same browser
+  // Reset user-specific data state when user logs out
+  // Board selection and default board are user data — must clear
+  // UI preferences (darkMode, zoomLevel) are device-level — preserve across logout
+  // They will be overridden by initializeFirebaseSync on next login if the
+  // new user has different preferences stored in Firestore
   store.setDefaultBoard(null);
   store.setDueDatePanelOpen(false);
-  store.setDarkMode(true);      // Default: dark mode
-  store.setZoomLevel(80);       // Default: 80%
 
   console.log('[Sync] Cleanup complete - all subscriptions cancelled, boards cleared');
 }

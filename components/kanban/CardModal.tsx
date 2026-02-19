@@ -15,6 +15,7 @@ import { CARD_COLORS, CARD_COLOR_NAMES } from '@/lib/constants';
 import { useToast } from '@/components/ui/Toast';
 import AttachmentUpload from './AttachmentUpload';
 import AttachmentList from './AttachmentList';
+import CardActivityTimeline from './CardActivityTimeline';
 
 interface CardModalProps {
   isOpen: boolean;
@@ -493,6 +494,9 @@ const CardModal = ({ isOpen, onClose, card, boardId }: CardModalProps) => {
             </p>
           </div>
         )}
+
+        {/* Card Activity Timeline */}
+        {card && <CardActivityTimeline boardId={boardId} cardId={card.id} />}
 
         {/* Metadata */}
         <div className="pt-4 border-t border-gray-200 dark:border-gray-700">

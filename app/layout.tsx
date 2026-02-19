@@ -33,15 +33,18 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{
             __html: `
               try {
-                const stored = localStorage.getItem('kanban-store');
-                if (stored) {
-                  const state = JSON.parse(stored);
-                  const darkMode = state?.state?.darkMode ?? true;
-                  if (darkMode) {
+                var dedicated = localStorage.getItem('kanban-ui-darkMode');
+                if (dedicated !== null) {
+                  if (JSON.parse(dedicated)) document.documentElement.classList.add('dark');
+                } else {
+                  var stored = localStorage.getItem('kanban-store');
+                  if (stored) {
+                    var state = JSON.parse(stored);
+                    var darkMode = state && state.state && state.state.darkMode;
+                    if (darkMode !== false) document.documentElement.classList.add('dark');
+                  } else {
                     document.documentElement.classList.add('dark');
                   }
-                } else {
-                  document.documentElement.classList.add('dark');
                 }
               } catch (e) {
                 document.documentElement.classList.add('dark');

@@ -29,6 +29,7 @@ export const BOARD_TEMPLATES: BoardTemplate[] = [
       { title: 'In Review', order: 2 },
       { title: 'Testing', order: 3 },
       { title: 'Done', order: 4 },
+      { title: 'Descoped', order: 5 },
     ],
   },
   {

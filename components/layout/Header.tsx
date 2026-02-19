@@ -47,18 +47,14 @@ const Header = () => {
   const unreadActivityCount = useUnreadActivityCount(activeBoard);
   const setDemoMode = useKanbanStore((state) => state.setDemoMode);
 
-  // Save UI preferences to Firebase when they change
-  // CRITICAL: Only save AFTER sync is complete. During init, the store has default values
-  // (dark mode, 80% zoom) that would overwrite the user's real preferences in Firestore
-  // before initializeFirebaseSync has a chance to load them.
+  // Save UI preferences to Firestore for cross-device sync.
+  // Dedicated localStorage keys (kanban-ui-*) are written directly by store actions
+  // (toggleDarkMode, setDarkMode, setZoomLevel) — instant, no effect delay.
+  // CRITICAL: Only save to Firestore AFTER sync is complete.
   const syncState = useKanbanStore((state) => state.syncState);
   useEffect(() => {
     if (user && syncState === 'synced') {
-      const timer = setTimeout(() => {
-        setUserUIPreferences(user.uid, { dueDatePanelOpen, zoomLevel, darkMode });
-      }, 1000);
-
-      return () => clearTimeout(timer);
+      setUserUIPreferences(user.uid, { dueDatePanelOpen, zoomLevel, darkMode });
     }
   }, [dueDatePanelOpen, zoomLevel, darkMode, user, syncState]);
 

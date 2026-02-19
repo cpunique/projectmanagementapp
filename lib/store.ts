@@ -434,12 +434,17 @@ export const useKanbanStore = create<KanbanStore>()(
           hasUnsavedChanges: true,
         }));
 
-        // Log activity for meaningful field changes (title, priority, dueDate)
+        // Log activity for meaningful field changes
         if (preCard && boardId !== 'default-board') {
           const fieldsChanged: string[] = [];
           if (cardData.title !== undefined && cardData.title !== preCard.title) fieldsChanged.push('title');
+          if (cardData.description !== undefined && cardData.description !== preCard.description) fieldsChanged.push('description');
           if (cardData.priority !== undefined && cardData.priority !== preCard.priority) fieldsChanged.push('priority');
           if (cardData.dueDate !== undefined && cardData.dueDate !== preCard.dueDate) fieldsChanged.push('due date');
+          if (cardData.notes !== undefined && cardData.notes !== preCard.notes) fieldsChanged.push('notes');
+          if (cardData.tags !== undefined && JSON.stringify(cardData.tags) !== JSON.stringify(preCard.tags)) fieldsChanged.push('tags');
+          if (cardData.color !== undefined && cardData.color !== preCard.color) fieldsChanged.push('color');
+          if (cardData.checklist !== undefined && JSON.stringify(cardData.checklist) !== JSON.stringify(preCard.checklist)) fieldsChanged.push('checklist');
 
           if (fieldsChanged.length > 0) {
             import('@/lib/firebase/activities').then(({ logActivity }) => {
@@ -863,12 +868,20 @@ export const useKanbanStore = create<KanbanStore>()(
       // Zoom actions
       setZoomLevel: (level: number) => {
         const clamped = Math.max(50, Math.min(150, level));
+        try { localStorage.setItem('kanban-ui-zoomLevel', JSON.stringify(clamped)); } catch {}
         set({ zoomLevel: clamped });
       },
 
       // UI state actions
-      toggleDarkMode: () => set((state) => ({ darkMode: !state.darkMode })),
-      setDarkMode: (darkMode) => set({ darkMode }),
+      toggleDarkMode: () => set((state) => {
+        const newVal = !state.darkMode;
+        try { localStorage.setItem('kanban-ui-darkMode', JSON.stringify(newVal)); } catch {}
+        return { darkMode: newVal };
+      }),
+      setDarkMode: (darkMode) => {
+        try { localStorage.setItem('kanban-ui-darkMode', JSON.stringify(darkMode)); } catch {}
+        set({ darkMode });
+      },
       toggleDemoMode: () =>
         set((state) => {
           const newDemoMode = !state.demoMode;

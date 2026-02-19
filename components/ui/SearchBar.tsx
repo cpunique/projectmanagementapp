@@ -55,8 +55,10 @@ export default function SearchBar() {
     setTimeout(() => inputRef.current?.focus(), 100);
   };
 
-  const handleBlur = () => {
-    if (!localValue && !showFilters) {
+  const handleBlur = (e: React.FocusEvent) => {
+    // Don't collapse if focus moved to another element inside our container
+    if (containerRef.current?.contains(e.relatedTarget as Node)) return;
+    if (!localValue && !showFilters && !hasFilters) {
       setIsExpanded(false);
     }
   };
