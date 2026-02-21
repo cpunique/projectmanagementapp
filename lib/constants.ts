@@ -64,71 +64,118 @@ export const CARD_COLOR_NAMES = [
 ] as const;
 
 export const DEMO_CARDS = [
+  // --- TODO (columnOrder: 0) ---
   {
-    title: "Design kanban board layout",
-    description: "Create mockups and wireframes for the kanban UI",
+    title: "Plan social media launch campaign",
+    description: "Define channels, content calendar, and paid ad budget for launch week",
     priority: "high",
-    tags: ["design", "ui"],
-    columnOrder: 0, // TODO
+    tags: ["marketing", "social"],
+    columnOrder: 0,
   },
   {
-    title: "Implement drag and drop",
-    description: "Use @dnd-kit to make cards draggable between columns",
+    title: "Redesign pricing page",
+    description: "A/B test headline copy and update plan tiers based on beta feedback",
     priority: "high",
-    tags: ["feature", "react"],
-    columnOrder: 1, // In Progress
+    tags: ["design", "website"],
+    columnOrder: 0,
+  },
+  {
+    title: "Set up customer support workflow",
+    description: "Configure help desk, canned responses, and escalation paths before launch",
+    priority: "medium",
+    tags: ["operations", "support"],
+    columnOrder: 0,
+  },
+  {
+    title: "Write onboarding email sequence",
+    description: "5-email drip campaign for new sign-ups covering key features",
+    priority: "medium",
+    tags: ["marketing", "email"],
+    columnOrder: 0,
+  },
+
+  // --- In Progress (columnOrder: 1) ---
+  {
+    title: "App Store & Play Store submission",
+    description: "Prepare screenshots, descriptions, and metadata for both stores",
+    priority: "high",
+    tags: ["product", "mobile"],
+    columnOrder: 1,
     checklist: [
-      { id: "cl1", text: "Set up DndContext", completed: true },
-      { id: "cl2", text: "Make cards draggable", completed: true },
-      { id: "cl3", text: "Handle drop logic", completed: false },
-      { id: "cl4", text: "Add animations", completed: false },
+      { id: "cl1", text: "Capture app screenshots (all screen sizes)", completed: true },
+      { id: "cl2", text: "Write store description & keywords", completed: true },
+      { id: "cl3", text: "Submit to App Store review", completed: false },
+      { id: "cl4", text: "Submit to Google Play review", completed: false },
     ],
   },
   {
-    title: "Add dark mode support",
-    description: "Implement theme toggle with Tailwind dark mode",
-    priority: "medium",
-    tags: ["feature", "ui"],
-    columnOrder: 0, // TODO
-  },
-  {
-    title: "Create rich text editor",
-    description: "Integrate Tiptap for card notes with formatting",
-    priority: "medium",
-    tags: ["feature", "editor"],
-    columnOrder: 1, // In Progress
-  },
-  {
-    title: "Set up state management",
-    description: "Create Zustand store with localStorage persistence",
+    title: "Press kit & media outreach",
+    description: "Compile press kit with logos, screenshots, founder bios, and story angles",
     priority: "high",
-    tags: ["infrastructure", "state"],
-    columnOrder: 2, // Completed
+    tags: ["marketing", "pr"],
+    columnOrder: 1,
     checklist: [
-      { id: "cl5", text: "Create store", completed: true },
-      { id: "cl6", text: "Add persistence middleware", completed: true },
-      { id: "cl7", text: "Add undo/redo", completed: true },
+      { id: "cl5", text: "Write press release", completed: true },
+      { id: "cl6", text: "Build media contact list", completed: true },
+      { id: "cl7", text: "Send outreach emails", completed: false },
     ],
   },
   {
-    title: "Implement search and filter",
-    description: "Add ability to search and filter cards by priority, tags, due date",
-    priority: "low",
-    tags: ["feature", "search"],
-    columnOrder: 0, // TODO
-  },
-  {
-    title: "Add demo mode",
-    description: "Create sample cards that demonstrate all features",
-    priority: "low",
-    tags: ["feature", "docs"],
-    columnOrder: 2, // Completed
-  },
-  {
-    title: "Export/Import boards",
-    description: "Allow users to download and upload board data as JSON",
+    title: "Integrate analytics & event tracking",
+    description: "Instrument key user actions to measure activation, retention, and drop-off",
     priority: "medium",
-    tags: ["feature", "data"],
-    columnOrder: 0, // TODO
+    tags: ["product", "analytics"],
+    columnOrder: 1,
+  },
+
+  // --- Completed (columnOrder: 2) ---
+  {
+    title: "Finalize v1.0 feature set",
+    description: "Lock scope, cut lower-priority items, communicate decisions to team",
+    priority: "high",
+    tags: ["product", "planning"],
+    columnOrder: 2,
+    checklist: [
+      { id: "cl8", text: "Review open feature requests", completed: true },
+      { id: "cl9", text: "Confirm scope with stakeholders", completed: true },
+      { id: "cl10", text: "Update roadmap doc", completed: true },
+    ],
+  },
+  {
+    title: "Beta testing with 50 users",
+    description: "Recruited beta cohort, collected feedback via surveys and interviews",
+    priority: "high",
+    tags: ["qa", "research"],
+    columnOrder: 2,
+  },
+  {
+    title: "Landing page design & copywriting",
+    description: "Hero section, feature highlights, testimonials, and CTA designed and live",
+    priority: "high",
+    tags: ["design", "website"],
+    columnOrder: 2,
+  },
+  {
+    title: "Set up billing & subscription management",
+    description: "Stripe integration for Pro plan — payments, upgrades, and cancellations working",
+    priority: "medium",
+    tags: ["product", "billing"],
+    columnOrder: 2,
+  },
+
+  // --- Descoped (columnOrder: 3) ---
+  {
+    title: "Android app — Phase 2",
+    description: "Deprioritized for launch; iOS first strategy agreed with team",
+    priority: "low",
+    tags: ["product", "mobile"],
+    columnOrder: 3,
+  },
+  {
+    title: "Affiliate / referral program",
+    description: "Good long-term growth lever but too complex to ship before launch",
+    priority: "low",
+    tags: ["marketing", "growth"],
+    columnOrder: 3,
   },
 ] as const;
