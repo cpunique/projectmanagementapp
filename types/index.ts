@@ -72,7 +72,7 @@ export interface BoardCollaborator {
 }
 
 // Instruction types for AI prompt generation
-export type InstructionType = 'development' | 'general' | 'event-planning' | 'documentation';
+export type InstructionType = 'development' | 'general' | 'event-planning' | 'documentation' | 'research';
 
 export interface CardAttachment {
   id: string;

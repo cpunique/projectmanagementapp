@@ -410,6 +410,10 @@ function AITab() {
             <span>📝</span>
             <div><strong className="text-gray-800 dark:text-gray-200">Documentation</strong> <span className="text-gray-500 dark:text-gray-400">— Guides, explanations, how-tos, and reference material.</span></div>
           </div>
+          <div className="flex gap-2 text-sm">
+            <span>🔬</span>
+            <div><strong className="text-gray-800 dark:text-gray-200">Research</strong> <span className="text-gray-500 dark:text-gray-400">— Structured research plans: key questions, sources to consult, how to evaluate and synthesize findings.</span></div>
+          </div>
         </div>
         <div className="mt-3">
           <Item label="Board default">The style defaults to whatever your board's "Purpose" is set to. You can override it per-generation.</Item>

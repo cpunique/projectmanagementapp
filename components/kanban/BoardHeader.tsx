@@ -11,6 +11,7 @@ const PURPOSE_OPTIONS: { value: InstructionType; label: string; icon: string; de
   { value: 'general', label: 'General Tasks', icon: '📋', description: 'Simple actionable steps' },
   { value: 'event-planning', label: 'Event Planning', icon: '📅', description: 'Timelines and logistics' },
   { value: 'documentation', label: 'Documentation', icon: '📝', description: 'Guides and explanations' },
+  { value: 'research', label: 'Research', icon: '🔬', description: 'Research plans and key questions' },
 ];
 
 interface BoardHeaderProps {

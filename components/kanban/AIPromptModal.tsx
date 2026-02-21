@@ -16,6 +16,7 @@ const INSTRUCTION_OPTIONS: { value: InstructionType; label: string; icon: string
   { value: 'general', label: 'General Tasks', icon: '📋', description: 'Simple actionable steps anyone can follow' },
   { value: 'event-planning', label: 'Event Planning', icon: '📅', description: 'Timelines, logistics, and preparation steps' },
   { value: 'documentation', label: 'Documentation', icon: '📝', description: 'Guides, explanations, and how-tos' },
+  { value: 'research', label: 'Research', icon: '🔬', description: 'Research plans, key questions, sources, and synthesis' },
 ];
 
 interface AIPromptModalProps {

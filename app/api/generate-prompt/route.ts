@@ -6,7 +6,7 @@ import { aiPromptRatelimit } from '@/lib/ratelimit';
 import { canAccessProFeaturesById, isProUserId } from '@/lib/features/featureGate';
 
 // Instruction type definitions
-type InstructionType = 'development' | 'general' | 'event-planning' | 'documentation';
+type InstructionType = 'development' | 'general' | 'event-planning' | 'documentation' | 'research';
 
 // Formatting instruction for Word 365 style output (plain text, no markdown)
 const FORMATTING_INSTRUCTION = `
@@ -47,12 +47,15 @@ const SYSTEM_PROMPTS: Record<InstructionType, string> = {
 
   documentation:
     'You are a helpful assistant that creates clear documentation and guides. Explain concepts thoroughly, provide step-by-step instructions, include context and examples where helpful. Structure information for easy reference and understanding.' + FORMATTING_INSTRUCTION,
+
+  research:
+    'You are a helpful assistant that creates structured research plans. Identify the key questions to answer, suggest credible sources and methods to consult, outline how to evaluate and compare findings, and describe how to synthesize and present conclusions. Focus on intellectual rigor and completeness.' + FORMATTING_INSTRUCTION,
 };
 
 // Input validation schema
 const GeneratePromptSchema = z.object({
   cardTitle: z.string().min(1, 'Card title is required').max(200, 'Card title too long'),
-  instructionType: z.enum(['development', 'general', 'event-planning', 'documentation']).optional().default('development'),
+  instructionType: z.enum(['development', 'general', 'event-planning', 'documentation', 'research']).optional().default('development'),
   description: z.string().max(1000, 'Description too long').optional(),
   notes: z.string().max(2000, 'Notes too long').optional(),
   checklist: z.array(z.object({
@@ -176,6 +179,7 @@ export async function POST(request: Request) {
       general: 'Task',
       'event-planning': 'Event',
       documentation: 'Topic',
+      research: 'Research Topic',
     };
 
     let contextPrompt = `${contextHeaders[instructionType]}: ${data.cardTitle}\n\n`;
@@ -219,6 +223,7 @@ export async function POST(request: Request) {
       general: 'Please provide clear, actionable steps to complete this task.',
       'event-planning': 'Please provide an event plan with timeline, logistics, and preparation steps.',
       documentation: 'Please provide clear documentation and a guide for this topic.',
+      research: 'Please provide a structured research plan: key questions to answer, sources and methods to consult, how to evaluate findings, and how to synthesize conclusions.',
     };
 
     // Token limits based on instruction type - event planning needs more for detailed itineraries
@@ -227,6 +232,7 @@ export async function POST(request: Request) {
       general: 2048,
       'event-planning': 4096, // Itineraries need more detail
       documentation: 3072,   // Documentation can be lengthy
+      research: 3072,         // Research plans benefit from thoroughness
     };
 
     const userMessage = `${systemPrompt}
