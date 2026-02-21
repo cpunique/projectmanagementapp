@@ -3,6 +3,7 @@ import { useKanbanStore } from '@/lib/store';
 import { useAuth } from './AuthContext';
 import { isAdmin } from '@/lib/admin/isAdmin';
 import { saveDemoConfig } from './demoConfig';
+import { reinitializeDb } from './config';
 import {
   getUserBoards,
   subscribeToBoard,
@@ -296,7 +297,7 @@ export async function initializeFirebaseSync(user: User) {
  */
 export function cleanupFirebaseSync() {
   activeSubscriptions.forEach((unsubscribe) => {
-    unsubscribe();
+    try { unsubscribe(); } catch (_) { /* Firestore SDK v12 internal race — safe to ignore */ }
   });
   activeSubscriptions.clear();
 
@@ -502,6 +503,21 @@ export function subscribeToStoreChanges(user: User) {
                 boardRemoteVersions.set(board.id, new Date().toISOString());
                 boardBaseVersions.set(board.id, structuredClone(board));
               } catch (error: any) {
+                // Firestore SDK v12 known bug: AsyncQueue enters a permanently failed state
+                // after a watch stream race condition (ID: b815/ca9). Reinitialize the
+                // Firestore instance and retry the write immediately with a fresh SDK.
+                if ((error?.message || '').includes('INTERNAL ASSERTION FAILED')) {
+                  console.warn('[Sync] Firestore SDK assertion failure — reinitializing and retrying write');
+                  try {
+                    await reinitializeDb();
+                    await updateBoard(board.id, board);
+                    boardRemoteVersions.set(board.id, new Date().toISOString());
+                    boardBaseVersions.set(board.id, structuredClone(board));
+                    continue; // Write succeeded after reinit — skip enqueue
+                  } catch (_) {
+                    // Still failing after reinit — fall through to enqueue
+                  }
+                }
                 // Enqueue failed writes for retry
                 console.warn(`[Sync] Firebase write failed for board ${board.id}, queueing for retry:`, error?.code || error);
                 await enqueueSyncOperation(board.id, board).catch(err =>

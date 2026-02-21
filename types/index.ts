@@ -97,7 +97,8 @@ export interface Card {
   updatedAt: string;
   priority?: "low" | "medium" | "high";
   tags?: string[];
-  color?: string; // Hex color code
+  tagColors?: Record<string, string>; // Maps tag text to hex/CSS color
+  color?: string; // Hex color code (shown as cover strip at top of card)
   dueDate?: string; // ISO date string
   checklist?: ChecklistItem[];
   aiPrompt?: string; // Generated AI implementation prompt
@@ -111,6 +112,7 @@ export interface Column {
   title: string;
   order: number;
   boardId: string;
+  wipLimit?: number; // Optional WIP limit (undefined = no limit)
   cards: Card[];
 }
 
@@ -121,6 +123,7 @@ export interface Board {
   purpose?: InstructionType; // Board's default AI instruction type
   createdAt: string;
   updatedAt: string;
+  background?: string; // CSS background value (color or gradient)
   columns: Column[];
   ownerId: string; // User ID of the board creator
   ownerEmail?: string; // Email of the board creator (for @mentions)
@@ -176,6 +179,7 @@ export interface KanbanActions {
   updateBoard: (boardId: string, name: string) => void;
   updateBoardDescription: (boardId: string, description: string) => void;
   updateBoardPurpose: (boardId: string, purpose: InstructionType) => void;
+  updateBoardBackground: (boardId: string, background: string | undefined) => void;
   switchBoard: (boardId: string) => void;
   setDefaultBoard: (boardId: string | null) => void;
   exportBoards: (boardId?: string) => string; // JSON string
@@ -185,6 +189,7 @@ export interface KanbanActions {
   addColumn: (boardId: string, title: string) => void;
   deleteColumn: (boardId: string, columnId: string) => void;
   updateColumn: (boardId: string, columnId: string, title: string) => void;
+  updateColumnWipLimit: (boardId: string, columnId: string, wipLimit: number | undefined) => void;
   reorderColumns: (boardId: string, columnIds: string[]) => void;
 
   // Card actions

@@ -60,7 +60,9 @@ export default function NotificationBell({ onNavigateToCard }: NotificationBellP
       }
     );
 
-    return () => unsubscribe();
+    return () => {
+      try { unsubscribe(); } catch (_) { /* Firestore SDK v12 internal race — safe to ignore */ }
+    };
   }, [user]);
 
   const unreadCount = notifications.filter((n) => !n.read).length;

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/firebase/AuthContext';
-import { subscribeToActivities } from '@/lib/firebase/activities';
+import { fetchActivities } from '@/lib/firebase/activities';
 import { formatTimeAgo } from '@/lib/utils/formatTimeAgo';
 import { type ActivityEntry, type ActivityEventType } from '@/types';
 
@@ -65,16 +65,21 @@ export default function CardActivityTimeline({ boardId, cardId }: CardActivityTi
       return;
     }
 
+    let cancelled = false;
     setLoading(true);
-    // Subscribe to board activities and filter client-side by cardId
-    // This avoids needing a new Firestore composite index
-    const unsubscribe = subscribeToActivities(boardId, (allActivities) => {
+
+    // Use a one-time fetch instead of a real-time listener.
+    // This avoids adding another concurrent onSnapshot listener, which triggers
+    // Firestore SDK v12 internal assertion failures (ID: b815/ca9) under rapid
+    // card open/save/close cycles. Card history doesn't need live updates.
+    fetchActivities(boardId).then((allActivities) => {
+      if (cancelled) return;
       const cardActivities = allActivities.filter((a) => a.cardId === cardId);
       setActivities(cardActivities);
       setLoading(false);
     });
 
-    return () => unsubscribe();
+    return () => { cancelled = true; };
   }, [boardId, cardId]);
 
   if (loading) {

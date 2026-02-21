@@ -36,7 +36,11 @@ export function useBoardPresence(boardId: string | null, enabled: boolean = true
     // Mark that we're actively tracking presence
     wasActivelyTrackingRef.current = true;
 
+    // Guard against state updates after unmount (prevents Firestore SDK race conditions)
+    let mounted = true;
+
     // Wrap in try-catch to prevent presence failures from breaking the app
+    let unsubscribe: (() => void) | null = null;
     try {
       // Start presence heartbeat (updates every 30 seconds)
       const stopHeartbeat = startPresenceHeartbeat(
@@ -47,24 +51,36 @@ export function useBoardPresence(boardId: string | null, enabled: boolean = true
       heartbeatCleanupRef.current = stopHeartbeat;
 
       // Subscribe to presence updates from other users
-      const unsubscribe = subscribeToPresence(boardId, (userIds) => {
-        setOnlineUsers(userIds);
+      unsubscribe = subscribeToPresence(boardId, (userIds) => {
+        if (mounted) setOnlineUsers(userIds);
       });
-
-      // Cleanup on unmount or board change
-      return () => {
-        console.log('[useBoardPresence] Cleaning up presence for board:', boardId);
-        unsubscribe();
-        if (heartbeatCleanupRef.current) {
-          heartbeatCleanupRef.current();
-          heartbeatCleanupRef.current = null;
-        }
-      };
     } catch (error) {
       console.error('[useBoardPresence] Failed to initialize presence tracking:', error);
       // Don't throw - presence is non-critical, app should still work
       setOnlineUsers([]);
     }
+
+    // Cleanup on unmount or board change
+    return () => {
+      mounted = false;
+      console.log('[useBoardPresence] Cleaning up presence for board:', boardId);
+      // Firestore SDK v12 has an internal race condition bug where unsubscribe()
+      // can throw INTERNAL ASSERTION FAILED when a watch stream event arrives
+      // concurrently. Wrap in try-catch so this never crashes the app.
+      try {
+        unsubscribe?.();
+      } catch (e) {
+        // Intentionally swallow — Firestore SDK internal bug, not our code
+      }
+      if (heartbeatCleanupRef.current) {
+        try {
+          heartbeatCleanupRef.current();
+        } catch (e) {
+          // Intentionally swallow
+        }
+        heartbeatCleanupRef.current = null;
+      }
+    };
   }, [boardId, user?.uid, user?.email, enabled]);
 
   // Clean up presence when user logs out

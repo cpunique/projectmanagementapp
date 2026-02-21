@@ -216,6 +216,17 @@ export const useKanbanStore = create<KanbanStore>()(
         }));
       },
 
+      updateBoardBackground: (boardId: string, background: string | undefined) => {
+        set((state) => ({
+          boards: state.boards.map((b) =>
+            b.id === boardId
+              ? { ...b, background, updatedAt: new Date().toISOString() }
+              : b
+          ),
+          hasUnsavedChanges: true,
+        }));
+      },
+
       switchBoard: (boardId: string) => {
         set({ activeBoard: boardId });
       },
@@ -307,6 +318,22 @@ export const useKanbanStore = create<KanbanStore>()(
                   ...b,
                   columns: b.columns.map((c) =>
                     c.id === columnId ? { ...c, title } : c
+                  ),
+                }
+              : b
+          ),
+          hasUnsavedChanges: true,
+        }));
+      },
+
+      updateColumnWipLimit: (boardId: string, columnId: string, wipLimit: number | undefined) => {
+        set((state) => ({
+          boards: state.boards.map((b) =>
+            b.id === boardId
+              ? {
+                  ...b,
+                  columns: b.columns.map((c) =>
+                    c.id === columnId ? { ...c, wipLimit } : c
                   ),
                 }
               : b

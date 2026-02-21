@@ -9,6 +9,7 @@ import {
 import { updateBoard, getBoardUpdatedAt, getBoard } from '@/lib/firebase/firestore';
 import { useKanbanStore } from '@/lib/store';
 import { getBoardRemoteVersion, setBoardRemoteVersion } from '@/lib/firebase/storeSync';
+import { reinitializeDb } from '@/lib/firebase/config';
 
 const MAX_RETRIES = 5;
 const BASE_DELAY_MS = 2000; // 2s, 4s, 8s, 16s, 32s
@@ -80,6 +81,11 @@ export async function processQueue(): Promise<void> {
       store.setSyncProgress({ completed, total: operations.length });
     } catch (error: any) {
       const errorMsg = error?.message || String(error);
+      // Firestore SDK v12 bug: reinitialize so the next retry uses a fresh instance
+      if (errorMsg.includes('INTERNAL ASSERTION FAILED')) {
+        console.warn('[SyncQueue] Firestore SDK assertion failure — reinitializing for next retry');
+        await reinitializeDb().catch(() => {});
+      }
       await markOperationFailed(op.id!, errorMsg);
 
       // On quota error, back off before continuing

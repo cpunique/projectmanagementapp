@@ -52,7 +52,7 @@ const Column = ({
   triggerAddCard,
   onTriggerAddCardHandled,
 }: ColumnProps) => {
-  const { addCard, updateColumn, deleteColumn, boards, reorderCards } = useKanbanStore();
+  const { addCard, updateColumn, updateColumnWipLimit, deleteColumn, boards, reorderCards } = useKanbanStore();
   const searchQuery = useKanbanStore((state) => state.searchQuery);
   const filters = useKanbanStore((state) => state.filters);
   const { showToast } = useToast();
@@ -70,6 +70,22 @@ const Column = ({
   const [isAddingCard, setIsAddingCard] = useState(false);
   const [newCardTitle, setNewCardTitle] = useState('');
   const [dropTargetCardId, setDropTargetCardId] = useState<string | null>(null);
+  const [isEditingWip, setIsEditingWip] = useState(false);
+  const [wipInput, setWipInput] = useState('');
+
+  const cardCount = currentColumn?.cards.length || 0;
+  const wipLimit = currentColumn?.wipLimit;
+  const isOverWip = wipLimit !== undefined && wipLimit > 0 && cardCount > wipLimit;
+
+  const handleSaveWipLimit = () => {
+    const num = parseInt(wipInput, 10);
+    if (wipInput === '' || wipInput === '0') {
+      updateColumnWipLimit(boardId, column.id, undefined);
+    } else if (!isNaN(num) && num > 0) {
+      updateColumnWipLimit(boardId, column.id, num);
+    }
+    setIsEditingWip(false);
+  };
 
   // Check if this is a descoped column (shouldn't allow adding new tasks)
   const isDescopedColumn = DESCOPED_COLUMN_KEYWORDS.some(
@@ -231,7 +247,7 @@ const Column = ({
       }}
     >
       {/* Column Header */}
-      <div className="border-b border-gray-300 dark:border-gray-700" style={{ paddingTop: '1.5rem', paddingBottom: '1.5rem', paddingLeft: '1.5rem', paddingRight: '1rem' }}>
+      <div className="group border-b border-gray-300 dark:border-gray-700" style={{ paddingTop: '1.5rem', paddingBottom: '1.5rem', paddingLeft: '1.5rem', paddingRight: '1rem' }}>
         <div className="flex items-center justify-between mb-2">
           <div className="mr-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 cursor-grab active:cursor-grabbing transition-colors flex-shrink-0">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
@@ -281,12 +297,51 @@ const Column = ({
           )}
         </div>
 
-        {/* Task Count - below column name */}
-        <div className="text-xs text-gray-600 dark:text-gray-400 font-medium">
-          {isFiltering
-            ? `${visibleCards.length} of ${currentColumn?.cards.length || 0} task${(currentColumn?.cards.length || 0) !== 1 ? 's' : ''}`
-            : `${currentColumn?.cards.length || 0} task${(currentColumn?.cards.length || 0) !== 1 ? 's' : ''}`
-          }
+        {/* Task Count + WIP Limit */}
+        <div className="flex items-center gap-2">
+          <div className={`text-xs font-medium ${isOverWip ? 'text-red-500 dark:text-red-400' : 'text-gray-600 dark:text-gray-400'}`}>
+            {isFiltering
+              ? `${visibleCards.length} of ${cardCount} task${cardCount !== 1 ? 's' : ''}`
+              : `${cardCount} task${cardCount !== 1 ? 's' : ''}`
+            }
+            {wipLimit !== undefined && wipLimit > 0 && (
+              <span className={`ml-1 font-semibold ${isOverWip ? 'text-red-500 dark:text-red-400' : 'text-gray-500 dark:text-gray-500'}`}>
+                / {wipLimit} {isOverWip && '⚠'}
+              </span>
+            )}
+          </div>
+
+          {/* WIP Limit Editor - owner/editor only */}
+          {canEdit && (
+            isEditingWip ? (
+              <input
+                type="number"
+                min="0"
+                max="99"
+                value={wipInput}
+                onChange={(e) => setWipInput(e.target.value)}
+                onBlur={handleSaveWipLimit}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleSaveWipLimit();
+                  if (e.key === 'Escape') setIsEditingWip(false);
+                }}
+                autoFocus
+                placeholder="Limit"
+                className="w-14 px-1.5 py-0.5 text-xs border border-purple-400 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-purple-500"
+              />
+            ) : (
+              <button
+                onClick={() => {
+                  setWipInput(wipLimit !== undefined ? String(wipLimit) : '');
+                  setIsEditingWip(true);
+                }}
+                className="text-[10px] text-gray-400 dark:text-gray-500 hover:text-purple-600 dark:hover:text-purple-400 transition-colors opacity-0 group-hover:opacity-100"
+                title={wipLimit ? `WIP limit: ${wipLimit} (click to edit)` : 'Set WIP limit'}
+              >
+                {wipLimit ? '' : 'Set limit'}
+              </button>
+            )
+          )}
         </div>
       </div>
 

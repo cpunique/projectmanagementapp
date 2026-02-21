@@ -10,7 +10,7 @@ import {
   Timestamp,
 } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
-import { getDb } from './config';
+import { getDb, reinitializeDb } from './config';
 import { type ActivityEntry, type ActivityEventType } from '@/types';
 
 /**
@@ -38,9 +38,34 @@ export async function logActivity(
   }
 }
 
+function docsToActivities(snapshot: import('firebase/firestore').QuerySnapshot): ActivityEntry[] {
+  return snapshot.docs.map((doc) => {
+    const data = doc.data();
+    return {
+      id: doc.id,
+      boardId: data.boardId,
+      eventType: data.eventType as ActivityEventType,
+      actorId: data.actorId,
+      actorEmail: data.actorEmail,
+      createdAt: data.createdAt instanceof Timestamp
+        ? data.createdAt.toDate().toISOString()
+        : data.createdAt || new Date().toISOString(),
+      cardId: data.cardId,
+      cardTitle: data.cardTitle,
+      columnTitle: data.columnTitle,
+      fromColumnTitle: data.fromColumnTitle,
+      toColumnTitle: data.toColumnTitle,
+      fieldChanged: data.fieldChanged,
+      commentSnippet: data.commentSnippet,
+      targetEmail: data.targetEmail,
+    };
+  });
+}
+
 /**
  * Subscribe to real-time activity feed for a board.
- * Returns an unsubscribe function.
+ * Returns an unsubscribe function. Defensively wraps onSnapshot to guard
+ * against Firestore SDK v12 internal assertion failures (ID: b815/ca9).
  */
 export function subscribeToActivities(
   boardId: string,
@@ -54,34 +79,41 @@ export function subscribeToActivities(
     firestoreLimit(max)
   );
 
-  return onSnapshot(
-    q,
-    (snapshot) => {
-      const activities: ActivityEntry[] = snapshot.docs.map((doc) => {
-        const data = doc.data();
-        return {
-          id: doc.id,
-          boardId: data.boardId,
-          eventType: data.eventType as ActivityEventType,
-          actorId: data.actorId,
-          actorEmail: data.actorEmail,
-          createdAt: data.createdAt instanceof Timestamp
-            ? data.createdAt.toDate().toISOString()
-            : data.createdAt || new Date().toISOString(),
-          cardId: data.cardId,
-          cardTitle: data.cardTitle,
-          columnTitle: data.columnTitle,
-          fromColumnTitle: data.fromColumnTitle,
-          toColumnTitle: data.toColumnTitle,
-          fieldChanged: data.fieldChanged,
-          commentSnippet: data.commentSnippet,
-          targetEmail: data.targetEmail,
-        };
-      });
-      callback(activities);
-    },
-    (error) => {
-      console.error('[Activities] Subscription error:', error);
-    }
-  );
+  try {
+    return onSnapshot(
+      q,
+      (snapshot) => { callback(docsToActivities(snapshot)); },
+      (error) => { console.error('[Activities] Subscription error:', error); }
+    );
+  } catch (err) {
+    // Firestore SDK v12 bug: AsyncQueue enters permanently failed state after
+    // a watch stream race. onSnapshot() itself throws.
+    // Reinitialize the Firestore instance so subsequent writes/reads use a fresh SDK.
+    console.warn('[Activities] onSnapshot failed (Firestore SDK internal state) — reinitializing:', err);
+    reinitializeDb().catch(() => {});
+    return () => {};
+  }
+}
+
+/**
+ * One-time fetch of activity feed for a board (no real-time listener).
+ * Use this when live updates are not required (e.g. card-level timelines).
+ */
+export async function fetchActivities(
+  boardId: string,
+  max: number = 100
+): Promise<ActivityEntry[]> {
+  try {
+    const db = getDb();
+    const q = query(
+      collection(db, 'boards', boardId, 'activities'),
+      orderBy('createdAt', 'desc'),
+      firestoreLimit(max)
+    );
+    const snapshot = await getDocs(q);
+    return docsToActivities(snapshot);
+  } catch (err) {
+    console.error('[Activities] fetchActivities failed:', err);
+    return [];
+  }
 }

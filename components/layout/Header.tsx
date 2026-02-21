@@ -20,6 +20,7 @@ import { useToast } from '@/components/ui/Toast';
 
 const KeyboardShortcutsModal = dynamic(() => import('@/components/ui/KeyboardShortcutsModal'), { ssr: false });
 const HealthDashboard = dynamic(() => import('@/components/ui/HealthDashboard'), { ssr: false });
+const HelpModal = dynamic(() => import('@/components/ui/HelpModal'), { ssr: false });
 
 const Header = () => {
   const { user } = useAuth();
@@ -41,6 +42,7 @@ const Header = () => {
   const [loadingDemo, setLoadingDemo] = useState(false);
   const [showKeyboardShortcuts, setShowKeyboardShortcuts] = useState(false);
   const [showHealthDashboard, setShowHealthDashboard] = useState(false);
+  const [showHelp, setShowHelp] = useState(false);
   const userIsAdmin = isAdmin(user);
   // Admin can save ANY board as the demo board (not restricted to default-board)
   const canEditDemo = userIsAdmin;
@@ -262,6 +264,18 @@ const Header = () => {
               </button>
             )}
 
+            {/* Help Button */}
+            <button
+              onClick={() => setShowHelp(true)}
+              className="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors text-gray-600 dark:text-gray-400"
+              title="Help guide"
+              aria-label="Show help guide"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </button>
+
             {/* Keyboard Shortcuts Button */}
             <button
               onClick={() => setShowKeyboardShortcuts(true)}
@@ -351,6 +365,12 @@ const Header = () => {
       <HealthDashboard
         isOpen={showHealthDashboard}
         onClose={() => setShowHealthDashboard(false)}
+      />
+
+      {/* Help Guide Modal */}
+      <HelpModal
+        isOpen={showHelp}
+        onClose={() => setShowHelp(false)}
       />
     </header>
   );

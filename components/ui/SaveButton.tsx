@@ -112,6 +112,7 @@ const SaveButton = () => {
     if (quotaExceeded) {
       markAsSaved();
       setSaveState('saved');
+      setSyncState('synced');
       setErrorMessage('Saved locally (Firebase quota exceeded)');
 
       setTimeout(() => {
@@ -134,6 +135,7 @@ const SaveButton = () => {
         if (activeBoard === 'default-board') {
           markAsSaved();
           setSaveState('saved');
+          setSyncState('synced');
           setErrorMessage('Demo board - changes saved locally only');
 
           setTimeout(() => {
@@ -240,8 +242,8 @@ const SaveButton = () => {
 
   return (
     <div className="relative">
-      {/* Unsaved changes indicator (always visible when there are unsaved changes) */}
-      {hasUnsavedChanges && saveState === 'idle' && (
+      {/* Unsaved changes indicator — only shown to authenticated users */}
+      {hasUnsavedChanges && saveState === 'idle' && user && (
         <div className="absolute -top-1 -right-1 h-3 w-3 bg-amber-500 rounded-full animate-pulse" title="Unsaved changes - will auto-save after 5 minutes of inactivity or when switching boards" />
       )}
 

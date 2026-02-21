@@ -1,7 +1,7 @@
 'use client';
 
 import { initializeApp, getApps } from 'firebase/app';
-import { getFirestore } from 'firebase/firestore';
+import { getFirestore, terminate } from 'firebase/firestore';
 import { getAuth as getFirebaseAuth } from 'firebase/auth';
 
 // Only initialize if we're in a browser environment with required env vars
@@ -58,3 +58,29 @@ const initializeFirebase = () => {
 export const getApp = () => initializeFirebase().app;
 export const getDb = () => initializeFirebase().db;
 export const getAuth = () => initializeFirebase().auth;
+
+/**
+ * Terminate the current Firestore instance and reinitialize a fresh one.
+ * Called when the Firestore SDK enters a permanently failed state due to
+ * an internal assertion failure (ID: b815/ca9) — a known SDK v12 bug.
+ * After reinitialization, all subsequent getDb() calls return the fresh instance.
+ */
+export async function reinitializeDb(): Promise<void> {
+  if (!db) return;
+  const oldDb = db;
+  db = null; // Clear immediately so concurrent getDb() calls create a fresh instance
+  try {
+    await terminate(oldDb);
+  } catch (_) {
+    // Ignore — the instance was already in a failed state, terminate may throw too
+  }
+  // Re-create a fresh Firestore instance on the same app
+  try {
+    if (app) {
+      db = getFirestore(app);
+      console.log('[Firebase] Firestore instance reinitialized after SDK internal failure');
+    }
+  } catch (e) {
+    console.error('[Firebase] Failed to reinitialize Firestore instance:', e);
+  }
+}

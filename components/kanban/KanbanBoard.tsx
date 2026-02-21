@@ -10,15 +10,16 @@ import BoardHeader from './BoardHeader';
 import { CollaboratorAvatarStack } from './CollaboratorAvatarStack';
 import { useBoardPresence } from '@/lib/hooks/useBoardPresence';
 import { useKeyboardShortcuts } from '@/lib/hooks/useKeyboardShortcuts';
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import Input from '@/components/ui/Input';
 import Button from '@/components/ui/Button';
+import { BOARD_BACKGROUNDS } from '@/lib/constants';
 
 const KeyboardShortcutsModal = dynamic(() => import('@/components/ui/KeyboardShortcutsModal'), { ssr: false });
 
 const KanbanBoard = () => {
   const { user } = useAuth();
-  const { boards, activeBoard, moveCard, reorderCards, addColumn, reorderColumns, demoMode } = useKanbanStore();
+  const { boards, activeBoard, moveCard, reorderCards, addColumn, reorderColumns, demoMode, updateBoardBackground } = useKanbanStore();
   const [draggedCardId, setDraggedCardId] = useState<string | null>(null);
   const [draggedFromColumnId, setDraggedFromColumnId] = useState<string | null>(null);
   const [draggedColumnId, setDraggedColumnId] = useState<string | null>(null);
@@ -26,6 +27,8 @@ const KanbanBoard = () => {
   const [isAddingColumn, setIsAddingColumn] = useState(false);
   const [newColumnTitle, setNewColumnTitle] = useState('');
   const [triggerAddCardColumn, setTriggerAddCardColumn] = useState<string | null>(null);
+  const [showBgPicker, setShowBgPicker] = useState(false);
+  const bgPickerRef = useRef<HTMLDivElement>(null);
 
   // Keyboard shortcuts
   const { showHelp, setShowHelp, triggerNewCard, resetTriggerNewCard } = useKeyboardShortcuts();
@@ -40,6 +43,17 @@ const KanbanBoard = () => {
       resetTriggerNewCard();
     }
   }, [triggerNewCard, board, resetTriggerNewCard]);
+
+  // Close bg picker on outside click
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      if (bgPickerRef.current && !bgPickerRef.current.contains(e.target as Node)) {
+        setShowBgPicker(false);
+      }
+    };
+    if (showBgPicker) document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [showBgPicker]);
 
   // Track online users for presence indicators
   const { onlineUsers } = useBoardPresence(board?.id || null, !!user && !!board);
@@ -187,12 +201,23 @@ const KanbanBoard = () => {
   };
 
   return (
-    <div className="bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 min-h-[calc(100vh-4rem)] overflow-visible">
+    <div
+      className="min-h-[calc(100vh-4rem)] overflow-visible"
+      style={board.background
+        ? { background: board.background }
+        : undefined
+      }
+    >
+      {/* Fallback gradient when no custom background */}
+      {!board.background && (
+        <div className="absolute inset-0 bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 -z-10" />
+      )}
+
       <div className="py-6 overflow-visible" style={{ marginLeft: '2rem', marginRight: '2rem' }}>
         {/* Board Title */}
         <div className="mb-6">
           <div className="flex items-center gap-3 mb-2">
-            <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
+            <h2 className={`text-3xl font-bold ${board.background ? 'text-white drop-shadow' : 'text-gray-900 dark:text-white'}`}>
               {board.name}
             </h2>
             {isViewOnly && (
@@ -210,9 +235,74 @@ const KanbanBoard = () => {
                 maxVisible={4}
               />
             )}
+
+            {/* Board Background Picker — always visible for editors/owners, including demo mode */}
+            {canEdit && (
+              <div className="relative ml-auto" ref={bgPickerRef}>
+                <button
+                  onClick={() => setShowBgPicker(!showBgPicker)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                    board.background
+                      ? 'bg-white/20 text-white hover:bg-white/30'
+                      : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                  }`}
+                  title="Change board background"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                  Background
+                </button>
+
+                {showBgPicker && (
+                  <div className="absolute top-full left-0 mt-2 z-50 bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 p-4 w-56">
+                    <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">
+                      Board Background
+                    </p>
+                    <div className="grid grid-cols-3 gap-2">
+                      {BOARD_BACKGROUNDS.map((bg) => (
+                        <button
+                          key={bg.label}
+                          onClick={() => {
+                            updateBoardBackground(board.id, bg.value);
+                            setShowBgPicker(false);
+                          }}
+                          className={`relative h-12 rounded-lg border-2 transition-all hover:scale-105 ${
+                            board.background === bg.value
+                              ? 'border-purple-500 ring-2 ring-purple-300'
+                              : 'border-gray-200 dark:border-gray-600 hover:border-gray-400'
+                          }`}
+                          style={bg.value
+                            ? { background: bg.value }
+                            : { background: 'linear-gradient(to bottom, #f9fafb, #f3f4f6)' }
+                          }
+                          title={bg.label}
+                        >
+                          {!bg.value && (
+                            <span className="absolute inset-0 flex items-center justify-center text-gray-500 text-[10px] font-medium">
+                              Default
+                            </span>
+                          )}
+                          {board.background === bg.value && (
+                            <span className="absolute inset-0 flex items-center justify-center">
+                              <svg className="w-4 h-4 text-white drop-shadow" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                              </svg>
+                            </span>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-3 text-center">
+                      {BOARD_BACKGROUNDS.map(b => b.label).join(' • ')}
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
           <BoardHeader boardId={board.id} />
-          <p className="text-gray-600 dark:text-gray-400 mt-1">
+          <p className={`mt-1 ${board.background ? 'text-white/80' : 'text-gray-600 dark:text-gray-400'}`}>
             {board.columns.length} column{board.columns.length !== 1 ? 's' : ''} • {' '}
             {board.columns.reduce((sum, col) => sum + col.cards.length, 0)} total card
             {board.columns.reduce((sum, col) => sum + col.cards.length, 0) !== 1 ? 's' : ''}

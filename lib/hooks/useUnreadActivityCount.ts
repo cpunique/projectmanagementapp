@@ -48,7 +48,7 @@ export function useUnreadActivityCount(boardId: string | null): number {
 
     return () => {
       cancelled = true;
-      unsubscribe?.();
+      try { unsubscribe?.(); } catch (_) { /* Firestore SDK v12 internal race — safe to ignore */ }
     };
   }, [boardId, user?.uid, activityPanelOpen]);
 

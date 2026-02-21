@@ -39,6 +39,29 @@ export const DEFAULT_COLUMNS = [
   { title: "Descoped", order: 3 },
 ] as const;
 
+export const LABEL_COLORS = [
+  '#ef4444', // Red
+  '#f97316', // Orange
+  '#eab308', // Yellow
+  '#22c55e', // Green
+  '#3b82f6', // Blue
+  '#8b5cf6', // Purple
+  '#ec4899', // Pink
+  '#6b7280', // Gray
+] as const;
+
+export const BOARD_BACKGROUNDS: { label: string; value: string | undefined }[] = [
+  { label: 'Default', value: undefined },
+  { label: 'Ocean', value: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' },
+  { label: 'Sunset', value: 'linear-gradient(135deg, #f6d365 0%, #fda085 100%)' },
+  { label: 'Sky', value: 'linear-gradient(135deg, #a1c4fd 0%, #c2e9fb 100%)' },
+  { label: 'Forest', value: 'linear-gradient(135deg, #d4fc79 0%, #96e6a1 100%)' },
+  { label: 'Rose', value: 'linear-gradient(135deg, #fbc2eb 0%, #a6c1ee 100%)' },
+  { label: 'Navy', value: '#1e3a5f' },
+  { label: 'Dark', value: '#1a1a2e' },
+  { label: 'Teal', value: '#134e4a' },
+];
+
 export const CARD_COLORS = [
   "#ffffff", // White/Default
   "#fecaca", // Red 200

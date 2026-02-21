@@ -10,8 +10,8 @@ import Button from '@/components/ui/Button';
 import RichTextEditor from '@/components/ui/RichTextEditor';
 import CommentThread from './CommentThread';
 import { Card, ChecklistItem, MentionedUser, CardAttachment } from '@/types';
-import { formatDate, getDefaultCardColor } from '@/lib/utils';
-import { CARD_COLORS, CARD_COLOR_NAMES } from '@/lib/constants';
+import { formatDate, getDefaultCardColor, isLightColor } from '@/lib/utils';
+import { CARD_COLORS, CARD_COLOR_NAMES, LABEL_COLORS } from '@/lib/constants';
 import { useToast } from '@/components/ui/Toast';
 import AttachmentUpload from './AttachmentUpload';
 import AttachmentList from './AttachmentList';
@@ -57,6 +57,8 @@ const CardModal = ({ isOpen, onClose, card, boardId }: CardModalProps) => {
   );
   const [dueDate, setDueDate] = useState(card?.dueDate || '');
   const [tags, setTags] = useState<string[]>(card?.tags || []);
+  const [tagColors, setTagColors] = useState<Record<string, string>>(card?.tagColors || {});
+  const [selectedTag, setSelectedTag] = useState<string | null>(null); // tag whose label color is being picked
   const [tagInput, setTagInput] = useState('');
   // Use empty string to represent "default" selection, otherwise use the actual color
   const [color, setColor] = useState<string>(card?.color || '');
@@ -73,10 +75,12 @@ const CardModal = ({ isOpen, onClose, card, boardId }: CardModalProps) => {
       setPriority(card.priority);
       setDueDate(card.dueDate || '');
       setTags(card.tags || []);
+      setTagColors(card.tagColors || {});
       setColor(card.color || '');
       setChecklist(card.checklist || []);
       setTagInput('');
       setChecklistInput('');
+      setSelectedTag(null);
     }
   }, [card?.id, card?.updatedAt]); // Re-sync when card ID or updatedAt changes (collaboration support)
 
@@ -116,6 +120,7 @@ const CardModal = ({ isOpen, onClose, card, boardId }: CardModalProps) => {
         priority,
         dueDate,
         tags,
+        tagColors: Object.keys(tagColors).length > 0 ? tagColors : undefined,
         color: colorToSave,
         checklist,
       });
@@ -224,6 +229,27 @@ const CardModal = ({ isOpen, onClose, card, boardId }: CardModalProps) => {
 
   const handleRemoveTag = (tag: string) => {
     setTags(tags.filter((t) => t !== tag));
+    // Clean up color entry
+    setTagColors((prev) => {
+      const next = { ...prev };
+      delete next[tag];
+      return next;
+    });
+    if (selectedTag === tag) setSelectedTag(null);
+  };
+
+  const handleSetTagColor = (tag: string, color: string) => {
+    setTagColors((prev) => ({ ...prev, [tag]: color }));
+    setSelectedTag(null);
+  };
+
+  const handleClearTagColor = (tag: string) => {
+    setTagColors((prev) => {
+      const next = { ...prev };
+      delete next[tag];
+      return next;
+    });
+    setSelectedTag(null);
   };
 
   if (!card) return null;
@@ -319,23 +345,72 @@ const CardModal = ({ isOpen, onClose, card, boardId }: CardModalProps) => {
           </div>
           {tags.length > 0 && (
             <div className="flex flex-wrap gap-2">
-              {tags.map((tag) => (
-                <span
-                  key={tag}
-                  className="inline-flex items-center gap-2 px-3 py-1.5 bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-200 rounded-full text-sm font-medium border border-purple-200 dark:border-purple-700 shadow-sm"
-                >
-                  {tag}
-                  <button
-                    onClick={() => handleRemoveTag(tag)}
-                    className="hover:bg-purple-200 dark:hover:bg-purple-800 rounded-full p-0.5 transition-colors"
-                    aria-label={`Remove ${tag}`}
+              {tags.map((tag) => {
+                const bg = tagColors[tag];
+                const textCol = bg ? (isLightColor(bg) ? '#374151' : '#ffffff') : undefined;
+                const isPickingThis = selectedTag === tag;
+                return (
+                  <span
+                    key={tag}
+                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium border shadow-sm ${
+                      bg
+                        ? 'border-transparent'
+                        : 'bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-200 border-purple-200 dark:border-purple-700'
+                    } ${isPickingThis ? 'ring-2 ring-purple-500' : ''}`}
+                    style={bg ? { backgroundColor: bg, color: textCol } : undefined}
                   >
-                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
+                    {/* Color dot — click to open/close picker */}
+                    <button
+                      type="button"
+                      onClick={() => setSelectedTag(isPickingThis ? null : tag)}
+                      className="w-3 h-3 rounded-full border border-white/60 flex-shrink-0 transition-transform hover:scale-110"
+                      style={{ backgroundColor: bg || '#a855f7' }}
+                      title="Pick label color"
+                    />
+                    {tag}
+                    <button
+                      onClick={() => handleRemoveTag(tag)}
+                      className="hover:opacity-70 rounded-full p-0.5 transition-opacity flex-shrink-0"
+                      aria-label={`Remove ${tag}`}
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </span>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Label color picker — appears when a tag's color dot is clicked */}
+          {selectedTag && (
+            <div className="mt-1 flex items-center gap-2 p-2 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
+              <span className="text-xs text-gray-500 dark:text-gray-400 flex-shrink-0">Color:</span>
+              <div className="flex gap-1.5 flex-wrap">
+                {LABEL_COLORS.map((lc) => (
+                  <button
+                    key={lc}
+                    type="button"
+                    onClick={() => handleSetTagColor(selectedTag, lc)}
+                    className={`w-6 h-6 rounded-full border-2 transition-transform hover:scale-110 ${
+                      tagColors[selectedTag] === lc ? 'border-gray-900 dark:border-white scale-110' : 'border-transparent'
+                    }`}
+                    style={{ backgroundColor: lc }}
+                    title={lc}
+                  />
+                ))}
+                {tagColors[selectedTag] && (
+                  <button
+                    type="button"
+                    onClick={() => handleClearTagColor(selectedTag)}
+                    className="w-6 h-6 rounded-full border-2 border-gray-300 dark:border-gray-500 bg-white dark:bg-gray-800 flex items-center justify-center text-gray-400 hover:text-red-500 transition-colors text-xs"
+                    title="Remove color"
+                  >
+                    ✕
                   </button>
-                </span>
-              ))}
+                )}
+              </div>
             </div>
           )}
         </div>
