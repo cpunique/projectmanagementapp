@@ -12,6 +12,7 @@ import {
 } from 'firebase/auth';
 import { getAuth } from './config';
 import { initializeUserLegalConsent, hasAcceptedCurrentToS, hasAcceptedCurrentPrivacy } from './legal';
+import { ensureUserProfile } from './firestore';
 
 interface AuthContextType {
   user: User | null;
@@ -39,6 +40,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Set up auth state listener
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setUser(user);
+
+      // Write email to users collection immediately on every session — required for board-sharing lookup.
+      // Non-blocking: runs in background so it doesn't delay auth state resolution.
+      if (user?.email) {
+        ensureUserProfile(user.uid, user.email, user.displayName).catch(err =>
+          console.warn('[AuthContext] ensureUserProfile failed (non-critical):', err)
+        );
+      }
 
       // Check if user needs to accept ToS/Privacy
       if (user) {

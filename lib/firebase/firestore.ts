@@ -634,13 +634,59 @@ export async function recoverCorruptedBoards(userId: string): Promise<string[]> 
 // ============================================
 
 /**
+ * Ensure the user's profile (email, displayName) is written to the users collection.
+ * Called on every login so the email field is always present for board-sharing lookups.
+ * Uses merge so existing fields (defaultBoardId, preferences) are preserved.
+ */
+export async function ensureUserProfile(userId: string, email: string, displayName?: string | null) {
+  try {
+    const userRef = doc(getUsersCollection(), userId);
+    await setDoc(userRef, {
+      email,
+      ...(displayName ? { displayName } : {}),
+    }, { merge: true });
+  } catch (error) {
+    console.warn('[ensureUserProfile] Failed to write user profile:', error);
+    // Non-critical — don't rethrow
+  }
+}
+
+/**
  * Look up a user by email address
  * Returns user ID and email if found, null otherwise
  */
 export async function getUserByEmail(email: string): Promise<{ uid: string; email: string } | null> {
+  const normalizedEmail = email.toLowerCase().trim();
+
+  // Primary: server-side lookup via Admin SDK — works for ALL registered users regardless of
+  // whether they have a Firestore profile document.
+  try {
+    const { getAuth: getClientAuth } = await import('firebase/auth');
+    const { getApp } = await import('firebase/app');
+    const idToken = await getClientAuth(getApp()).currentUser?.getIdToken();
+
+    if (idToken) {
+      const res = await fetch(
+        `/api/lookup-user?email=${encodeURIComponent(normalizedEmail)}`,
+        { headers: { Authorization: `Bearer ${idToken}` } }
+      );
+      if (res.ok) {
+        const data = await res.json();
+        // Backfill Firestore profile so future queries also work
+        ensureUserProfile(data.uid, data.email, data.displayName ?? undefined).catch(() => {});
+        return { uid: data.uid, email: data.email };
+      }
+      if (res.status === 404) return null; // Confirmed: user doesn't exist in Firebase Auth
+      // 5xx (e.g. env var not configured yet) → fall through to Firestore
+    }
+  } catch {
+    // Fall through to Firestore query
+  }
+
+  // Fallback: Firestore query (works once user has logged in at least once since the fix)
   try {
     const usersRef = getUsersCollection();
-    const q = query(usersRef, where('email', '==', email), limit(1));
+    const q = query(usersRef, where('email', '==', normalizedEmail), limit(1));
     const snapshot = await getDocs(q);
 
     if (snapshot.empty) return null;
@@ -651,7 +697,7 @@ export async function getUserByEmail(email: string): Promise<{ uid: string; emai
       email: doc.data().email,
     };
   } catch (error) {
-    console.error('[UserLookup] Failed to lookup user by email:', email, error);
+    console.error('[UserLookup] Failed to lookup user by email:', normalizedEmail, error);
     return null;
   }
 }
@@ -689,7 +735,7 @@ export async function shareBoardWithUser(
     // Look up the target user by email
     const targetUser = await getUserByEmail(userEmail);
     if (!targetUser) {
-      return { success: false, error: 'User not found' };
+      return { success: false, error: 'User not found. Make sure they have logged in to Kan-do at least once.' };
     }
     const userId = targetUser.uid;
 

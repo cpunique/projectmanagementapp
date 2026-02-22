@@ -18,6 +18,7 @@ import {
   setUserUIPreferences,
   getBoardUpdatedAt,
   getBoard,
+  ensureUserProfile,
 } from './firestore';
 import { saveBoards, loadBoards, clearBoards, clearPreferences, enqueueSyncOperation, getPendingCount, savePreference, loadPreference } from '@/lib/db';
 import type { Board } from '@/types';
@@ -134,6 +135,10 @@ export async function initializeFirebaseSync(user: User) {
         console.warn('[Sync] Board repair skipped or failed:', error);
       }
     }
+
+    // Ensure email is written to the user doc so board-sharing lookup works.
+    // Uses merge so no existing fields (preferences, defaultBoardId) are overwritten.
+    await ensureUserProfile(user.uid, user.email || '', user.displayName);
 
     // Load all boards for the user from Firebase
     const userBoards = await getUserBoards(user.uid);
