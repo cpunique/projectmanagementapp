@@ -537,6 +537,7 @@ export const useKanbanStore = create<KanbanStore>()(
           if (cardData.tags !== undefined && JSON.stringify(cardData.tags) !== JSON.stringify(preCard.tags)) fieldsChanged.push('tags');
           if (cardData.color !== undefined && cardData.color !== preCard.color) fieldsChanged.push('color');
           if (cardData.checklist !== undefined && JSON.stringify(cardData.checklist) !== JSON.stringify(preCard.checklist)) fieldsChanged.push('checklist');
+          if (cardData.blockedBy !== undefined && JSON.stringify(cardData.blockedBy) !== JSON.stringify(preCard.blockedBy)) fieldsChanged.push('dependencies');
           // Skip 'assignees' — handled by dedicated assignCard/unassignCard actions
 
           if (fieldsChanged.length > 0) {
@@ -571,6 +572,22 @@ export const useKanbanStore = create<KanbanStore>()(
         import('@/lib/firebase/activities').then(({ logActivity }) => {
           logActivity(boardId, { eventType: 'card_unassigned', cardId, cardTitle: card?.title }).catch(() => {});
         }).catch(() => {});
+      },
+
+      addDependency: (boardId: string, cardId: string, blockerCardId: string) => {
+        const state = get();
+        const card = state.boards.find(b => b.id === boardId)?.columns.flatMap(c => c.cards).find(c => c.id === cardId);
+        if (!card) return;
+        const current = card.blockedBy ?? [];
+        if (current.includes(blockerCardId)) return;
+        get().updateCard(boardId, cardId, { blockedBy: [...current, blockerCardId] });
+      },
+
+      removeDependency: (boardId: string, cardId: string, blockerCardId: string) => {
+        const state = get();
+        const card = state.boards.find(b => b.id === boardId)?.columns.flatMap(c => c.cards).find(c => c.id === cardId);
+        if (!card) return;
+        get().updateCard(boardId, cardId, { blockedBy: (card.blockedBy ?? []).filter(id => id !== blockerCardId) });
       },
 
       archiveCard: (boardId: string, cardId: string) => {

@@ -115,6 +115,7 @@ export interface Card {
   attachments?: CardAttachment[]; // File attachments
   assignees?: string[]; // Array of user IDs assigned to this card
   archived?: boolean; // Soft-delete: archived cards are hidden from the board
+  blockedBy?: string[]; // Card IDs (same board) that must complete before this card
 }
 
 export interface Column {
@@ -224,6 +225,8 @@ export interface KanbanActions {
   archiveCard: (boardId: string, cardId: string) => void;
   restoreCard: (boardId: string, cardId: string) => void;
   copyCardToBoard: (sourceBoardId: string, cardId: string, targetBoardId: string) => void;
+  addDependency: (boardId: string, cardId: string, blockerCardId: string) => void;
+  removeDependency: (boardId: string, cardId: string, blockerCardId: string) => void;
   moveCard: (
     boardId: string,
     cardId: string,

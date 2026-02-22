@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { nanoid } from 'nanoid';
 import { useKanbanStore } from '@/lib/store';
 import { useAuth } from '@/lib/firebase/AuthContext';
@@ -17,6 +17,7 @@ import AttachmentUpload from './AttachmentUpload';
 import AttachmentList from './AttachmentList';
 import CardActivityTimeline from './CardActivityTimeline';
 import AssigneeSection from './AssigneeSection';
+import DependencySection from './DependencySection';
 
 interface CardModalProps {
   isOpen: boolean;
@@ -39,10 +40,18 @@ const CardModal = ({ isOpen, onClose, card, boardId, canEdit = false }: CardModa
   const addComment = useKanbanStore((state) => state.addComment);
   const editComment = useKanbanStore((state) => state.editComment);
   const deleteComment = useKanbanStore((state) => state.deleteComment);
+  const addDependency = useKanbanStore((state) => state.addDependency);
+  const removeDependency = useKanbanStore((state) => state.removeDependency);
   const boards = useKanbanStore((state) => state.boards);
 
   // Get current board for owner and collaborator info
   const currentBoard = boards.find((b) => b.id === boardId);
+
+  // All non-archived cards in this board (for dependency picker)
+  const allBoardCards = useMemo(
+    () => currentBoard?.columns.filter((c) => !c.archived).flatMap((c) => c.cards.filter((c) => !c.archived)) ?? [],
+    [currentBoard]
+  );
 
   // Detect actual theme from DOM instead of store (since store's darkMode is broken)
   const [actualDarkMode, setActualDarkMode] = useState(() => {
@@ -363,6 +372,16 @@ const CardModal = ({ isOpen, onClose, card, boardId, canEdit = false }: CardModa
           canEdit={canEdit}
           onAssign={(userId) => assignCard(boardId, card.id, userId)}
           onUnassign={(userId) => unassignCard(boardId, card.id, userId)}
+        />
+
+        {/* Dependencies Section */}
+        <DependencySection
+          boardId={boardId}
+          card={card}
+          allCards={allBoardCards}
+          canEdit={canEdit}
+          onAdd={(blockerCardId) => addDependency(boardId, card.id, blockerCardId)}
+          onRemove={(blockerCardId) => removeDependency(boardId, card.id, blockerCardId)}
         />
 
         {/* Tags Section */}

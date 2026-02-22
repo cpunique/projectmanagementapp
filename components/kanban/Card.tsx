@@ -104,6 +104,8 @@ const Card = ({ card, boardId, columnId, onDragStart, onDragEnd, isDragging, can
   const [showAILockModal, setShowAILockModal] = useState(false);
   const [showNotesTooltip, setShowNotesTooltip] = useState(false);
   const [tooltipPosition, setTooltipPosition] = useState({ top: 0, left: 0 });
+  const [showBlockersTooltip, setShowBlockersTooltip] = useState(false);
+  const [blockersTooltipPosition, setBlockersTooltipPosition] = useState({ top: 0, left: 0 });
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
   const notesIconRef = useRef<HTMLDivElement>(null);
 
@@ -361,7 +363,7 @@ const Card = ({ card, boardId, columnId, onDragStart, onDragEnd, isDragging, can
           )}
 
           {/* Metadata Footer */}
-          {(card.dueDate || hasNotes(card.notes) || totalComments > 0 || (card.attachments && card.attachments.length > 0) || (card.assignees && card.assignees.length > 0)) && (
+          {(card.dueDate || hasNotes(card.notes) || totalComments > 0 || (card.attachments && card.attachments.length > 0) || (card.assignees && card.assignees.length > 0) || (card.blockedBy && card.blockedBy.length > 0)) && (
             <div className="flex items-center gap-3 pt-2 mt-auto border-t border-gray-100 dark:border-gray-700">
               {/* Assignee Avatars */}
               {card.assignees && card.assignees.length > 0 && (
@@ -373,6 +375,40 @@ const Card = ({ card, boardId, columnId, onDragStart, onDragEnd, isDragging, can
                   max={3}
                 />
               )}
+
+              {/* Blocked badge with hover tooltip */}
+              {card.blockedBy && card.blockedBy.length > 0 && (() => {
+                const doneColId = currentBoard?.columns.filter((c) => !c.archived).at(-1)?.id;
+                const allCards = currentBoard?.columns.flatMap((c) => c.cards) ?? [];
+                const isBlocked = card.blockedBy.some((id) => {
+                  const blocker = allCards.find((c) => c.id === id);
+                  return blocker && blocker.columnId !== doneColId;
+                });
+                return (
+                  <div
+                    className="pointer-events-auto cursor-help"
+                    onMouseEnter={(e) => {
+                      const rect = e.currentTarget.getBoundingClientRect();
+                      setBlockersTooltipPosition({ top: rect.top, left: rect.right + 10 });
+                      setShowBlockersTooltip(true);
+                    }}
+                    onMouseLeave={() => setShowBlockersTooltip(false)}
+                  >
+                    <span
+                      className={`inline-flex items-center gap-0.5 text-xs px-1.5 py-0.5 rounded-full font-medium ${
+                        isBlocked
+                          ? 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400'
+                          : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
+                      }`}
+                    >
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                      </svg>
+                      {card.blockedBy.length}
+                    </span>
+                  </div>
+                );
+              })()}
               {/* Attachments Indicator */}
               {card.attachments && card.attachments.length > 0 && (
                 <div className="flex items-center gap-1 text-xs pointer-events-none text-gray-500 dark:text-gray-400">
@@ -539,6 +575,54 @@ const Card = ({ card, boardId, columnId, onDragStart, onDragEnd, isDragging, can
             {/* Arrow pointing left */}
             <div className="absolute top-3 right-full">
               <div className="w-0 h-0 border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent border-r-[6px] border-r-gray-200 dark:border-r-gray-700"></div>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Blockers Tooltip - Rendered via Portal */}
+      {showBlockersTooltip && card.blockedBy && card.blockedBy.length > 0 && typeof window !== 'undefined' && createPortal(
+        <div
+          className="fixed z-[9999] pointer-events-none"
+          style={{ top: `${blockersTooltipPosition.top}px`, left: `${blockersTooltipPosition.left}px` }}
+        >
+          <div className="bg-white dark:bg-gray-700 text-gray-800 dark:text-white text-xs rounded-lg py-2.5 px-3 shadow-xl border border-gray-200 dark:border-transparent w-56">
+            {(() => {
+              const doneColId = currentBoard?.columns.filter((c) => !c.archived).at(-1)?.id;
+              const allCards = currentBoard?.columns.flatMap((c) => c.cards) ?? [];
+              const blockerCards = card.blockedBy!
+                .map((id) => allCards.find((c) => c.id === id))
+                .filter((c): c is NonNullable<typeof c> => !!c);
+              const shown = blockerCards.slice(0, 3);
+              const extra = blockerCards.length - shown.length;
+              return (
+                <>
+                  <p className="font-semibold text-gray-500 dark:text-gray-400 mb-1.5 uppercase tracking-wide" style={{ fontSize: '10px' }}>
+                    Blocked by
+                  </p>
+                  <div className="space-y-1">
+                    {shown.map((blocker) => {
+                      const done = blocker.columnId === doneColId;
+                      return (
+                        <div key={blocker.id} className="flex items-center gap-1.5">
+                          <span className={`text-[10px] ${done ? 'text-green-500' : 'text-red-400'}`}>
+                            {done ? '✓' : '●'}
+                          </span>
+                          <span className="truncate text-gray-800 dark:text-gray-200">{blocker.title}</span>
+                        </div>
+                      );
+                    })}
+                    {extra > 0 && (
+                      <p className="text-gray-400 dark:text-gray-500 pl-4">+{extra} more</p>
+                    )}
+                  </div>
+                </>
+              );
+            })()}
+            {/* Arrow pointing left */}
+            <div className="absolute top-3 right-full">
+              <div className="w-0 h-0 border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent border-r-[6px] border-r-gray-200 dark:border-r-gray-700" />
             </div>
           </div>
         </div>,
