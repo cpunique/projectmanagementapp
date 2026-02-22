@@ -36,7 +36,8 @@ export type ActivityEventType =
   | 'card_archived'
   | 'card_restored'
   | 'column_archived'
-  | 'column_restored';
+  | 'column_restored'
+  | 'card_copied';
 
 export interface ActivityEntry {
   id: string;
@@ -53,6 +54,7 @@ export interface ActivityEntry {
   fieldChanged?: string;
   commentSnippet?: string;
   targetEmail?: string; // for board_shared events
+  targetBoardName?: string; // for card_copied events
 }
 
 export interface Notification {
@@ -221,6 +223,7 @@ export interface KanbanActions {
   unassignCard: (boardId: string, cardId: string, userId: string) => void;
   archiveCard: (boardId: string, cardId: string) => void;
   restoreCard: (boardId: string, cardId: string) => void;
+  copyCardToBoard: (sourceBoardId: string, cardId: string, targetBoardId: string) => void;
   moveCard: (
     boardId: string,
     cardId: string,

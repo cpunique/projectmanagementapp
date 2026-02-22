@@ -34,6 +34,28 @@ function BarChart({ items, maxCount }: { items: { label: string; count: number; 
   );
 }
 
+function ActivityHeatmap({ data }: { data: { date: string; label: string; count: number }[] }) {
+  const max = Math.max(...data.map((d) => d.count), 1);
+  return (
+    <div className="flex items-end gap-0.5 h-16">
+      {data.map((d, i) => (
+        <div key={d.date} className="flex flex-col items-center flex-1 h-full justify-end group relative">
+          <div
+            className="w-full rounded-sm bg-purple-500 dark:bg-purple-400 transition-all duration-500"
+            style={{ height: `${Math.max((d.count / max) * 52, d.count > 0 ? 4 : 2)}px`, opacity: d.count === 0 ? 0.15 : 1 }}
+          />
+          <div className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 bg-gray-800 dark:bg-gray-200 text-white dark:text-gray-900 text-xs rounded px-1.5 py-0.5 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
+            {d.label}: {d.count}
+          </div>
+          {i % 7 === 0 && (
+            <span className="text-[9px] text-gray-400 dark:text-gray-500 mt-0.5 truncate w-full text-center">{d.label}</span>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function StatCard({ label, value, subtext, color }: { label: string; value: string | number; subtext?: string; color?: string }) {
   return (
     <div className="p-3 rounded-lg bg-gray-50 dark:bg-gray-700/50">
@@ -169,6 +191,28 @@ export default function AnalyticsPanel() {
                         {analytics.averageChecklistProgress}%
                       </span>
                     </div>
+                  </div>
+                )}
+
+                {/* Activity Heatmap — last 14 days */}
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Activity (last 14 days)</h3>
+                  <ActivityHeatmap data={analytics.activityHeatmap} />
+                  <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Cards updated per day</p>
+                </div>
+
+                {/* Card Age Distribution */}
+                {analytics.cardAgeBuckets.length > 0 && (
+                  <div>
+                    <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Card Age</h3>
+                    <BarChart
+                      items={analytics.cardAgeBuckets.map((b) => ({
+                        label: b.label,
+                        count: b.count,
+                        color: b.label === '> 30 days' ? 'bg-orange-400' : b.label === '7–30 days' ? 'bg-yellow-400' : 'bg-green-500',
+                      }))}
+                      maxCount={Math.max(...analytics.cardAgeBuckets.map((b) => b.count), 1)}
+                    />
                   </div>
                 )}
               </>

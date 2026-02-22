@@ -24,6 +24,7 @@ const EVENT_ICONS: Record<ActivityEventType, string> = {
   card_restored: '↑',
   column_archived: '↓',
   column_restored: '↑',
+  card_copied: '⎘',
 };
 
 const EVENT_COLORS: Record<ActivityEventType, string> = {
@@ -41,6 +42,7 @@ const EVENT_COLORS: Record<ActivityEventType, string> = {
   card_restored: 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400',
   column_archived: 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400',
   column_restored: 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400',
+  card_copied: 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400',
 };
 
 function getActivityDescription(entry: ActivityEntry, currentUserId?: string): string {
@@ -77,6 +79,8 @@ function getActivityDescription(entry: ActivityEntry, currentUserId?: string): s
       return `${actor} archived column "${entry.columnTitle}"`;
     case 'column_restored':
       return `${actor} restored column "${entry.columnTitle}"`;
+    case 'card_copied':
+      return `${actor} copied "${entry.cardTitle}" to ${entry.targetBoardName || 'another board'}`;
     default:
       return `${actor} performed an action`;
   }

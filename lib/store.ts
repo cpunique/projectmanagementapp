@@ -617,6 +617,57 @@ export const useKanbanStore = create<KanbanStore>()(
         }).catch(() => {});
       },
 
+      copyCardToBoard: (sourceBoardId: string, cardId: string, targetBoardId: string) => {
+        const state = get();
+        const sourceCard = state.boards.find(b => b.id === sourceBoardId)?.columns.flatMap(c => c.cards).find(c => c.id === cardId);
+        const targetBoard = state.boards.find(b => b.id === targetBoardId);
+        if (!sourceCard || !targetBoard) return;
+
+        // First non-archived column in the target board
+        const targetColumn = targetBoard.columns.filter(c => !c.archived)[0];
+        if (!targetColumn) return;
+
+        const newCardId = nanoid();
+        const now = new Date().toISOString();
+        const clonedCard: Card = {
+          ...sourceCard,
+          id: newCardId,
+          boardId: targetBoardId,
+          columnId: targetColumn.id,
+          order: 0, // will be prepended
+          createdAt: now,
+          updatedAt: now,
+          archived: false,
+          assignees: [],
+          comments: [],
+        };
+
+        set((state) => ({
+          boards: state.boards.map((b) =>
+            b.id !== targetBoardId ? b : {
+              ...b,
+              updatedAt: now,
+              columns: b.columns.map((c) =>
+                c.id !== targetColumn.id ? c : {
+                  ...c,
+                  cards: [clonedCard, ...c.cards.map((card, i) => ({ ...card, order: i + 1 }))],
+                }
+              ),
+            }
+          ),
+          hasUnsavedChanges: true,
+        }));
+
+        import('@/lib/firebase/activities').then(({ logActivity }) => {
+          logActivity(sourceBoardId, {
+            eventType: 'card_copied',
+            cardId,
+            cardTitle: sourceCard.title,
+            targetBoardName: targetBoard.name,
+          }).catch(() => {});
+        }).catch(() => {});
+      },
+
       moveCard: (
         boardId: string,
         cardId: string,

@@ -9,6 +9,8 @@ export interface BoardAnalytics {
   dueSoonCount: number; // due in next 7 days
   tagDistribution: { tag: string; count: number }[];
   averageChecklistProgress: number; // 0-100
+  activityHeatmap: { date: string; label: string; count: number }[]; // last 14 days
+  cardAgeBuckets: { label: string; count: number }[]; // freshness distribution
 }
 
 /**
@@ -78,6 +80,43 @@ export function computeBoardAnalytics(board: Board): BoardAnalytics {
     ? Math.round(totalProgress / checklistCardCount)
     : 0;
 
+  // Activity heatmap: cards updated per day for last 14 days
+  const heatmapMap: Record<string, number> = {};
+  for (let i = 13; i >= 0; i--) {
+    const d = new Date(now);
+    d.setDate(d.getDate() - i);
+    heatmapMap[d.toISOString().split('T')[0]] = 0;
+  }
+  for (const card of allCards) {
+    if (card.updatedAt) {
+      const key = new Date(card.updatedAt).toISOString().split('T')[0];
+      if (key in heatmapMap) heatmapMap[key]++;
+    }
+  }
+  const activityHeatmap = Object.entries(heatmapMap).map(([date, count]) => {
+    const d = new Date(date + 'T00:00:00');
+    const label = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    return { date, label, count };
+  });
+
+  // Card age distribution: how long active cards have been open
+  const ageBuckets = { fresh: 0, week: 0, month: 0, aging: 0 };
+  const msPerDay = 24 * 60 * 60 * 1000;
+  for (const card of allCards) {
+    const created = card.createdAt ? new Date(card.createdAt) : now;
+    const ageDays = Math.floor((now.getTime() - created.getTime()) / msPerDay);
+    if (ageDays < 1) ageBuckets.fresh++;
+    else if (ageDays < 7) ageBuckets.week++;
+    else if (ageDays < 30) ageBuckets.month++;
+    else ageBuckets.aging++;
+  }
+  const cardAgeBuckets = [
+    { label: '< 1 day', count: ageBuckets.fresh },
+    { label: '1–7 days', count: ageBuckets.week },
+    { label: '7–30 days', count: ageBuckets.month },
+    { label: '> 30 days', count: ageBuckets.aging },
+  ].filter((b) => b.count > 0);
+
   return {
     totalCards: allCards.length,
     cardsByColumn,
@@ -87,5 +126,7 @@ export function computeBoardAnalytics(board: Board): BoardAnalytics {
     dueSoonCount,
     tagDistribution,
     averageChecklistProgress,
+    activityHeatmap,
+    cardAgeBuckets,
   };
 }

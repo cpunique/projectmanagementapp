@@ -21,6 +21,7 @@ const EVENT_ICONS: Record<ActivityEventType, string> = {
   card_restored: '↑',
   column_archived: '↓',
   column_restored: '↑',
+  card_copied: '⎘',
 };
 
 const EVENT_COLORS: Record<ActivityEventType, string> = {
@@ -38,6 +39,7 @@ const EVENT_COLORS: Record<ActivityEventType, string> = {
   card_restored: 'text-green-600 dark:text-green-400',
   column_archived: 'text-orange-600 dark:text-orange-400',
   column_restored: 'text-green-600 dark:text-green-400',
+  card_copied: 'text-blue-600 dark:text-blue-400',
 };
 
 function getCardActivityDescription(entry: ActivityEntry, currentUserId?: string): string {
@@ -62,6 +64,8 @@ function getCardActivityDescription(entry: ActivityEntry, currentUserId?: string
       return `${actor} archived this card`;
     case 'card_restored':
       return `${actor} restored this card`;
+    case 'card_copied':
+      return `${actor} copied this card to ${entry.targetBoardName || 'another board'}`;
     default:
       return `${actor} performed an action`;
   }

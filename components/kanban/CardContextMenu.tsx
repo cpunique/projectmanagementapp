@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card } from '@/types';
 import { useKanbanStore } from '@/lib/store';
+import { useAuth } from '@/lib/firebase/AuthContext';
 import { DESCOPED_COLUMN_KEYWORDS } from '@/lib/constants';
 
 interface CardContextMenuProps {
@@ -28,9 +29,11 @@ const CardContextMenu = ({
   onEditCard,
   onDeleteCard,
 }: CardContextMenuProps) => {
-  const { moveCard, boards, archiveCard } = useKanbanStore();
+  const { moveCard, boards, archiveCard, copyCardToBoard } = useKanbanStore();
+  const { user } = useAuth();
   const menuRef = useRef<HTMLDivElement>(null);
   const [adjustedPosition, setAdjustedPosition] = useState(position);
+  const [showCopySubmenu, setShowCopySubmenu] = useState(false);
 
   // Handle click outside to close menu and suppress browser context menu
   useEffect(() => {
@@ -155,6 +158,17 @@ const CardContextMenu = ({
     onClose();
   };
 
+  // Boards the current user can copy cards into (owner or editor), excluding current board
+  const copyableBoards = boards.filter((b) =>
+    b.id !== boardId &&
+    (b.ownerId === user?.uid || b.editorUserIds?.includes(user?.uid ?? ''))
+  );
+
+  const handleCopyToBoard = (targetBoardId: string) => {
+    copyCardToBoard(boardId, card.id, targetBoardId);
+    onClose();
+  };
+
   return createPortal(
     <AnimatePresence>
       {isOpen && (
@@ -241,6 +255,37 @@ const CardContextMenu = ({
             </svg>
             Copy Card Data
           </button>
+
+          {/* Copy to Board */}
+          {copyableBoards.length > 0 && (
+            <>
+              <button
+                onClick={() => setShowCopySubmenu((prev) => !prev)}
+                className="w-full px-4 py-2 text-left text-sm text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center gap-3"
+                title="Copy this card to another board"
+              >
+                <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                </svg>
+                <span className="flex-1">Copy to board…</span>
+                <span className="text-gray-400 text-xs">{showCopySubmenu ? '▲' : '▼'}</span>
+              </button>
+              {showCopySubmenu && (
+                <div className="bg-gray-50 dark:bg-gray-700/50 border-t border-b border-gray-100 dark:border-gray-600">
+                  {copyableBoards.map((b) => (
+                    <button
+                      key={b.id}
+                      onClick={() => handleCopyToBoard(b.id)}
+                      className="w-full px-6 py-1.5 text-left text-xs text-gray-700 dark:text-gray-300 hover:bg-purple-50 dark:hover:bg-purple-900/20 hover:text-purple-700 dark:hover:text-purple-300 transition-colors truncate"
+                      title={b.name}
+                    >
+                      {b.name}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
 
           <div className="h-px bg-gray-200 dark:bg-gray-700 my-1" />
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import { useKanbanStore } from '@/lib/store';
 import { useAuth } from '@/lib/firebase/AuthContext';
@@ -12,7 +12,7 @@ import Modal from '@/components/ui/Modal';
 import Input from '@/components/ui/Input';
 import BoardTemplateSelector from './BoardTemplateSelector';
 import { BOARD_TEMPLATES, type BoardTemplate } from '@/lib/boardTemplates';
-import { downloadBoardAsJSON } from '@/lib/utils/exportBoard';
+import { downloadBoardAsJSON, parseBoardImportJSON } from '@/lib/utils/exportBoard';
 
 const CloneBoardModal = dynamic(() => import('@/components/kanban/CloneBoardModal'), { ssr: false });
 const ShareBoardModal = dynamic(() => import('@/components/kanban/ShareBoardModal'), { ssr: false });
@@ -38,6 +38,8 @@ const BoardSwitcher = () => {
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [boardToShare, setBoardToShare] = useState<string | null>(null);
   const [selectedTemplate, setSelectedTemplate] = useState<BoardTemplate>(BOARD_TEMPLATES[0]);
+  const [importError, setImportError] = useState<string | null>(null);
+  const importInputRef = useRef<HTMLInputElement>(null);
 
   const currentBoard = boards.find((b) => b.id === activeBoard);
 
@@ -99,6 +101,25 @@ const BoardSwitcher = () => {
     setTimeout(() => {
       setIsSavingDefaultBoard(false);
     }, 500);
+  };
+
+  const handleImportFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const text = ev.target?.result as string;
+      const parsed = parseBoardImportJSON(text);
+      if (!parsed) {
+        setImportError('Invalid board file. Make sure it was exported from Kan-do.');
+        setTimeout(() => setImportError(null), 4000);
+      } else {
+        addBoard(parsed.name, parsed.description, parsed.columns);
+      }
+      // Reset so the same file can be re-imported
+      if (importInputRef.current) importInputRef.current.value = '';
+    };
+    reader.readAsText(file);
   };
 
   const triggerContent = (
@@ -272,6 +293,24 @@ const BoardSwitcher = () => {
           >
             + New Board
           </button>
+
+          {/* Import Board Button */}
+          <button
+            onClick={() => importInputRef.current?.click()}
+            className="w-full px-3 py-1.5 text-xs text-left hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-gray-500 dark:text-gray-400 font-medium"
+          >
+            ↑ Import from JSON
+          </button>
+          <input
+            ref={importInputRef}
+            type="file"
+            accept=".json,application/json"
+            className="hidden"
+            onChange={handleImportFile}
+          />
+          {importError && (
+            <p className="px-3 py-1 text-xs text-red-500 dark:text-red-400">{importError}</p>
+          )}
         </div>
       </Dropdown>
 

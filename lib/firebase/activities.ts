@@ -58,6 +58,7 @@ function docsToActivities(snapshot: import('firebase/firestore').QuerySnapshot):
       fieldChanged: data.fieldChanged,
       commentSnippet: data.commentSnippet,
       targetEmail: data.targetEmail,
+      targetBoardName: data.targetBoardName,
     };
   });
 }
