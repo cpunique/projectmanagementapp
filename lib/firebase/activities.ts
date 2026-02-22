@@ -118,3 +118,41 @@ export async function fetchActivities(
     return [];
   }
 }
+
+/**
+ * Fetch weekly velocity: unique cards moved to the done column per week
+ * for the last N weeks. Deduplicates by cardId within each week.
+ */
+export async function fetchCompletedByWeek(
+  boardId: string,
+  doneColumnTitle: string,
+  weeks: number = 8
+): Promise<{ weekLabel: string; count: number }[]> {
+  const all = await fetchActivities(boardId, 500);
+  const moves = all.filter(
+    (a) => a.eventType === 'card_moved' && a.toColumnTitle === doneColumnTitle
+  );
+
+  // Build week buckets (Sunday-anchored, oldest first)
+  const now = new Date();
+  const buckets: { weekStart: Date; weekLabel: string; cardIds: Set<string> }[] = [];
+  for (let i = weeks - 1; i >= 0; i--) {
+    const d = new Date(now);
+    d.setDate(d.getDate() - i * 7 - d.getDay());
+    d.setHours(0, 0, 0, 0);
+    const label = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    buckets.push({ weekStart: new Date(d), weekLabel: label, cardIds: new Set() });
+  }
+
+  for (const move of moves) {
+    const d = new Date(move.createdAt);
+    for (let i = buckets.length - 1; i >= 0; i--) {
+      if (d >= buckets[i].weekStart) {
+        if (move.cardId) buckets[i].cardIds.add(move.cardId);
+        break;
+      }
+    }
+  }
+
+  return buckets.map((b) => ({ weekLabel: b.weekLabel, count: b.cardIds.size }));
+}

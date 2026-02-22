@@ -1,9 +1,11 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useKanbanStore } from '@/lib/store';
 import { computeBoardAnalytics } from '@/lib/utils/analytics';
+import { fetchCompletedByWeek } from '@/lib/firebase/activities';
+import { COMPLETED_COLUMN_KEYWORDS } from '@/lib/constants';
 
 const PRIORITY_COLORS: Record<string, string> = {
   high: 'bg-red-500',
@@ -11,6 +13,31 @@ const PRIORITY_COLORS: Record<string, string> = {
   low: 'bg-green-500',
   none: 'bg-gray-400',
 };
+
+function VelocityChart({ data }: { data: { weekLabel: string; count: number }[] }) {
+  const max = Math.max(...data.map((d) => d.count), 1);
+  return (
+    <div className="flex items-end gap-1 h-20">
+      {data.map((d) => (
+        <div key={d.weekLabel} className="flex flex-col items-center flex-1 h-full justify-end group relative">
+          <div
+            className="w-full rounded-sm bg-green-500 dark:bg-green-400 transition-all duration-500"
+            style={{
+              height: `${Math.max((d.count / max) * 64, d.count > 0 ? 4 : 2)}px`,
+              opacity: d.count === 0 ? 0.2 : 1,
+            }}
+          />
+          <div className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 bg-gray-800 dark:bg-gray-200 text-white dark:text-gray-900 text-xs rounded px-1.5 py-0.5 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
+            {d.weekLabel}: {d.count} completed
+          </div>
+          <span className="text-[9px] text-gray-400 dark:text-gray-500 mt-0.5 truncate w-full text-center">
+            {d.weekLabel}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 function BarChart({ items, maxCount }: { items: { label: string; count: number; color?: string }[]; maxCount: number }) {
   if (maxCount === 0) return null;
@@ -73,6 +100,20 @@ export default function AnalyticsPanel() {
 
   const board = boards.find((b) => b.id === activeBoard);
   const analytics = useMemo(() => (board ? computeBoardAnalytics(board) : null), [board]);
+
+  const [velocityData, setVelocityData] = useState<{ weekLabel: string; count: number }[]>([]);
+
+  const doneColumn = board?.columns
+    .filter((c) => !c.archived)
+    .find((c) => COMPLETED_COLUMN_KEYWORDS.some((kw) => c.title.toLowerCase().includes(kw)));
+
+  useEffect(() => {
+    if (!analyticsPanelOpen || !board || !doneColumn) {
+      setVelocityData([]);
+      return;
+    }
+    fetchCompletedByWeek(board.id, doneColumn.title).then(setVelocityData).catch(() => {});
+  }, [analyticsPanelOpen, board?.id, doneColumn?.title]);
 
   return (
     <AnimatePresence>
@@ -200,6 +241,32 @@ export default function AnalyticsPanel() {
                   <ActivityHeatmap data={analytics.activityHeatmap} />
                   <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Cards updated per day</p>
                 </div>
+
+                {/* Weekly Velocity */}
+                {doneColumn && (
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                        Weekly Velocity
+                      </h3>
+                      {velocityData.length > 0 && (
+                        <span className="text-xs text-gray-400 dark:text-gray-500 tabular-nums">
+                          {velocityData.reduce((s, d) => s + d.count, 0)} in 8 wks
+                        </span>
+                      )}
+                    </div>
+                    {velocityData.length > 0 ? (
+                      <>
+                        <VelocityChart data={velocityData} />
+                        <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                          Cards completed per week (moved to &ldquo;{doneColumn.title}&rdquo;)
+                        </p>
+                      </>
+                    ) : (
+                      <p className="text-xs text-gray-400 dark:text-gray-500 italic">Loading…</p>
+                    )}
+                  </div>
+                )}
 
                 {/* Card Age Distribution */}
                 {analytics.cardAgeBuckets.length > 0 && (
