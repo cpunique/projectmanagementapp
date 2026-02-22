@@ -120,7 +120,7 @@ const BoardSwitcher = () => {
               <div
                 key={board.id}
                 className={cn(
-                  'px-3 py-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center justify-between group',
+                  'px-3 py-1 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center justify-between group',
                   activeBoard === board.id
                     ? 'bg-purple-50 dark:bg-purple-900/20 border-l-2 border-purple-600'
                     : ''
@@ -129,7 +129,7 @@ const BoardSwitcher = () => {
                 <div className="flex-1 flex items-center gap-2">
                   <button
                     onClick={() => switchBoard(board.id)}
-                    className="flex-1 text-left text-sm hover:text-purple-600 dark:hover:text-purple-400"
+                    className="flex-1 text-left text-xs hover:text-purple-600 dark:hover:text-purple-400"
                   >
                     {isRenamingBoardId === board.id ? (
                       <input
@@ -268,7 +268,7 @@ const BoardSwitcher = () => {
           {/* Create New Board Button */}
           <button
             onClick={() => setIsCreateModalOpen(true)}
-            className="w-full px-3 py-2 text-sm text-left hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-purple-600 dark:text-purple-400 font-medium"
+            className="w-full px-3 py-1.5 text-xs text-left hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-purple-600 dark:text-purple-400 font-medium"
           >
             + New Board
           </button>
