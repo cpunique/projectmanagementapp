@@ -1,14 +1,39 @@
-# Roadmap Summary — February 18, 2026
+# Roadmap Summary — February 22, 2026
 
-## Recently Completed (This Sprint)
+## Current Sprint (Completed & Deployed)
+
+### Copy Card to Board
+- Right-click context menu → "Copy to board…" submenu
+- Only shows boards where user is owner or editor
+- Logs `card_copied` activity with target board name
+
+### Card Dependencies (blocked-by / blocks)
+- `blockedBy?: string[]` field on Card — Firebase synced automatically
+- Dependencies section in CardModal: chip list, ✕ remove, searchable live picker
+- Derived "Blocks (N)" read-only section for reverse direction
+- Red "Blocked — waiting on N card(s)" banner when any blocker not yet done
+- Chain-link badge on card face: red = actively blocked, gray = all done
+- Hover tooltip on badge: up to 3 blocker titles with ✓/● status
+
+### Weekly Velocity Chart
+- New section in Analytics Panel (below Activity Heatmap)
+- Pulls `card_moved` activities from Firestore, filters for moves to done column
+- 8-week Sunday-anchored buckets, deduplicates by cardId per week
+- Green bar chart with hover tooltips; total "X in 8 wks" in header
+- Done column detected by keywords (completed/done/finished/closed/delivered)
+
+---
+
+## Previously Completed
 
 ### Phase 1: Search + Activity Feed Badge
 - **Search & Filter** — debounced search across card titles/descriptions, priority filter dropdown, overdue-only toggle
 - **Activity Feed Badge** — unread count on clock icon, per-board last-seen tracking via IndexedDB, resets on panel open
 
-### Phase 2: Board Templates + JSON Export
-- **6 Board Templates** — Blank, Software Development (with Descoped column), Marketing, Event Planning, Personal, Bug Tracking
+### Phase 2: Board Templates + JSON Export/Import
+- **6 Board Templates** — Blank, Software Development, Marketing, Event Planning, Personal, Bug Tracking
 - **JSON Export** — download any board as a JSON file from the board dropdown
+- **JSON Import** — import boards from JSON file (in board dropdown menu, live in production)
 
 ### Phase 3: Card Attachments (Dormant)
 - **Full implementation** — upload/download/delete, drag-and-drop, image thumbnails, 10MB limit, paperclip badge on cards
@@ -19,26 +44,24 @@
 - **Per-field resolution UI** — side-by-side diff with mine/theirs radio buttons
 - **Bulk actions** — "Keep all mine" / "Use all remote"
 - **Auto-resolve** — non-conflicting changes merged automatically
-- **Backward compatible** — falls back to simple dialog when no base version available
 
 ### Phase 5: Analytics Panel + Health Dashboard
-- **Analytics Panel** — card counts by column, priority distribution, top tags, checklist progress, CSS bar charts
+- **Analytics Panel** — card counts by column, priority distribution, top tags, checklist progress, activity heatmap, card age, weekly velocity
 - **Health Dashboard** — modal showing sync state, network status, pending operations, board sizes, browser storage usage
 
 ### Bug Fixes & Enhancements
-- **Card Activity Timeline** — per-card activity history inside CardModal (created, moved, updated, comments)
-- **Expanded activity logging** — now tracks all card field changes (description, notes, tags, color, checklist)
-- **UI preferences persistence** — dedicated localStorage keys for darkMode/zoomLevel, survives Zustand persist cycles
-- **Search filter fix** — blur handler checks relatedTarget to prevent collapse when clicking filter button
-- **Activity badge fix** — race condition resolved (load lastSeen before subscribing), count resets after viewing
+- **Card Activity Timeline** — per-card activity history inside CardModal
+- **Expanded activity logging** — tracks all card field changes
+- **UI preferences persistence** — dedicated localStorage keys for darkMode/zoomLevel
+- **Search filter fix** — blur handler checks relatedTarget
+- **Activity badge fix** — race condition resolved
 
-## Previously Completed
+### Foundation
 - **Per-User Preference Persistence** (dark mode + zoom isolated per account)
 - **Performance Optimization** (first load JS 450 kB → 325 kB, -28%)
-- **Pro Auth Fix** — JWT properly decoded for UID extraction
 - **Default Board Fix** — Custom Zustand persist merge prevents rehydration wipe
 - **Error Boundary** — Runtime errors display instead of blank page
-- **Basic Conflict Detection** (multi-device safety, now upgraded to 3-way merge)
+- **Enhanced Conflict Detection** (multi-device safety, 3-way merge)
 - **Disaster Recovery MVP** (IndexedDB + Sync Queue + Enhanced Status)
 - **Page Zoom Control** (50-150% range, persisted)
 - **Dark Mode Preference Sync** (persisted via dedicated localStorage + Firestore)
@@ -47,19 +70,22 @@
 - **Pro feature gating** + AI-generated instructions
 - **Role-based permissions** (Firestore rules + frontend)
 - **Keyboard shortcuts & confetti celebration**
+- **Calendar View** — alternate board layout with due-date cards on calendar grid
+
+---
 
 ## Next on Roadmap (By Priority)
 
 ### Ready When Needed
 - **Enable Attachments** — upgrade to Firebase Blaze, deploy storage rules, feature is already built
-- **Automated Backups** — scheduled Firestore exports or Cloud Function snapshots
 
-### Potential Future Features
-- **Recurring Tasks** — auto-create cards on schedule
-- **Card Dependencies** — blocked-by / blocks relationships
-- **Board Import** — import from JSON (complement to existing export)
+### Potential Future Features (pending user feedback)
+- **Recurring Tasks** — auto-create cards on schedule (client-side, no infra)
 - **Email Notifications** — digest of activity (requires Cloud Function)
-- **Burndown Charts** — time-series velocity tracking in analytics panel
+- **Automated Backups** — scheduled Firestore exports or Cloud Function snapshots
+- **Burndown Chart** — true burndown requires historical snapshots (more complex)
 
-## Production Readiness: ~95%
-All core features deployed and tested. Search, tlemplates, analytics, conflict resolution, activity tracking, collaboration, offline sync, and disaster recovery all in place. Attachments ready but gated behind Firebase Blaze. Only missing automated backups and advanced reporting for full feature parity with commercial tools.
+---
+
+## Production Readiness: ~97%
+All core features deployed and tested. Full collaboration, offline sync, conflict resolution, analytics, dependencies, velocity tracking, templates, import/export, and activity logging all live. Attachments built but gated on Firebase Blaze upgrade. Pausing for user feedback before next sprint.
