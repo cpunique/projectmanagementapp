@@ -17,8 +17,8 @@ import ClientShell from "@/components/providers/ClientShell";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Kanban Board - Project Management",
-  description: "Beautiful kanban board application for managing your projects and tasks",
+  title: "Kan-do - Project Management",
+  description: "Beautiful Kan-do board application for managing your projects and tasks",
 };
 
 export default function RootLayout({

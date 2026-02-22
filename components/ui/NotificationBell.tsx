@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '@/lib/firebase/AuthContext';
 import { useKanbanStore } from '@/lib/store';
+import Tooltip from '@/components/ui/Tooltip';
 import {
   subscribeToNotifications,
   markNotificationAsRead,
@@ -119,6 +120,7 @@ export default function NotificationBell({ onNavigateToCard }: NotificationBellP
   return (
     <div className="relative">
       {/* Bell button */}
+      <Tooltip position="bottom" text="Notifications">
       <button
         ref={buttonRef}
         onClick={() => setIsOpen(!isOpen)}
@@ -146,6 +148,7 @@ export default function NotificationBell({ onNavigateToCard }: NotificationBellP
           </span>
         )}
       </button>
+      </Tooltip>
 
       {/* Dropdown panel */}
       {isOpen && (

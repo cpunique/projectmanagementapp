@@ -13,7 +13,7 @@ export default function MarketingPanel() {
           <div className="w-8 h-8 rounded-lg bg-purple-600 flex items-center justify-center">
             <span className="text-white font-bold text-lg">K</span>
           </div>
-          <span className="text-xl font-bold text-gray-900 dark:text-white">Kanban</span>
+          <span className="text-xl font-bold text-gray-900 dark:text-white">Kan-do</span>
         </div>
 
         {/* Headline */}

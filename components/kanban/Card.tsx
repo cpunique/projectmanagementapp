@@ -12,6 +12,7 @@ import { type Card as CardType } from '@/types';
 import { PRIORITY_LABELS, DESCOPED_COLUMN_KEYWORDS } from '@/lib/constants';
 import { formatDate, isOverdue, isLightColor } from '@/lib/utils';
 import CardContextMenu from './CardContextMenu';
+import AssigneeAvatarRow from './AssigneeAvatarRow';
 
 const CardModal = dynamic(() => import('./CardModal'), { ssr: false });
 const AIPromptModal = dynamic(() => import('./AIPromptModal'), { ssr: false });
@@ -24,6 +25,54 @@ interface CardProps {
   onDragEnd: () => void;
   isDragging: boolean;
   canEdit: boolean;
+}
+
+// Card action button with portal tooltip (escapes overflow-hidden)
+function CardActionButton({
+  title,
+  onClick,
+  className,
+  children,
+}: {
+  title: string;
+  onClick: (e: React.MouseEvent) => void;
+  className: string;
+  children: React.ReactNode;
+}) {
+  const [visible, setVisible] = useState(false);
+  const [pos, setPos] = useState({ top: 0, left: 0 });
+  const ref = useRef<HTMLButtonElement>(null);
+
+  const handleMouseEnter = () => {
+    if (ref.current) {
+      const rect = ref.current.getBoundingClientRect();
+      setPos({ top: rect.top - 4, left: rect.left + rect.width / 2 });
+    }
+    setVisible(true);
+  };
+
+  return (
+    <>
+      <button
+        ref={ref}
+        onClick={onClick}
+        className={className}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={() => setVisible(false)}
+      >
+        {children}
+      </button>
+      {visible && typeof document !== 'undefined' && createPortal(
+        <div
+          style={{ position: 'fixed', top: pos.top, left: pos.left, transform: 'translate(-50%, -100%)', zIndex: 9999 }}
+          className="px-2 py-1 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 text-xs rounded-md shadow-md border border-gray-200 dark:border-transparent whitespace-nowrap pointer-events-none"
+        >
+          {title}
+        </div>,
+        document.body
+      )}
+    </>
+  );
 }
 
 // Highlight matching text in search results
@@ -45,6 +94,7 @@ function HighlightText({ text, query }: { text: string; query: string }) {
 
 const Card = ({ card, boardId, columnId, onDragStart, onDragEnd, isDragging, canEdit }: CardProps) => {
   const { deleteCard, boards } = useKanbanStore();
+  const currentBoard = boards.find((b) => b.id === boardId);
   const searchQuery = useKanbanStore((state) => state.searchQuery);
   const { user } = useAuth();
   const { getUnreadCount, markAsSeen } = useUnreadComments();
@@ -156,7 +206,8 @@ const Card = ({ card, boardId, columnId, onDragStart, onDragEnd, isDragging, can
           {isHovering && !isDescoped && (
             <div className="absolute top-2 right-2 flex gap-1" style={{ top: card.color ? '14px' : '8px' }}>
               {/* Generate Instructions Button */}
-              <button
+              <CardActionButton
+                title={isAIFeatureLocked && !card.aiPrompt ? "Sign up to generate instructions" : (card.aiPrompt ? "View instructions (Pro)" : "Generate instructions (Pro)")}
                 onClick={(e) => {
                   e.stopPropagation();
                   if (isAIFeatureLocked && !card.aiPrompt) {
@@ -172,7 +223,6 @@ const Card = ({ card, boardId, columnId, onDragStart, onDragEnd, isDragging, can
                     ? 'text-purple-600 dark:text-purple-400 hover:bg-purple-100 dark:hover:bg-purple-900/30 hover:text-purple-700 dark:hover:text-purple-300'
                     : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-purple-600 dark:text-gray-400 dark:hover:text-purple-400'
                 }`}
-                title={isAIFeatureLocked && !card.aiPrompt ? "Sign up to generate instructions" : (card.aiPrompt ? "View instructions (Pro)" : "Generate instructions (Pro)")}
               >
                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
@@ -180,38 +230,38 @@ const Card = ({ card, boardId, columnId, onDragStart, onDragEnd, isDragging, can
                 {/* Pro badge */}
                 <span className="absolute -top-1.5 -right-2 text-[8px] font-bold text-purple-600 dark:text-purple-400 bg-purple-100 dark:bg-purple-900/50 px-1 rounded">Pro</span>
                 {isAIFeatureLocked && !card.aiPrompt && <span className="absolute -bottom-1 -right-1 w-2 h-2 bg-yellow-400 rounded-full border border-white" />}
-              </button>
+              </CardActionButton>
 
               {/* Edit Button - disabled for viewers */}
               {canEdit && (
-                <button
+                <CardActionButton
+                  title="Edit card"
                   onClick={(e) => {
                     e.stopPropagation();
                     setIsModalOpen(true);
                   }}
                   className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-150 text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 pointer-events-auto"
-                  title="Edit card"
                 >
                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                   </svg>
-                </button>
+                </CardActionButton>
               )}
 
               {/* Delete Button - disabled for viewers */}
               {canEdit && (
-                <button
+                <CardActionButton
+                  title="Delete card"
                   onClick={(e) => {
                     e.stopPropagation();
                     handleDelete();
                   }}
                   className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-150 text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400 pointer-events-auto"
-                  title="Delete card"
                 >
                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
-                </button>
+                </CardActionButton>
               )}
             </div>
           )}
@@ -311,8 +361,18 @@ const Card = ({ card, boardId, columnId, onDragStart, onDragEnd, isDragging, can
           )}
 
           {/* Metadata Footer */}
-          {(card.dueDate || hasNotes(card.notes) || totalComments > 0 || (card.attachments && card.attachments.length > 0)) && (
+          {(card.dueDate || hasNotes(card.notes) || totalComments > 0 || (card.attachments && card.attachments.length > 0) || (card.assignees && card.assignees.length > 0)) && (
             <div className="flex items-center gap-3 pt-2 mt-auto border-t border-gray-100 dark:border-gray-700">
+              {/* Assignee Avatars */}
+              {card.assignees && card.assignees.length > 0 && (
+                <AssigneeAvatarRow
+                  assigneeIds={card.assignees}
+                  ownerId={currentBoard?.ownerId || ''}
+                  ownerEmail={currentBoard?.ownerEmail}
+                  collaborators={currentBoard?.sharedWith}
+                  max={3}
+                />
+              )}
               {/* Attachments Indicator */}
               {card.attachments && card.attachments.length > 0 && (
                 <div className="flex items-center gap-1 text-xs pointer-events-none text-gray-500 dark:text-gray-400">
@@ -349,7 +409,6 @@ const Card = ({ card, boardId, columnId, onDragStart, onDragEnd, isDragging, can
                       ? 'text-purple-600 dark:text-purple-400 font-medium'
                       : 'text-gray-500 dark:text-gray-400'
                   }`}
-                  title={unreadCount > 0 ? `${unreadCount} new comment${unreadCount !== 1 ? 's' : ''}` : `${totalComments} comment${totalComments !== 1 ? 's' : ''}`}
                 >
                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
@@ -403,6 +462,7 @@ const Card = ({ card, boardId, columnId, onDragStart, onDragEnd, isDragging, can
           }}
           card={card}
           boardId={boardId}
+          canEdit={canEdit}
         />,
         document.body
       )}
@@ -465,9 +525,9 @@ const Card = ({ card, boardId, columnId, onDragStart, onDragEnd, isDragging, can
             left: `${tooltipPosition.left}px`,
           }}
         >
-          <div className="bg-gray-900 dark:bg-gray-700 text-white text-xs rounded-lg p-4 shadow-xl w-72 max-h-96 overflow-y-auto">
+          <div className="bg-white dark:bg-gray-700 text-gray-800 dark:text-white text-xs rounded-lg p-4 shadow-xl border border-gray-200 dark:border-transparent w-72 max-h-96 overflow-y-auto">
             <div
-              className="prose prose-sm prose-invert max-w-none break-words whitespace-normal leading-relaxed [&>*]:break-words [&_p]:m-0 [&_p]:mb-2 [&_p:last-child]:mb-0 [&_ul]:m-0 [&_ul]:mb-2 [&_ol]:m-0 [&_ol]:mb-2 [&_h1]:text-base [&_h1]:mb-2 [&_h2]:text-sm [&_h2]:mb-2 [&_h3]:text-xs [&_h3]:mb-1"
+              className="prose prose-sm dark:prose-invert max-w-none break-words whitespace-normal leading-relaxed [&>*]:break-words [&_p]:m-0 [&_p]:mb-2 [&_p:last-child]:mb-0 [&_ul]:m-0 [&_ul]:mb-2 [&_ol]:m-0 [&_ol]:mb-2 [&_h1]:text-base [&_h1]:mb-2 [&_h2]:text-sm [&_h2]:mb-2 [&_h3]:text-xs [&_h3]:mb-1"
               dangerouslySetInnerHTML={{
                 __html: DOMPurify.sanitize(card.notes || '', {
                   ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'u', 'h1', 'h2', 'h3', 'ul', 'ol', 'li', 'blockquote'],
@@ -478,7 +538,7 @@ const Card = ({ card, boardId, columnId, onDragStart, onDragEnd, isDragging, can
             />
             {/* Arrow pointing left */}
             <div className="absolute top-3 right-full">
-              <div className="w-0 h-0 border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent border-r-[6px] border-r-gray-900 dark:border-r-gray-700"></div>
+              <div className="w-0 h-0 border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent border-r-[6px] border-r-gray-200 dark:border-r-gray-700"></div>
             </div>
           </div>
         </div>,

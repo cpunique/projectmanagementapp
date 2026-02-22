@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { LEGAL_VERSIONS, LEGAL_LAST_UPDATED, LEGAL_DOCUMENTS } from '@/types/legal';
 
 export const metadata: Metadata = {
-  title: 'Legal Changelog - Kanban Board',
+  title: 'Legal Changelog - Kan-do',
   description: 'History of changes to our legal documents',
 };
 

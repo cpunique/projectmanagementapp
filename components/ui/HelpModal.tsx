@@ -91,9 +91,9 @@ function ShortcutRow({ description, keys }: { description: string; keys: string[
 function GettingStartedTab() {
   return (
     <div>
-      <Section title="Welcome to Kanban">
+      <Section title="Welcome to Kan-do">
         <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
-          Kanban is a visual project management tool that helps you organize work into boards, columns, and cards.
+          Kan-do is a visual project management tool that helps you organize work into boards, columns, and cards.
           Think of it as a digital whiteboard with sticky notes — but with real-time collaboration, file attachments,
           analytics, and offline support.
         </p>
@@ -552,7 +552,7 @@ export default function HelpModal({ isOpen, onClose }: HelpModalProps) {
                 </div>
                 <div>
                   <h2 className="text-lg font-bold text-gray-900 dark:text-white">Help Guide</h2>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">Everything you need to know about Kanban</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Everything you need to know about Kan-do</p>
                 </div>
               </div>
               <button

@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useKanbanStore } from '@/lib/store';
+import Tooltip from '@/components/ui/Tooltip';
 
 export default function SearchBar() {
   const searchQuery = useKanbanStore((state) => state.searchQuery);
@@ -81,19 +82,20 @@ export default function SearchBar() {
   // Collapsed state: just a search icon button
   if (!isExpanded) {
     return (
-      <button
-        onClick={handleExpand}
-        className="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors text-gray-600 dark:text-gray-400 relative"
-        title="Search cards (Ctrl+/)"
-        aria-label="Search cards"
-      >
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-        </svg>
-        {hasFilters && (
-          <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-purple-600" />
-        )}
-      </button>
+      <Tooltip position="bottom" text="Search cards (Ctrl+/)">
+        <button
+          onClick={handleExpand}
+          className="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors text-gray-600 dark:text-gray-400 relative"
+          aria-label="Search cards"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+          {hasFilters && (
+            <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-purple-600" />
+          )}
+        </button>
+      </Tooltip>
     );
   }
 
@@ -145,7 +147,6 @@ export default function SearchBar() {
             ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400'
             : 'hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400'
         }`}
-        title="Filter cards"
         aria-label="Toggle filters"
       >
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -10,6 +10,7 @@ import Input from '@/components/ui/Input';
 import { useToast } from '@/components/ui/Toast';
 import { DESCOPED_COLUMN_KEYWORDS } from '@/lib/constants';
 import { filterCards, hasActiveFilters } from '@/lib/utils/searchFilter';
+import ColumnOptionsMenu from './ColumnOptionsMenu';
 
 interface ColumnProps {
   column: ColumnType;
@@ -73,7 +74,9 @@ const Column = ({
   const [isEditingWip, setIsEditingWip] = useState(false);
   const [wipInput, setWipInput] = useState('');
 
-  const cardCount = currentColumn?.cards.length || 0;
+  // Exclude archived cards from counts and WIP tracking
+  const activeCards = (currentColumn?.cards || []).filter((c) => !c.archived);
+  const cardCount = activeCards.length;
   const wipLimit = currentColumn?.wipLimit;
   const isOverWip = wipLimit !== undefined && wipLimit > 0 && cardCount > wipLimit;
 
@@ -286,15 +289,15 @@ const Column = ({
               {column.title}
             </h3>
           )}
-          {canEdit && (
-            <button
-              onClick={handleDelete}
-              className="opacity-50 hover:opacity-100 text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400 text-sm pointer-events-auto flex-shrink-0"
-              title="Delete column"
-            >
-              ✕
-            </button>
-          )}
+          <ColumnOptionsMenu
+            boardId={boardId}
+            columnId={column.id}
+            activeCards={activeCards}
+            canEdit={canEdit}
+            onRename={() => { setIsEditing(true); setEditTitle(column.title); }}
+            onSetWipLimit={() => { setWipInput(wipLimit?.toString() || ''); setIsEditingWip(true); }}
+            onDelete={handleDelete}
+          />
         </div>
 
         {/* Task Count + WIP Limit */}
@@ -345,8 +348,8 @@ const Column = ({
         </div>
       </div>
 
-      {/* Cards List */}
-      <div className="overflow-y-auto overflow-x-visible space-y-1 flex-1 pb-6 flex flex-col items-center min-h-0">
+      {/* Cards List — scrollable, no bottom padding needed since + Add Task is pinned below */}
+      <div className="overflow-y-auto overflow-x-visible space-y-1 flex-1 pb-2 flex flex-col items-center min-h-0">
         {(currentColumn?.cards.length || 0) === 0 && !isAddingCard && (
           <div className="text-center py-6 px-4">
             <p className="text-gray-500 dark:text-gray-400 text-xs">
@@ -444,18 +447,19 @@ const Column = ({
           </div>
         )}
 
-        {/* Add Task Button - only shown in first column (hidden for descoped columns) */}
-        {canEdit && !isAddingCard && !isDescopedColumn && isFirstColumn && (
-          <div className="w-full flex justify-center">
-            <button
-              onClick={() => setIsAddingCard(true)}
-              className="w-60 text-center text-sm text-purple-600 hover:text-purple-700 dark:text-purple-400 dark:hover:text-purple-300 py-2 px-2 rounded border border-purple-300 dark:border-purple-600 bg-white dark:bg-gray-700 hover:bg-purple-50 dark:hover:bg-gray-600 transition-colors mt-2"
-            >
-              + Add Task
-            </button>
-          </div>
-        )}
       </div>
+
+      {/* Add Task Button — pinned to column bottom, always visible regardless of card count */}
+      {canEdit && !isAddingCard && !isDescopedColumn && isFirstColumn && (
+        <div className="px-4 py-2 border-t border-gray-200 dark:border-gray-700 flex-shrink-0">
+          <button
+            onClick={() => setIsAddingCard(true)}
+            className="w-full text-center text-sm text-purple-600 hover:text-purple-700 dark:text-purple-400 dark:hover:text-purple-300 py-2 px-2 rounded border border-purple-300 dark:border-purple-600 bg-white dark:bg-gray-700 hover:bg-purple-50 dark:hover:bg-gray-600 transition-colors"
+          >
+            + Add Task
+          </button>
+        </div>
+      )}
     </motion.div>
   );
 };

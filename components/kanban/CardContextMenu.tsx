@@ -28,7 +28,7 @@ const CardContextMenu = ({
   onEditCard,
   onDeleteCard,
 }: CardContextMenuProps) => {
-  const { moveCard, boards } = useKanbanStore();
+  const { moveCard, boards, archiveCard } = useKanbanStore();
   const menuRef = useRef<HTMLDivElement>(null);
   const [adjustedPosition, setAdjustedPosition] = useState(position);
 
@@ -137,6 +137,11 @@ const CardContextMenu = ({
     onClose();
   };
 
+  const handleArchive = () => {
+    archiveCard(boardId, card.id);
+    onClose();
+  };
+
   const handleDuplicate = () => {
     // Copy card content to clipboard as JSON for manual duplication
     const cardData = {
@@ -211,6 +216,18 @@ const CardContextMenu = ({
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
             </svg>
             Edit Card
+          </button>
+
+          {/* Archive Card */}
+          <button
+            onClick={handleArchive}
+            className="w-full px-4 py-2 text-left text-sm text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/20 transition-colors flex items-center gap-3"
+            title="Archive this card (can be restored)"
+          >
+            <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+            </svg>
+            Archive Card
           </button>
 
           {/* Duplicate Card */}

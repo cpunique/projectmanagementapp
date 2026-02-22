@@ -16,18 +16,23 @@ import { useToast } from '@/components/ui/Toast';
 import AttachmentUpload from './AttachmentUpload';
 import AttachmentList from './AttachmentList';
 import CardActivityTimeline from './CardActivityTimeline';
+import AssigneeSection from './AssigneeSection';
 
 interface CardModalProps {
   isOpen: boolean;
   onClose: () => void;
   card: Card | null;
   boardId: string;
+  canEdit?: boolean;
 }
 
-const CardModal = ({ isOpen, onClose, card, boardId }: CardModalProps) => {
+const CardModal = ({ isOpen, onClose, card, boardId, canEdit = false }: CardModalProps) => {
   const { user } = useAuth();
   const { showToast } = useToast();
   const updateCard = useKanbanStore((state) => state.updateCard);
+  const assignCard = useKanbanStore((state) => state.assignCard);
+  const unassignCard = useKanbanStore((state) => state.unassignCard);
+  const archiveCard = useKanbanStore((state) => state.archiveCard);
   const addChecklistItem = useKanbanStore((state) => state.addChecklistItem);
   const deleteChecklistItem = useKanbanStore((state) => state.deleteChecklistItem);
   const toggleChecklistItem = useKanbanStore((state) => state.toggleChecklistItem);
@@ -317,6 +322,17 @@ const CardModal = ({ isOpen, onClose, card, boardId }: CardModalProps) => {
             />
           </div>
         </div>
+
+        {/* Assignees Section — always render; AssigneeSection controls its own visibility */}
+        <AssigneeSection
+          currentAssignees={card.assignees || []}
+          ownerId={currentBoard?.ownerId || ''}
+          ownerEmail={currentBoard?.ownerEmail || ''}
+          collaborators={currentBoard?.sharedWith || []}
+          canEdit={canEdit}
+          onAssign={(userId) => assignCard(boardId, card.id, userId)}
+          onUnassign={(userId) => unassignCard(boardId, card.id, userId)}
+        />
 
         {/* Tags Section */}
         <div>
@@ -622,6 +638,19 @@ const CardModal = ({ isOpen, onClose, card, boardId }: CardModalProps) => {
 
       {/* Action Buttons - Sticky Footer */}
       <div className="flex gap-3 justify-center pt-6 mt-6 border-t border-gray-200 dark:border-gray-700">
+        {canEdit && (
+          <button
+            onClick={() => {
+              archiveCard(boardId, card.id);
+              showToast('Card archived', 'info');
+              onClose();
+            }}
+            className="min-w-[80px] px-4 py-2 text-orange-600 hover:bg-orange-50 dark:text-orange-400 dark:hover:bg-orange-900/20 border border-orange-300 dark:border-orange-700 rounded-lg transition-colors font-medium text-xs"
+            title="Archive this card (can be restored from the Archive panel)"
+          >
+            Archive
+          </button>
+        )}
         <button
           onClick={onClose}
           className="min-w-[80px] px-6 py-2 border border-gray-300 text-gray-900 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-100 dark:hover:bg-gray-900 rounded-lg transition-colors duration-200 font-medium shadow-sm hover:shadow-md text-xs"

@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '@/lib/firebase/AuthContext';
+import Tooltip from '@/components/ui/Tooltip';
 
 export default function UserMenu() {
   const { user, signOut } = useAuth();
@@ -33,28 +34,26 @@ export default function UserMenu() {
   return (
     <div ref={menuRef} className="relative">
       {/* User Avatar Button */}
+      <Tooltip position="bottom" text={user.email || ''}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+        className="flex items-center gap-1.5 p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
       >
-        {/* Avatar Circle */}
+        {/* Avatar Circle only — email shown in dropdown */}
         <div className="w-8 h-8 rounded-full bg-purple-600 flex items-center justify-center text-white text-sm font-medium">
           {userInitials}
         </div>
-        {/* Email */}
-        <span className="text-sm text-gray-900 dark:text-white hidden sm:inline-block max-w-xs truncate">
-          {user.email}
-        </span>
         {/* Chevron */}
         <svg
-          className={`w-4 h-4 text-gray-600 dark:text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+          className={`w-3.5 h-3.5 text-gray-600 dark:text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`}
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
         >
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
         </svg>
       </button>
+      </Tooltip>
 
       {/* Dropdown Menu */}
       {isOpen && (

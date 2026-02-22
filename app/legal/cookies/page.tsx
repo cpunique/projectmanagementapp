@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { LEGAL_VERSIONS, LEGAL_LAST_UPDATED } from '@/types/legal';
 
 export const metadata: Metadata = {
-  title: 'Cookie Policy - Kanban Board',
+  title: 'Cookie Policy - Kan-do',
   description: 'Cookie Policy for our project management application',
 };
 

@@ -115,12 +115,14 @@ export const useKanbanStore = create<KanbanStore>()(
       activeBoard: DEFAULT_BOARD_ID,
       defaultBoardId: null,
       demoMode: false,
-      darkMode: true,
+      darkMode: false,
       searchQuery: '',
       filters: {},
       dueDatePanelOpen: true,
       activityPanelOpen: false,
       analyticsPanelOpen: false,
+      archivePanelOpen: false,
+      activeView: 'board' as const,
       dueDatePanelWidth: 320,
       zoomLevel: 80,
       hasUnsavedChanges: false,
@@ -361,6 +363,69 @@ export const useKanbanStore = create<KanbanStore>()(
         }));
       },
 
+      sortColumnCards: (boardId: string, columnId: string, sortBy: 'alpha' | 'dueDate' | 'priority') => {
+        const PRIORITY_ORDER: Record<string, number> = { high: 0, medium: 1, low: 2 };
+        set((state) => ({
+          boards: state.boards.map((b) =>
+            b.id !== boardId ? b : {
+              ...b,
+              columns: b.columns.map((c) => {
+                if (c.id !== columnId) return c;
+                const sorted = [...c.cards].sort((a, b) => {
+                  if (sortBy === 'alpha') return a.title.localeCompare(b.title);
+                  if (sortBy === 'dueDate') {
+                    if (!a.dueDate && !b.dueDate) return 0;
+                    if (!a.dueDate) return 1;
+                    if (!b.dueDate) return -1;
+                    return a.dueDate.localeCompare(b.dueDate);
+                  }
+                  // priority
+                  const pa = a.priority !== undefined ? (PRIORITY_ORDER[a.priority] ?? 3) : 3;
+                  const pb = b.priority !== undefined ? (PRIORITY_ORDER[b.priority] ?? 3) : 3;
+                  return pa - pb;
+                });
+                return { ...c, cards: sorted.map((card, idx) => ({ ...card, order: idx })) };
+              }),
+            }
+          ),
+          hasUnsavedChanges: true,
+        }));
+      },
+
+      archiveColumn: (boardId: string, columnId: string) => {
+        const state = get();
+        const col = state.boards.find(b => b.id === boardId)?.columns.find(c => c.id === columnId);
+        set((state) => ({
+          boards: state.boards.map((b) =>
+            b.id !== boardId ? b : {
+              ...b,
+              columns: b.columns.map((c) => c.id === columnId ? { ...c, archived: true } : c),
+            }
+          ),
+          hasUnsavedChanges: true,
+        }));
+        import('@/lib/firebase/activities').then(({ logActivity }) => {
+          logActivity(boardId, { eventType: 'column_archived', columnTitle: col?.title }).catch(() => {});
+        }).catch(() => {});
+      },
+
+      restoreColumn: (boardId: string, columnId: string) => {
+        const state = get();
+        const col = state.boards.find(b => b.id === boardId)?.columns.find(c => c.id === columnId);
+        set((state) => ({
+          boards: state.boards.map((b) =>
+            b.id !== boardId ? b : {
+              ...b,
+              columns: b.columns.map((c) => c.id === columnId ? { ...c, archived: false } : c),
+            }
+          ),
+          hasUnsavedChanges: true,
+        }));
+        import('@/lib/firebase/activities').then(({ logActivity }) => {
+          logActivity(boardId, { eventType: 'column_restored', columnTitle: col?.title }).catch(() => {});
+        }).catch(() => {});
+      },
+
       // Card actions
       addCard: (boardId: string, columnId: string, cardData) => {
         const state = get();
@@ -472,6 +537,7 @@ export const useKanbanStore = create<KanbanStore>()(
           if (cardData.tags !== undefined && JSON.stringify(cardData.tags) !== JSON.stringify(preCard.tags)) fieldsChanged.push('tags');
           if (cardData.color !== undefined && cardData.color !== preCard.color) fieldsChanged.push('color');
           if (cardData.checklist !== undefined && JSON.stringify(cardData.checklist) !== JSON.stringify(preCard.checklist)) fieldsChanged.push('checklist');
+          // Skip 'assignees' — handled by dedicated assignCard/unassignCard actions
 
           if (fieldsChanged.length > 0) {
             import('@/lib/firebase/activities').then(({ logActivity }) => {
@@ -484,6 +550,71 @@ export const useKanbanStore = create<KanbanStore>()(
             }).catch(() => {});
           }
         }
+      },
+
+      assignCard: (boardId: string, cardId: string, userId: string) => {
+        const state = get();
+        const card = state.boards.find(b => b.id === boardId)?.columns.flatMap(c => c.cards).find(c => c.id === cardId);
+        const currentAssignees = card?.assignees || [];
+        if (currentAssignees.includes(userId)) return;
+        get().updateCard(boardId, cardId, { assignees: [...currentAssignees, userId] });
+        import('@/lib/firebase/activities').then(({ logActivity }) => {
+          logActivity(boardId, { eventType: 'card_assigned', cardId, cardTitle: card?.title }).catch(() => {});
+        }).catch(() => {});
+      },
+
+      unassignCard: (boardId: string, cardId: string, userId: string) => {
+        const state = get();
+        const card = state.boards.find(b => b.id === boardId)?.columns.flatMap(c => c.cards).find(c => c.id === cardId);
+        const updated = (card?.assignees || []).filter(id => id !== userId);
+        get().updateCard(boardId, cardId, { assignees: updated });
+        import('@/lib/firebase/activities').then(({ logActivity }) => {
+          logActivity(boardId, { eventType: 'card_unassigned', cardId, cardTitle: card?.title }).catch(() => {});
+        }).catch(() => {});
+      },
+
+      archiveCard: (boardId: string, cardId: string) => {
+        const state = get();
+        const card = state.boards.find(b => b.id === boardId)?.columns.flatMap(c => c.cards).find(c => c.id === cardId);
+        set((state) => ({
+          boards: state.boards.map((b) =>
+            b.id !== boardId ? b : {
+              ...b,
+              columns: b.columns.map((c) => ({
+                ...c,
+                cards: c.cards.map((card) =>
+                  card.id === cardId ? { ...card, archived: true, updatedAt: new Date().toISOString() } : card
+                ),
+              })),
+            }
+          ),
+          hasUnsavedChanges: true,
+        }));
+        import('@/lib/firebase/activities').then(({ logActivity }) => {
+          logActivity(boardId, { eventType: 'card_archived', cardId, cardTitle: card?.title }).catch(() => {});
+        }).catch(() => {});
+      },
+
+      restoreCard: (boardId: string, cardId: string) => {
+        const state = get();
+        const card = state.boards.find(b => b.id === boardId)?.columns.flatMap(c => c.cards).find(c => c.id === cardId);
+        set((state) => ({
+          boards: state.boards.map((b) =>
+            b.id !== boardId ? b : {
+              ...b,
+              columns: b.columns.map((c) => ({
+                ...c,
+                cards: c.cards.map((card) =>
+                  card.id === cardId ? { ...card, archived: false, updatedAt: new Date().toISOString() } : card
+                ),
+              })),
+            }
+          ),
+          hasUnsavedChanges: true,
+        }));
+        import('@/lib/firebase/activities').then(({ logActivity }) => {
+          logActivity(boardId, { eventType: 'card_restored', cardId, cardTitle: card?.title }).catch(() => {});
+        }).catch(() => {});
       },
 
       moveCard: (
@@ -882,6 +1013,11 @@ export const useKanbanStore = create<KanbanStore>()(
       toggleAnalyticsPanel: () => set((state) => ({ analyticsPanelOpen: !state.analyticsPanelOpen })),
       setAnalyticsPanelOpen: (isOpen: boolean) => set({ analyticsPanelOpen: isOpen }),
 
+      toggleArchivePanel: () => set((state) => ({ archivePanelOpen: !state.archivePanelOpen })),
+      setArchivePanelOpen: (isOpen: boolean) => set({ archivePanelOpen: isOpen }),
+
+      setActiveView: (view: 'board' | 'calendar') => set({ activeView: view }),
+
       // Due dates panel actions
       toggleDueDatePanel: () => set((state) => ({ dueDatePanelOpen: !state.dueDatePanelOpen })),
       setDueDatePanelOpen: (isOpen: boolean) => set({ dueDatePanelOpen: isOpen }),
@@ -1054,7 +1190,7 @@ export const useKanbanStore = create<KanbanStore>()(
       // Only persistent client-side UI state (darkMode, filters, etc.) should be in localStorage
       partialize: (state) => {
         // Exclude Firebase-managed state and transient state from localStorage
-        const { boards, activeBoard, defaultBoardId, demoMode, conflictState, activityPanelOpen, analyticsPanelOpen, ...rest } = state;
+        const { boards, activeBoard, defaultBoardId, demoMode, conflictState, activityPanelOpen, analyticsPanelOpen, archivePanelOpen, ...rest } = state;
         return rest;
       },
       merge: (persistedState, currentState) => {
@@ -1073,6 +1209,7 @@ export const useKanbanStore = create<KanbanStore>()(
           conflictState: currentState.conflictState,
           activityPanelOpen: currentState.activityPanelOpen,
           analyticsPanelOpen: currentState.analyticsPanelOpen,
+          archivePanelOpen: currentState.archivePanelOpen,
         };
       },
       // Skip automatic rehydration during SSR to prevent hydration mismatches.

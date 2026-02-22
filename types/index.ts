@@ -30,7 +30,13 @@ export type ActivityEventType =
   | 'comment_added'
   | 'column_added'
   | 'column_deleted'
-  | 'board_shared';
+  | 'board_shared'
+  | 'card_assigned'
+  | 'card_unassigned'
+  | 'card_archived'
+  | 'card_restored'
+  | 'column_archived'
+  | 'column_restored';
 
 export interface ActivityEntry {
   id: string;
@@ -105,6 +111,8 @@ export interface Card {
   status?: "active" | "descoped"; // Card status - defaults to 'active'
   comments?: CardComment[]; // Thread of comments on this card
   attachments?: CardAttachment[]; // File attachments
+  assignees?: string[]; // Array of user IDs assigned to this card
+  archived?: boolean; // Soft-delete: archived cards are hidden from the board
 }
 
 export interface Column {
@@ -114,6 +122,7 @@ export interface Column {
   boardId: string;
   wipLimit?: number; // Optional WIP limit (undefined = no limit)
   cards: Card[];
+  archived?: boolean; // Soft-delete: archived columns are hidden from the board
 }
 
 export interface Board {
@@ -146,6 +155,7 @@ export interface KanbanState {
     tags?: string[];
     dueDateRange?: [string, string]; // [start, end] ISO dates
     showOverdue?: boolean;
+    assignees?: string[]; // Filter by assigned user IDs
   };
   // Internal state for demo mode - stored boards before entering demo
   _userBoardsBackup?: Board[];
@@ -155,7 +165,11 @@ export interface KanbanState {
   activityPanelOpen: boolean;
   // Analytics panel state
   analyticsPanelOpen: boolean;
+  // Archive panel state
+  archivePanelOpen: boolean;
   dueDatePanelWidth: number;
+  // Active view: board or calendar
+  activeView: 'board' | 'calendar';
   // Page zoom level (percentage, default 80)
   zoomLevel: number;
   // Unsaved changes tracking
@@ -191,6 +205,9 @@ export interface KanbanActions {
   updateColumn: (boardId: string, columnId: string, title: string) => void;
   updateColumnWipLimit: (boardId: string, columnId: string, wipLimit: number | undefined) => void;
   reorderColumns: (boardId: string, columnIds: string[]) => void;
+  sortColumnCards: (boardId: string, columnId: string, sortBy: 'alpha' | 'dueDate' | 'priority') => void;
+  archiveColumn: (boardId: string, columnId: string) => void;
+  restoreColumn: (boardId: string, columnId: string) => void;
 
   // Card actions
   addCard: (
@@ -200,6 +217,10 @@ export interface KanbanActions {
   ) => void;
   deleteCard: (boardId: string, cardId: string) => void;
   updateCard: (boardId: string, cardId: string, cardData: Partial<Card>) => void;
+  assignCard: (boardId: string, cardId: string, userId: string) => void;
+  unassignCard: (boardId: string, cardId: string, userId: string) => void;
+  archiveCard: (boardId: string, cardId: string) => void;
+  restoreCard: (boardId: string, cardId: string) => void;
   moveCard: (
     boardId: string,
     cardId: string,
@@ -246,6 +267,13 @@ export interface KanbanActions {
   // Analytics panel actions
   toggleAnalyticsPanel: () => void;
   setAnalyticsPanelOpen: (isOpen: boolean) => void;
+
+  // Archive panel actions
+  toggleArchivePanel: () => void;
+  setArchivePanelOpen: (isOpen: boolean) => void;
+
+  // View actions
+  setActiveView: (view: 'board' | 'calendar') => void;
 
   // Zoom actions
   setZoomLevel: (level: number) => void;

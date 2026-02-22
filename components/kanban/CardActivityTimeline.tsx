@@ -15,6 +15,12 @@ const EVENT_ICONS: Record<ActivityEventType, string> = {
   column_added: '▐',
   column_deleted: '▐',
   board_shared: '👤',
+  card_assigned: '👤',
+  card_unassigned: '✕',
+  card_archived: '↓',
+  card_restored: '↑',
+  column_archived: '↓',
+  column_restored: '↑',
 };
 
 const EVENT_COLORS: Record<ActivityEventType, string> = {
@@ -26,6 +32,12 @@ const EVENT_COLORS: Record<ActivityEventType, string> = {
   column_added: 'text-green-600 dark:text-green-400',
   column_deleted: 'text-red-600 dark:text-red-400',
   board_shared: 'text-indigo-600 dark:text-indigo-400',
+  card_assigned: 'text-blue-600 dark:text-blue-400',
+  card_unassigned: 'text-gray-500 dark:text-gray-400',
+  card_archived: 'text-orange-600 dark:text-orange-400',
+  card_restored: 'text-green-600 dark:text-green-400',
+  column_archived: 'text-orange-600 dark:text-orange-400',
+  column_restored: 'text-green-600 dark:text-green-400',
 };
 
 function getCardActivityDescription(entry: ActivityEntry, currentUserId?: string): string {
@@ -42,6 +54,14 @@ function getCardActivityDescription(entry: ActivityEntry, currentUserId?: string
       return `${actor} updated ${entry.fieldChanged || 'this card'}`;
     case 'comment_added':
       return `${actor} added a comment`;
+    case 'card_assigned':
+      return `${actor} assigned this card to ${entry.targetEmail || 'someone'}`;
+    case 'card_unassigned':
+      return `${actor} unassigned this card from ${entry.targetEmail || 'someone'}`;
+    case 'card_archived':
+      return `${actor} archived this card`;
+    case 'card_restored':
+      return `${actor} restored this card`;
     default:
       return `${actor} performed an action`;
   }

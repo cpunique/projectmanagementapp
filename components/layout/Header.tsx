@@ -15,6 +15,7 @@ import SyncStatus from '@/components/ui/SyncStatus';
 import SaveButton from '@/components/ui/SaveButton';
 import NotificationBell from '@/components/ui/NotificationBell';
 import SearchBar from '@/components/ui/SearchBar';
+import Tooltip from '@/components/ui/Tooltip';
 import { useUnreadActivityCount } from '@/lib/hooks/useUnreadActivityCount';
 import { useToast } from '@/components/ui/Toast';
 
@@ -35,6 +36,8 @@ const Header = () => {
   const boards = useKanbanStore((state) => state.boards);
   const zoomLevel = useKanbanStore((state) => state.zoomLevel);
   const setZoomLevel = useKanbanStore((state) => state.setZoomLevel);
+  const archivePanelOpen = useKanbanStore((state) => state.archivePanelOpen);
+  const activeView = useKanbanStore((state) => state.activeView);
 
   // Admin demo board state
   const [isDemoEditMode, setIsDemoEditMode] = useState(false);
@@ -124,7 +127,7 @@ const Header = () => {
               <span className="text-white font-bold">K</span>
             </div>
             <h1 className="text-xl font-bold text-gray-900 dark:text-white">
-              Kanban
+              Kan-do
             </h1>
           </div>
 
@@ -134,7 +137,33 @@ const Header = () => {
           </div>
 
           {/* Controls */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            {/* Board / Calendar View Toggle - Desktop only — placed first so it never gets cut off */}
+            {activeBoard && (
+              <div className="hidden md:flex items-center border border-gray-300 dark:border-gray-600 rounded-lg overflow-hidden">
+                <button
+                  onClick={() => useKanbanStore.getState().setActiveView('board')}
+                  className={`px-3 py-1.5 text-xs font-medium transition-colors ${
+                    activeView === 'board'
+                      ? 'bg-purple-600 text-white'
+                      : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
+                  }`}
+                >
+                  Board
+                </button>
+                <button
+                  onClick={() => useKanbanStore.getState().setActiveView('calendar')}
+                  className={`px-3 py-1.5 text-xs font-medium transition-colors ${
+                    activeView === 'calendar'
+                      ? 'bg-purple-600 text-white'
+                      : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
+                  }`}
+                >
+                  Calendar
+                </button>
+              </div>
+            )}
+
             {/* Search */}
             {activeBoard && <SearchBar />}
 
@@ -146,13 +175,13 @@ const Header = () => {
 
             {/* Admin Demo Edit Button - Only show when admin user */}
             {canEditDemo && (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5">
                 {!isDemoEditMode ? (
                   <Button
                     variant="outline"
                     size="sm"
+                    className="text-xs"
                     onClick={() => setIsDemoEditMode(true)}
-                    title="Save current board as the demo board for landing page"
                   >
                     Edit Demo
                   </Button>
@@ -161,18 +190,18 @@ const Header = () => {
                     <Button
                       variant="primary"
                       size="sm"
+                      className="text-xs"
                       onClick={handleSaveDemoBoard}
                       disabled={savingDemo}
-                      title="Save this board as the demo board visible to all users on landing page"
                     >
                       {savingDemo ? 'Saving...' : 'Save Demo'}
                     </Button>
                     <Button
                       variant="outline"
                       size="sm"
+                      className="text-xs"
                       onClick={() => setIsDemoEditMode(false)}
                       disabled={savingDemo}
-                      title="Cancel demo board editing"
                     >
                       Cancel
                     </Button>
@@ -184,29 +213,27 @@ const Header = () => {
             {/* Sync Status + Health Dashboard */}
             <div className="flex items-center gap-1">
               <SyncStatus />
-              <button
-                onClick={() => setShowHealthDashboard(true)}
-                className="p-1.5 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors text-gray-500 dark:text-gray-400"
-                title="System health"
-                aria-label="Show system health dashboard"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </button>
+              <Tooltip position="bottom" text="System health">
+                <button
+                  onClick={() => setShowHealthDashboard(true)}
+                  className="p-1.5 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors text-gray-500 dark:text-gray-400"
+                  aria-label="Show system health dashboard"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </button>
+              </Tooltip>
             </div>
-
-            {/* User Menu */}
-            <UserMenu />
 
             {/* Demo Toggle - Only show for authenticated users */}
             {user && (
               <Button
                 variant={demoMode ? 'primary' : 'outline'}
                 size="sm"
+                className="text-xs"
                 onClick={handleToggleDemoMode}
                 disabled={loadingDemo}
-                title={demoMode ? 'Disable demo mode' : 'Enable demo mode'}
               >
                 {loadingDemo ? 'Loading...' : 'Demo'}
               </Button>
@@ -214,123 +241,147 @@ const Header = () => {
 
             {/* Activity Feed Toggle - Desktop only (hidden on landing page) */}
             {activeBoard && (
-              <button
-                onClick={() => useKanbanStore.getState().toggleActivityPanel()}
-                className="hidden md:flex relative p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors text-gray-600 dark:text-gray-400"
-                title={useKanbanStore.getState().activityPanelOpen ? 'Hide activity' : 'Show activity'}
-                aria-label="Toggle activity panel"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                {unreadActivityCount > 0 && (
-                  <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-purple-600 text-white text-xs font-bold flex items-center justify-center">
-                    {unreadActivityCount > 9 ? '9+' : unreadActivityCount}
-                  </span>
-                )}
-              </button>
+              <Tooltip position="bottom" text="Activity feed">
+                <button
+                  onClick={() => useKanbanStore.getState().toggleActivityPanel()}
+                  className="hidden md:flex relative p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors text-gray-600 dark:text-gray-400"
+                  aria-label="Toggle activity panel"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  {unreadActivityCount > 0 && (
+                    <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-purple-600 text-white text-xs font-bold flex items-center justify-center">
+                      {unreadActivityCount > 9 ? '9+' : unreadActivityCount}
+                    </span>
+                  )}
+                </button>
+              </Tooltip>
             )}
 
             {/* Analytics Panel Toggle - Desktop only */}
             {activeBoard && (
-              <button
-                onClick={() => useKanbanStore.getState().toggleAnalyticsPanel()}
-                className="hidden md:flex relative p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors text-gray-600 dark:text-gray-400"
-                title={useKanbanStore.getState().analyticsPanelOpen ? 'Hide analytics' : 'Show analytics'}
-                aria-label="Toggle analytics panel"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                </svg>
-              </button>
+              <Tooltip position="bottom" text="Analytics">
+                <button
+                  onClick={() => useKanbanStore.getState().toggleAnalyticsPanel()}
+                  className="hidden md:flex relative p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors text-gray-600 dark:text-gray-400"
+                  aria-label="Toggle analytics panel"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                  </svg>
+                </button>
+              </Tooltip>
+            )}
+
+            {/* Archive Panel Toggle - Desktop only */}
+            {activeBoard && (
+              <Tooltip position="bottom" text="Archive">
+                <button
+                  onClick={() => useKanbanStore.getState().toggleArchivePanel()}
+                  className={`hidden md:flex relative p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors ${
+                    archivePanelOpen ? 'text-orange-500' : 'text-gray-600 dark:text-gray-400'
+                  }`}
+                  aria-label="Toggle archive panel"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+                  </svg>
+                </button>
+              </Tooltip>
             )}
 
             {/* Due Dates Panel Toggle - Desktop only (hidden on landing page) */}
             {activeBoard && (
-              <button
-                onClick={toggleDueDatePanel}
-                className="hidden md:flex relative p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-                title={dueDatePanelOpen ? 'Hide due dates' : 'Show due dates'}
-                aria-label={dueDatePanelOpen ? 'Hide due dates panel' : 'Show due dates panel'}
-                aria-expanded={dueDatePanelOpen}
-              >
-                📅
-                {/* Badge for due date count */}
-                {cardsWithDueDates > 0 && (
-                  <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-red-500 text-white text-xs font-bold flex items-center justify-center">
-                    {cardsWithDueDates > 9 ? '9+' : cardsWithDueDates}
-                  </span>
-                )}
-              </button>
+              <Tooltip position="bottom" text="Due dates">
+                <button
+                  onClick={toggleDueDatePanel}
+                  className="hidden md:flex relative p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                  aria-label={dueDatePanelOpen ? 'Hide due dates panel' : 'Show due dates panel'}
+                  aria-expanded={dueDatePanelOpen}
+                >
+                  📅
+                  {/* Badge for due date count */}
+                  {cardsWithDueDates > 0 && (
+                    <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-red-500 text-white text-xs font-bold flex items-center justify-center">
+                      {cardsWithDueDates > 9 ? '9+' : cardsWithDueDates}
+                    </span>
+                  )}
+                </button>
+              </Tooltip>
             )}
 
             {/* Help Button */}
-            <button
-              onClick={() => setShowHelp(true)}
-              className="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors text-gray-600 dark:text-gray-400"
-              title="Help guide"
-              aria-label="Show help guide"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </button>
+            <Tooltip position="bottom" text="Help guide">
+              <button
+                onClick={() => setShowHelp(true)}
+                className="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors text-gray-600 dark:text-gray-400"
+                aria-label="Show help guide"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </button>
+            </Tooltip>
 
             {/* Keyboard Shortcuts Button */}
-            <button
-              onClick={() => setShowKeyboardShortcuts(true)}
-              className="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors text-gray-600 dark:text-gray-400"
-              title="Keyboard shortcuts (?)"
-              aria-label="Show keyboard shortcuts"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
-              </svg>
-            </button>
+            <Tooltip position="bottom" text="Keyboard shortcuts">
+              <button
+                onClick={() => setShowKeyboardShortcuts(true)}
+                className="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors text-gray-600 dark:text-gray-400"
+                aria-label="Show keyboard shortcuts"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+                </svg>
+              </button>
+            </Tooltip>
 
             {/* Zoom Control */}
             <div className="flex items-center gap-1">
-              <button
-                onClick={() => setZoomLevel(zoomLevel - 10)}
-                disabled={zoomLevel <= 50}
-                className="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors text-gray-600 dark:text-gray-400 disabled:opacity-30"
-                title="Zoom out"
-                aria-label="Zoom out"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
-                </svg>
-              </button>
+              <Tooltip position="bottom" text="Zoom out">
+                <button
+                  onClick={() => setZoomLevel(zoomLevel - 10)}
+                  disabled={zoomLevel <= 50}
+                  className="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors text-gray-600 dark:text-gray-400 disabled:opacity-30"
+                  aria-label="Zoom out"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
+                  </svg>
+                </button>
+              </Tooltip>
               <span className="text-xs text-gray-500 dark:text-gray-400 w-8 text-center tabular-nums">{zoomLevel}%</span>
-              <button
-                onClick={() => setZoomLevel(zoomLevel + 10)}
-                disabled={zoomLevel >= 150}
-                className="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors text-gray-600 dark:text-gray-400 disabled:opacity-30"
-                title="Zoom in"
-                aria-label="Zoom in"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                </svg>
-              </button>
+              <Tooltip position="bottom" text="Zoom in">
+                <button
+                  onClick={() => setZoomLevel(zoomLevel + 10)}
+                  disabled={zoomLevel >= 150}
+                  className="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors text-gray-600 dark:text-gray-400 disabled:opacity-30"
+                  aria-label="Zoom in"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                </button>
+              </Tooltip>
             </div>
 
             {/* Dark Mode Toggle */}
-            <button
-              onClick={toggleDarkMode}
-              className="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-              title={darkMode ? 'Light mode' : 'Dark mode'}
-              aria-label={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
-            >
-              {darkMode ? '☀️' : '🌙'}
-            </button>
+            <Tooltip position="bottom" text={darkMode ? 'Light mode' : 'Dark mode'}>
+              <button
+                onClick={toggleDarkMode}
+                className="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                aria-label={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
+              >
+                {darkMode ? '☀️' : '🌙'}
+              </button>
+            </Tooltip>
 
             {/* Admin Tools - Only show for admin users */}
             {userIsAdmin && (
               <div className="relative group">
                 <button
                   className="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors text-sm"
-                  title="Admin tools"
                   aria-label="Admin tools menu"
                 >
                   🔧
@@ -351,6 +402,9 @@ const Header = () => {
                 </div>
               </div>
             )}
+
+            {/* User Menu — always last, anchored to far right (standard convention) */}
+            <UserMenu />
           </div>
         </div>
       </Container>

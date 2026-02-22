@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { LEGAL_VERSIONS, LEGAL_LAST_UPDATED } from '@/types/legal';
 
 export const metadata: Metadata = {
-  title: 'Terms of Service - Kanban Board',
+  title: 'Terms of Service - Kan-do',
   description: 'Terms of Service for our project management application',
 };
 
@@ -77,7 +77,7 @@ export default function TermsOfService() {
               We provide a project management application featuring:
             </p>
             <ul className="list-disc list-inside text-gray-700 dark:text-gray-300 space-y-2 my-4">
-              <li>Kanban board interface for task management</li>
+              <li>Kan-do board interface for task management</li>
               <li>AI-powered task description generation using Anthropic's GPT models</li>
               <li>Board sharing and collaboration features</li>
               <li>Cloud synchronization via Firebase</li>

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useKanbanStore } from '@/lib/store';
 import { useAuth } from '@/lib/firebase/AuthContext';
 import { updateBoard, createBoard, setUserDefaultBoard, getBoard } from '@/lib/firebase/firestore';
+import { setBoardRemoteVersion } from '@/lib/firebase/storeSync';
 import { cn } from '@/lib/utils';
 import { Board, Card, CardComment } from '@/types';
 
@@ -160,6 +161,9 @@ const SaveButton = () => {
           }
 
           await updateBoard(currentBoard.id, boardToSave);
+          // Update boardRemoteVersions so the pending auto-save debounce doesn't
+          // see the server timestamp as "newer" and trigger a false positive conflict
+          setBoardRemoteVersion(currentBoard.id, new Date().toISOString());
         } else {
           // New board not yet in Firebase - create it with ownerId and ownerEmail
           const boardToCreate = { ...currentBoard, ownerId: user.uid, ownerEmail: user.email || '' };

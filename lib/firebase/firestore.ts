@@ -11,6 +11,7 @@ import {
   getDocs,
   onSnapshot,
   serverTimestamp,
+  deleteField,
   Timestamp,
   arrayUnion,
   limit,
@@ -172,12 +173,24 @@ export async function updateBoard(
 ) {
   const boardRef = doc(getBoardsCollection(), boardId);
 
+  // Identify top-level fields explicitly set to undefined — these must be deleted
+  // from Firestore using deleteField(). deepSanitize only strips them, causing
+  // updateDoc (which merges, not replaces) to leave the old Firestore value in place.
+  // Example: clearing board.background would otherwise leave the old gradient in Firestore.
+  const fieldsToDelete: Record<string, ReturnType<typeof deleteField>> = {};
+  for (const key of Object.keys(updates as any)) {
+    if ((updates as any)[key] === undefined) {
+      fieldsToDelete[key] = deleteField();
+    }
+  }
+
   // Deep sanitization to remove all undefined values including nested ones
   const sanitizedUpdates = deepSanitize(updates);
 
   try {
     await updateDoc(boardRef, {
       ...sanitizedUpdates,
+      ...fieldsToDelete,
       updatedAt: serverTimestamp(),
     });
   } catch (error: any) {

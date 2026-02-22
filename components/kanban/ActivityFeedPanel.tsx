@@ -18,6 +18,12 @@ const EVENT_ICONS: Record<ActivityEventType, string> = {
   column_added: '▐',
   column_deleted: '▐',
   board_shared: '👤',
+  card_assigned: '👤',
+  card_unassigned: '✕',
+  card_archived: '↓',
+  card_restored: '↑',
+  column_archived: '↓',
+  column_restored: '↑',
 };
 
 const EVENT_COLORS: Record<ActivityEventType, string> = {
@@ -29,6 +35,12 @@ const EVENT_COLORS: Record<ActivityEventType, string> = {
   column_added: 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400',
   column_deleted: 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400',
   board_shared: 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400',
+  card_assigned: 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400',
+  card_unassigned: 'bg-gray-100 dark:bg-gray-700/50 text-gray-600 dark:text-gray-400',
+  card_archived: 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400',
+  card_restored: 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400',
+  column_archived: 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400',
+  column_restored: 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400',
 };
 
 function getActivityDescription(entry: ActivityEntry, currentUserId?: string): string {
@@ -53,6 +65,18 @@ function getActivityDescription(entry: ActivityEntry, currentUserId?: string): s
       return `${actor} deleted column "${entry.columnTitle}"`;
     case 'board_shared':
       return `${actor} shared this board with ${entry.targetEmail}`;
+    case 'card_assigned':
+      return `${actor} assigned "${entry.cardTitle}" to ${entry.targetEmail || 'someone'}`;
+    case 'card_unassigned':
+      return `${actor} unassigned "${entry.cardTitle}" from ${entry.targetEmail || 'someone'}`;
+    case 'card_archived':
+      return `${actor} archived "${entry.cardTitle}"`;
+    case 'card_restored':
+      return `${actor} restored "${entry.cardTitle}"`;
+    case 'column_archived':
+      return `${actor} archived column "${entry.columnTitle}"`;
+    case 'column_restored':
+      return `${actor} restored column "${entry.columnTitle}"`;
     default:
       return `${actor} performed an action`;
   }

@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { LEGAL_VERSIONS, LEGAL_LAST_UPDATED } from '@/types/legal';
 
 export const metadata: Metadata = {
-  title: 'AI Usage Policy - Kanban Board',
+  title: 'AI Usage Policy - Kan-do',
   description: 'AI Usage Policy for our project management application',
 };
 

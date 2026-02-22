@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { LEGAL_VERSIONS, LEGAL_LAST_UPDATED } from '@/types/legal';
 
 export const metadata: Metadata = {
-  title: 'Privacy Policy - Kanban Board',
+  title: 'Privacy Policy - Kan-do',
   description: 'Privacy Policy for our project management application',
 };
 

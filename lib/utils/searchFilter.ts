@@ -9,7 +9,8 @@ export function filterCards(
   query: string,
   filters: KanbanState['filters']
 ): Card[] {
-  let result = cards;
+  // Exclude archived cards from all normal board/calendar views
+  let result = cards.filter((card) => !card.archived);
   const trimmed = query.trim().toLowerCase();
 
   // Text search: match title, description, or tags
@@ -52,6 +53,13 @@ export function filterCards(
     );
   }
 
+  // Assignee filter
+  if (filters.assignees && filters.assignees.length > 0) {
+    result = result.filter(
+      (card) => card.assignees?.some((id) => filters.assignees!.includes(id))
+    );
+  }
+
   return result;
 }
 
@@ -64,6 +72,7 @@ export function hasActiveFilters(query: string, filters: KanbanState['filters'])
     (filters.priorities?.length ?? 0) > 0 ||
     (filters.tags?.length ?? 0) > 0 ||
     !!filters.dueDateRange ||
-    !!filters.showOverdue
+    !!filters.showOverdue ||
+    (filters.assignees?.length ?? 0) > 0
   );
 }
