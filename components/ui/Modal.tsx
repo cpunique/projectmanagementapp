@@ -8,6 +8,7 @@ interface ModalProps {
   onClose: () => void;
   title?: string;
   children: React.ReactNode;
+  footer?: React.ReactNode;
   className?: string;
   contentClassName?: string;
 }
@@ -17,6 +18,7 @@ const Modal = ({
   onClose,
   title,
   children,
+  footer,
   className,
   contentClassName,
 }: ModalProps) => {
@@ -48,7 +50,7 @@ const Modal = ({
       <div className="absolute inset-0 overflow-y-auto p-8 flex items-center justify-center">
         <div
           className={cn(
-            'relative bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-3xl w-full max-h-[85vh] overflow-y-auto my-8',
+            'relative bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-3xl w-full max-h-[85vh] flex flex-col my-8',
             'transform transition-all duration-200',
             contentClassName
           )}
@@ -56,7 +58,7 @@ const Modal = ({
         >
           {/* Header */}
           {title && (
-            <div className="sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-8 py-5 flex items-center justify-center relative z-10">
+            <div className="flex-shrink-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-8 py-5 flex items-center justify-center relative z-10 rounded-t-xl">
               <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">
                 {title}
               </h2>
@@ -81,8 +83,15 @@ const Modal = ({
             </div>
           )}
 
-          {/* Content */}
-          <div className="px-8 py-6">{children}</div>
+          {/* Scrollable Content */}
+          <div className="px-8 py-6 overflow-y-auto flex-1 min-h-0">{children}</div>
+
+          {/* Sticky Footer */}
+          {footer && (
+            <div className="flex-shrink-0 border-t border-gray-200 dark:border-gray-700 px-8 py-4 bg-white dark:bg-gray-800 rounded-b-xl">
+              {footer}
+            </div>
+          )}
         </div>
       </div>
     </div>

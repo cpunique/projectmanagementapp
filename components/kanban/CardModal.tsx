@@ -259,8 +259,39 @@ const CardModal = ({ isOpen, onClose, card, boardId, canEdit = false }: CardModa
 
   if (!card) return null;
 
+  const footer = (
+    <div className="flex gap-3 justify-center">
+      {canEdit && (
+        <button
+          onClick={() => {
+            archiveCard(boardId, card.id);
+            showToast('Card archived', 'info');
+            onClose();
+          }}
+          className="min-w-[80px] px-4 py-2 text-orange-600 hover:bg-orange-50 dark:text-orange-400 dark:hover:bg-orange-900/20 border border-orange-300 dark:border-orange-700 rounded-lg transition-colors font-medium text-xs"
+          title="Archive this card (can be restored from the Archive panel)"
+        >
+          Archive
+        </button>
+      )}
+      <button
+        onClick={onClose}
+        className="min-w-[80px] px-6 py-2 border border-gray-300 text-gray-900 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-100 dark:hover:bg-gray-900 rounded-lg transition-colors duration-200 font-medium shadow-sm hover:shadow-md text-xs"
+      >
+        Cancel
+      </button>
+      <button
+        onClick={handleSave}
+        disabled={!title.trim()}
+        className="min-w-[80px] px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors duration-200 font-medium shadow-sm hover:shadow-md text-xs disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        Save
+      </button>
+    </div>
+  );
+
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Edit Card">
+    <Modal isOpen={isOpen} onClose={onClose} title="Edit Card" footer={footer}>
       {/* Scrollable Content */}
       <div className="space-y-4">
 
@@ -636,35 +667,6 @@ const CardModal = ({ isOpen, onClose, card, boardId, canEdit = false }: CardModa
         />
       )}
 
-      {/* Action Buttons - Sticky Footer */}
-      <div className="flex gap-3 justify-center pt-6 mt-6 border-t border-gray-200 dark:border-gray-700">
-        {canEdit && (
-          <button
-            onClick={() => {
-              archiveCard(boardId, card.id);
-              showToast('Card archived', 'info');
-              onClose();
-            }}
-            className="min-w-[80px] px-4 py-2 text-orange-600 hover:bg-orange-50 dark:text-orange-400 dark:hover:bg-orange-900/20 border border-orange-300 dark:border-orange-700 rounded-lg transition-colors font-medium text-xs"
-            title="Archive this card (can be restored from the Archive panel)"
-          >
-            Archive
-          </button>
-        )}
-        <button
-          onClick={onClose}
-          className="min-w-[80px] px-6 py-2 border border-gray-300 text-gray-900 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-100 dark:hover:bg-gray-900 rounded-lg transition-colors duration-200 font-medium shadow-sm hover:shadow-md text-xs"
-        >
-          Cancel
-        </button>
-        <button
-          onClick={handleSave}
-          disabled={!title.trim()}
-          className="min-w-[80px] px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors duration-200 font-medium shadow-sm hover:shadow-md text-xs disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          Save
-        </button>
-      </div>
     </Modal>
   );
 };
