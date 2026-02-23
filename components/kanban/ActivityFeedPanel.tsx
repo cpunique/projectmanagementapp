@@ -93,7 +93,7 @@ export default function ActivityFeedPanel() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!activityPanelOpen || !activeBoard) {
+    if (!activityPanelOpen || !activeBoard || !user) {
       setActivities([]);
       setLoading(false);
       return;
@@ -110,7 +110,7 @@ export default function ActivityFeedPanel() {
     return () => {
       try { unsubscribe(); } catch (_) { /* Firestore SDK v12 internal race — safe to ignore */ }
     };
-  }, [activityPanelOpen, activeBoard]);
+  }, [activityPanelOpen, activeBoard, user]);
 
   return (
     <AnimatePresence>
