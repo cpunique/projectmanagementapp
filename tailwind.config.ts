@@ -7,7 +7,23 @@ const config: Config = {
     './components/**/*.{js,ts,jsx,tsx,mdx}',
   ],
   theme: {
-    extend: {},
+    extend: {
+      colors: {
+        gray: {
+          50:  '#f8f7f6',
+          100: '#f0eeec',
+          200: '#e2deda',
+          300: '#c8c2bc',
+          400: '#9e9690',
+          500: '#6e6560',
+          600: '#4a4240',
+          700: '#322d2a',
+          800: '#231f1c',
+          900: '#161412',
+          950: '#0a0908',
+        },
+      },
+    },
   },
   plugins: [typography],
   darkMode: 'class',
