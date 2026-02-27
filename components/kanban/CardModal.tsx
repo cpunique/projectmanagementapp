@@ -9,12 +9,10 @@ import Input from '@/components/ui/Input';
 import Button from '@/components/ui/Button';
 import RichTextEditor from '@/components/ui/RichTextEditor';
 import CommentThread from './CommentThread';
-import { Card, ChecklistItem, MentionedUser, CardAttachment } from '@/types';
+import { Card, ChecklistItem, MentionedUser } from '@/types';
 import { formatDate, getDefaultCardColor, isLightColor } from '@/lib/utils';
 import { CARD_COLORS, CARD_COLOR_NAMES, LABEL_COLORS } from '@/lib/constants';
 import { useToast } from '@/components/ui/Toast';
-import AttachmentUpload from './AttachmentUpload';
-import AttachmentList from './AttachmentList';
 import CardActivityTimeline from './CardActivityTimeline';
 import AssigneeSection from './AssigneeSection';
 import DependencySection from './DependencySection';
@@ -573,38 +571,6 @@ const CardModal = ({ isOpen, onClose, card, boardId, canEdit = false }: CardModa
             </div>
           )}
         </div>
-
-        {/* Attachments Section */}
-        {card && (
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Attachments {(card.attachments?.length || 0) > 0 && (
-                <span className="text-gray-400 font-normal">({card.attachments!.length})</span>
-              )}
-            </label>
-            <AttachmentList
-              attachments={card.attachments || []}
-              onDelete={(attachmentId) => {
-                const updated = (card.attachments || []).filter((a) => a.id !== attachmentId);
-                updateCard(boardId, card.id, { attachments: updated });
-              }}
-              canEdit={!!user}
-            />
-            {user && (
-              <div className="mt-2">
-                <AttachmentUpload
-                  boardId={boardId}
-                  cardId={card.id}
-                  existingCount={card.attachments?.length || 0}
-                  onUploaded={(attachment) => {
-                    const updated = [...(card.attachments || []), attachment];
-                    updateCard(boardId, card.id, { attachments: updated });
-                  }}
-                />
-              </div>
-            )}
-          </div>
-        )}
 
         {/* Notes Section */}
         <div>
