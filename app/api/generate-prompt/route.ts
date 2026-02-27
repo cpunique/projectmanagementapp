@@ -338,16 +338,8 @@ ${instructionRequests[instructionType]}`;
     return NextResponse.json(
       {
         error: 'Failed to generate instructions. Please try again.',
-        debugMessage: errorMessage,
-        debugType: error?.constructor?.name,
       },
-      {
-        status: 500,
-        headers: {
-          'X-Error-Message': errorMessage.substring(0, 100),
-          'X-Error-Type': error?.constructor?.name || 'Unknown',
-        }
-      }
+      { status: 500 }
     );
   }
 }

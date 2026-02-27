@@ -151,11 +151,8 @@ service cloud.firestore {
     // ============================================
 
     match /presence/{userId} {
-      // Anyone authenticated can read presence (to see who's online)
-      allow read: if isAuthenticated();
-
-      // Users can only write their own presence status
-      allow write: if isAuthenticated() && request.auth.uid == userId;
+      // Users can only read and write their own presence document
+      allow read, write: if isAuthenticated() && request.auth.uid == userId;
     }
 
     // ============================================
