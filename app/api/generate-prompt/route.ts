@@ -79,22 +79,12 @@ export async function POST(request: Request) {
 
     const idToken = authHeader.split('Bearer ')[1];
 
-    // Verify token exists and is valid length
-    if (!idToken || idToken.length < 20) {
-      return NextResponse.json(
-        { error: 'Invalid authentication token' },
-        { status: 401 }
-      );
-    }
-
-    // Decode the JWT payload to extract the user ID (sub claim)
-    // Firebase ID tokens are JWTs: header.payload.signature
+    // Verify token signature and expiry using Firebase Admin SDK
     let userId: string;
     try {
-      const payloadBase64 = idToken.split('.')[1];
-      const payload = JSON.parse(Buffer.from(payloadBase64, 'base64').toString());
-      userId = payload.sub;
-      if (!userId) throw new Error('No sub claim');
+      const { getAdminAuth } = await import('@/lib/firebase/admin');
+      const decoded = await getAdminAuth().verifyIdToken(idToken);
+      userId = decoded.uid;
     } catch {
       return NextResponse.json(
         { error: 'Invalid authentication token' },

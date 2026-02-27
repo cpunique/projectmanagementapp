@@ -68,8 +68,11 @@ service cloud.firestore {
     // ============================================
 
     match /users/{userId} {
-      // Users can read any user document (needed for board sharing feature to lookup by email)
-      allow read: if isAuthenticated();
+      // Allow fetching a specific user document (e.g. owner email lookup for shared boards)
+      // but block collection-level queries to prevent user enumeration.
+      // Board-sharing email lookup uses /api/lookup-user (Admin SDK) instead of a Firestore query.
+      allow get: if isAuthenticated();
+      allow list: if false;
 
       // Users can create their own document
       allow create: if isAuthenticated() && request.auth.uid == userId;
