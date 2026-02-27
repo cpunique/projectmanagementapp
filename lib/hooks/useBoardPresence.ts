@@ -21,6 +21,7 @@ export function useBoardPresence(boardId: string | null, enabled: boolean = true
   const [onlineUsers, setOnlineUsers] = useState<string[]>([]);
   const heartbeatCleanupRef = useRef<(() => void) | null>(null);
   const previousUserRef = useRef<string | null>(null);
+  const lastBoardIdRef = useRef<string | null>(null);
   // Track if presence was ever actively tracked in this hook instance
   const wasActivelyTrackingRef = useRef(false);
 
@@ -35,6 +36,7 @@ export function useBoardPresence(boardId: string | null, enabled: boolean = true
 
     // Mark that we're actively tracking presence
     wasActivelyTrackingRef.current = true;
+    lastBoardIdRef.current = boardId;
 
     // Guard against state updates after unmount (prevents Firestore SDK race conditions)
     let mounted = true;
@@ -92,9 +94,8 @@ export function useBoardPresence(boardId: string | null, enabled: boolean = true
     // Only set offline if we were actually tracking presence for this user
     // This prevents demo mode / landing page from triggering logout cleanup
     if (previousUserId && !currentUserId && wasActivelyTrackingRef.current) {
-      console.log('[useBoardPresence] User logged out, setting offline:', previousUserId);
-      setOffline(previousUserId);
-      // Reset tracking flag after handling logout
+      const lastBoardId = lastBoardIdRef.current;
+      if (lastBoardId) setOffline(previousUserId, lastBoardId);
       wasActivelyTrackingRef.current = false;
     }
 
@@ -106,15 +107,12 @@ export function useBoardPresence(boardId: string | null, enabled: boolean = true
     if (!user?.uid) return;
 
     const handleBeforeUnload = () => {
-      // Use sendBeacon for reliable offline status on tab close
-      // Note: This is a best-effort attempt - browser may not complete async operation
-      setOffline(user.uid);
+      if (boardId) setOffline(user.uid, boardId);
     };
 
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'hidden' && boardId) {
-        // User switched tabs or minimized window - set offline
-        setOffline(user.uid);
+        setOffline(user.uid, boardId);
       } else if (document.visibilityState === 'visible' && boardId && user.email) {
         // User came back - set online
         updatePresence(user.uid, boardId, user.email, 'online');

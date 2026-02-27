@@ -41,6 +41,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setUser(user);
 
+      // Set/clear a lightweight session marker cookie so middleware can gate
+      // server-rendered pages (e.g. /admin/*) before React hydrates.
+      // This is NOT a security token — real auth is enforced by Firestore rules
+      // and Firebase Admin verifyIdToken on API routes.
+      if (user) {
+        document.cookie = 'app-session=1; path=/; SameSite=Strict; max-age=86400';
+      } else {
+        document.cookie = 'app-session=; path=/; SameSite=Strict; max-age=0';
+      }
+
       // Write email to users collection immediately on every session — required for board-sharing lookup.
       // Non-blocking: runs in background so it doesn't delay auth state resolution.
       if (user?.email) {

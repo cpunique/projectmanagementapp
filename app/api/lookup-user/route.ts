@@ -9,6 +9,10 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminAuth } from '@/lib/firebase/admin';
+import { SimpleRateLimiter } from '@/lib/ratelimit';
+
+// 20 lookups per hour per user — enough for board sharing without enabling enumeration
+const lookupRatelimit = new SimpleRateLimiter(20);
 
 export async function GET(request: NextRequest) {
   // Require caller to be authenticated — verify their ID token
@@ -23,7 +27,13 @@ export async function GET(request: NextRequest) {
     const adminAuth = getAdminAuth();
 
     // Verify the caller's token (throws if invalid/expired)
-    await adminAuth.verifyIdToken(idToken);
+    const decoded = await adminAuth.verifyIdToken(idToken);
+
+    // Rate limit by verified user ID — 20 lookups/hour prevents email enumeration
+    const rateResult = await lookupRatelimit.limit(decoded.uid);
+    if (!rateResult.success) {
+      return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
+    }
 
     // Get the email to look up
     const email = request.nextUrl.searchParams.get('email')?.toLowerCase().trim();

@@ -147,12 +147,20 @@ service cloud.firestore {
     }
 
     // ============================================
-    // Presence Collection Rules
+    // Board Presence Subcollection Rules
+    // Scoped to /boards/{boardId}/presence/{userId} so only board members
+    // can see who's online — prevents global user enumeration.
     // ============================================
 
-    match /presence/{userId} {
-      // Users can only read and write their own presence document
-      allow read, write: if isAuthenticated() && request.auth.uid == userId;
+    match /boards/{boardId}/presence/{userId} {
+      // Read: same access check as the parent board
+      allow read: if isAuthenticated() &&
+                    (get(/databases/$(database)/documents/boards/$(boardId)).data.ownerId == request.auth.uid ||
+                     (get(/databases/$(database)/documents/boards/$(boardId)).data.sharedWithUserIds != null &&
+                      request.auth.uid in get(/databases/$(database)/documents/boards/$(boardId)).data.sharedWithUserIds));
+
+      // Write: users can only update their own presence document
+      allow write: if isAuthenticated() && request.auth.uid == userId;
     }
 
     // ============================================
