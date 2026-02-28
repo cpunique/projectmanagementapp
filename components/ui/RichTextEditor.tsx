@@ -34,14 +34,20 @@ const RichTextEditor = ({
         }),
         Link.configure({
           openOnClick: false,
+          HTMLAttributes: {
+            target: '_blank',
+            rel: 'noopener noreferrer',
+          },
         }),
       ],
       content: value,
       onUpdate: ({ editor }) => {
         const html = editor.getHTML();
         const sanitized = DOMPurify.sanitize(html, {
-          ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'u', 'h1', 'h2', 'h3', 'ul', 'ol', 'li', 'blockquote'],
-          ALLOWED_ATTR: []
+          ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'u', 'h1', 'h2', 'h3', 'ul', 'ol', 'li', 'blockquote', 'a', 'code', 'pre'],
+          ALLOWED_ATTR: ['href', 'target', 'rel'],
+          // Only allow http/https links — blocks javascript:, data:, vbscript: and all other dangerous protocols
+          ALLOWED_URI_REGEXP: /^https?:\/\//i,
         });
         onChange?.(sanitized);
       },
@@ -184,7 +190,9 @@ const Toolbar = ({ editor }: ToolbarProps) => {
         onClick={() => {
           const url = prompt('Enter URL:');
           if (url) {
-            editor.chain().focus().setLink({ href: url }).run();
+            // Ensure protocol is present and safe — default bare domains to https://
+            const safeUrl = /^https?:\/\//i.test(url.trim()) ? url.trim() : `https://${url.trim()}`;
+            editor.chain().focus().setLink({ href: safeUrl }).run();
           }
         }}
         className={cn(buttonClass, editor.isActive('link') && activeButtonClass)}
