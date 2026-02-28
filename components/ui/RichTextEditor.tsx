@@ -34,6 +34,7 @@ const RichTextEditor = ({
         }),
         Link.configure({
           openOnClick: false,
+          autolink: true,
           HTMLAttributes: {
             target: '_blank',
             rel: 'noopener noreferrer',
@@ -192,7 +193,18 @@ const Toolbar = ({ editor }: ToolbarProps) => {
           if (url) {
             // Ensure protocol is present and safe — default bare domains to https://
             const safeUrl = /^https?:\/\//i.test(url.trim()) ? url.trim() : `https://${url.trim()}`;
-            editor.chain().focus().setLink({ href: safeUrl }).run();
+            const { from, to } = editor.state.selection;
+            if (from === to) {
+              // Nothing selected — insert the URL as the visible link text
+              editor.chain().focus().insertContent({
+                type: 'text',
+                text: safeUrl,
+                marks: [{ type: 'link', attrs: { href: safeUrl } }],
+              }).run();
+            } else {
+              // Text is selected — wrap it with the link
+              editor.chain().focus().setLink({ href: safeUrl }).run();
+            }
           }
         }}
         className={cn(buttonClass, editor.isActive('link') && activeButtonClass)}
