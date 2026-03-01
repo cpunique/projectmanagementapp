@@ -227,7 +227,7 @@ const Column = ({
       }}
       onDragOver={onColumnDragOver}
       className={`
-        w-72 flex-shrink-0 rounded-lg flex flex-col my-4 transition-all overflow-hidden max-h-full
+        w-72 flex-shrink-0 rounded-lg flex flex-col my-4 transition-all overflow-hidden h-full
         ${isDraggingColumn
           ? 'opacity-50 cursor-grabbing shadow-2xl scale-105'
           : 'opacity-100 cursor-grab shadow-sm hover:shadow-md'

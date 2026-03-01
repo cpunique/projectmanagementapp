@@ -319,7 +319,7 @@ const KanbanBoard = () => {
 
         {/* Columns Grid */}
         <div className="overflow-x-auto overflow-y-visible pb-4 h-[calc(100vh-200px)]">
-          <div className="flex gap-4 min-w-min items-start h-full">
+          <div className="flex gap-4 min-w-min items-stretch h-full">
             {board.columns.filter((c) => !c.archived).map((column, index) => (
               <Column
                 key={column.id}
