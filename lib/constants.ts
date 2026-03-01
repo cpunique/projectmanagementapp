@@ -14,7 +14,6 @@ export const DESCOPED_COLUMN_KEYWORDS = [
   "descoped",
   "descope",
   "out of scope",
-  "backlog",
 ] as const;
 
 export const PRIORITY_COLORS = {
