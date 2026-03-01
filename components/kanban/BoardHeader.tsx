@@ -16,9 +16,10 @@ const PURPOSE_OPTIONS: { value: InstructionType; label: string; icon: string; de
 
 interface BoardHeaderProps {
   boardId: string;
+  onGenerateTasks?: () => void;
 }
 
-export default function BoardHeader({ boardId }: BoardHeaderProps) {
+export default function BoardHeader({ boardId, onGenerateTasks }: BoardHeaderProps) {
   const { user } = useAuth();
   const boards = useKanbanStore((state) => state.boards);
   const updateBoardDescription = useKanbanStore((state) => state.updateBoardDescription);
@@ -65,8 +66,9 @@ export default function BoardHeader({ boardId }: BoardHeaderProps) {
 
   return (
     <div className="mt-2 space-y-2">
-      {/* Board Purpose Selector */}
+      {/* Board Purpose Selector + Generate Tasks */}
       {user && (
+        <div className="flex items-center gap-2 flex-wrap">
         <div className="relative inline-block">
           <button
             onClick={() => setShowPurposeDropdown(!showPurposeDropdown)}
@@ -121,6 +123,17 @@ export default function BoardHeader({ boardId }: BoardHeaderProps) {
               </div>
             </>
           )}
+        </div>
+
+        {onGenerateTasks && (
+          <button
+            onClick={onGenerateTasks}
+            className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 hover:bg-purple-200 dark:hover:bg-purple-900/50 transition-colors"
+            title="Generate task cards with AI"
+          >
+            ✦ Generate Tasks
+          </button>
+        )}
         </div>
       )}
 

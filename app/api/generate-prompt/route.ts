@@ -8,6 +8,25 @@ import { canAccessProFeaturesById, isProUserId } from '@/lib/features/featureGat
 // Instruction type definitions
 type InstructionType = 'development' | 'general' | 'event-planning' | 'documentation' | 'research';
 
+// System prompt for structured JSON task output (board-level AI task generation)
+const STRUCTURED_SYSTEM_PROMPT = `You are a task planning assistant. Break down the given goal into actionable kanban cards.
+
+Respond ONLY with valid JSON — no markdown, no code fences, no text outside the JSON object.
+
+Return exactly this shape:
+{
+  "overview": "2-3 sentence plain-text summary of the plan",
+  "tasks": [
+    { "title": "Action-oriented task title", "priority": "high", "description": "1-2 sentence plain-text description" }
+  ]
+}
+
+Guidelines:
+- Generate 4-10 tasks (scale with complexity of the goal)
+- Titles must be imperative: "Set up Firebase Auth" not "Firebase Auth Setup"
+- priority values: "high" = blocking or must-do-first, "medium" = important, "low" = nice-to-have
+- description is plain text only, no markdown formatting`;
+
 // Formatting instruction for Word 365 style output (plain text, no markdown)
 const FORMATTING_INSTRUCTION = `
 
@@ -64,6 +83,7 @@ const GeneratePromptSchema = z.object({
   })).max(50, 'Too many checklist items').optional(),
   tags: z.array(z.string().max(50, 'Tag too long')).max(20, 'Too many tags').optional(),
   priority: z.enum(['low', 'medium', 'high']).optional(),
+  structured: z.boolean().optional().default(false),
 });
 
 export async function POST(request: Request) {
@@ -85,7 +105,8 @@ export async function POST(request: Request) {
       const { getAdminAuth } = await import('@/lib/firebase/admin');
       const decoded = await getAdminAuth().verifyIdToken(idToken);
       userId = decoded.uid;
-    } catch {
+    } catch (tokenError: any) {
+      console.error('[AI Prompt] Token verification failed:', tokenError?.code, tokenError?.message);
       return NextResponse.json(
         { error: 'Invalid authentication token' },
         { status: 401 }
@@ -159,7 +180,66 @@ export async function POST(request: Request) {
       );
     }
 
-    // 6. Build context prompt based on instruction type
+    // 6a. Structured mode — generate JSON task list for board-level card creation
+    if (data.structured) {
+      const model = process.env.NEXT_PUBLIC_CLAUDE_MODEL || 'claude-sonnet-4-20250514';
+      let structuredUserMsg = `Goal: ${data.cardTitle}\n`;
+      if (data.boardName) structuredUserMsg += `Board: ${data.boardName}\n`;
+      if (data.description) structuredUserMsg += `Context: ${data.description}\n`;
+
+      try {
+        const response = await fetch('https://api.anthropic.com/v1/messages', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': apiKey,
+            'anthropic-version': '2023-06-01',
+          },
+          body: JSON.stringify({
+            model,
+            max_tokens: 2048,
+            messages: [{ role: 'user', content: `${STRUCTURED_SYSTEM_PROMPT}\n\n${structuredUserMsg}` }],
+          }),
+        });
+
+        const message = await response.json();
+        if (!response.ok) {
+          throw new Error(`API returned ${response.status}: ${message.error?.message || 'Unknown error'}`);
+        }
+
+        const rawText = message.content
+          .filter((block: any) => block.type === 'text')
+          .map((block: any) => block.text)
+          .join('\n');
+
+        // Strip potential markdown code fences Claude may wrap around JSON
+        const cleaned = rawText.replace(/^```json\s*/i, '').replace(/```\s*$/, '').trim();
+
+        let parsed: { overview: string; tasks: { title: string; priority: string; description: string }[] };
+        try {
+          parsed = JSON.parse(cleaned);
+        } catch {
+          console.error('[AI Prompt] Failed to parse structured JSON:', cleaned.slice(0, 200));
+          return NextResponse.json(
+            { error: 'Failed to parse task list. Please try again.' },
+            { status: 500 }
+          );
+        }
+
+        return NextResponse.json(
+          { overview: parsed.overview, tasks: parsed.tasks, remaining },
+          { headers: { 'X-RateLimit-Remaining': remaining.toString() } }
+        );
+      } catch (apiError: any) {
+        console.error('[AI Prompt] Structured API call failed:', {
+          name: apiError?.name,
+          message: apiError?.message,
+        });
+        throw apiError;
+      }
+    }
+
+    // 6b. Plain-text mode — existing flow unchanged
     const instructionType = data.instructionType as InstructionType;
     const systemPrompt = SYSTEM_PROMPTS[instructionType];
 

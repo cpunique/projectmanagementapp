@@ -40,6 +40,8 @@ const BoardSwitcher = () => {
   const [selectedTemplate, setSelectedTemplate] = useState<BoardTemplate>(BOARD_TEMPLATES[0]);
   const [importError, setImportError] = useState<string | null>(null);
   const importInputRef = useRef<HTMLInputElement>(null);
+  const [confirmDeleteBoardId, setConfirmDeleteBoardId] = useState<string | null>(null);
+  const [confirmExportBoardId, setConfirmExportBoardId] = useState<string | null>(null);
 
   const currentBoard = boards.find((b) => b.id === activeBoard);
 
@@ -188,21 +190,41 @@ const BoardSwitcher = () => {
                 <div className="flex items-center gap-1.5">
                   {!isRenamingBoardId && (
                     <>
-                      <button
-                        onMouseDown={(e) => {
-                          e.stopPropagation();
-                          e.preventDefault();
-                        }}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          e.preventDefault();
-                          downloadBoardAsJSON(board);
-                        }}
-                        className="text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-700 p-1 rounded text-sm"
-                        title="Export board as JSON"
-                      >
-                        ↓
-                      </button>
+                      {confirmExportBoardId === board.id ? (
+                        <span className="flex items-center gap-1 text-xs">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              e.preventDefault();
+                              downloadBoardAsJSON(board);
+                              setConfirmExportBoardId(null);
+                            }}
+                            className="text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20 px-1.5 py-0.5 rounded font-medium"
+                          >
+                            Export?
+                          </button>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); e.preventDefault(); setConfirmExportBoardId(null); }}
+                            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 px-1 py-0.5 rounded"
+                          >
+                            ✕
+                          </button>
+                        </span>
+                      ) : (
+                        <button
+                          onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            setConfirmExportBoardId(board.id);
+                            setConfirmDeleteBoardId(null);
+                          }}
+                          className="text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-700 p-1 rounded text-sm"
+                          title="Export board as JSON"
+                        >
+                          ↓
+                        </button>
+                      )}
                       <button
                         onMouseDown={(e) => {
                           e.stopPropagation();
@@ -270,13 +292,40 @@ const BoardSwitcher = () => {
                     </>
                   )}
                   {boards.length > 1 && !isRenamingBoardId && (
-                    <button
-                      onClick={() => handleDeleteBoard(board.id)}
-                      className="text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 p-1 rounded text-sm"
-                      title="Delete board"
-                    >
-                      ✕
-                    </button>
+                    confirmDeleteBoardId === board.id ? (
+                      <span className="flex items-center gap-1 text-xs">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            handleDeleteBoard(board.id);
+                            setConfirmDeleteBoardId(null);
+                          }}
+                          className="text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 px-1.5 py-0.5 rounded font-medium"
+                        >
+                          Delete?
+                        </button>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); e.preventDefault(); setConfirmDeleteBoardId(null); }}
+                          className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 px-1 py-0.5 rounded"
+                        >
+                          ✕
+                        </button>
+                      </span>
+                    ) : (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          e.preventDefault();
+                          setConfirmDeleteBoardId(board.id);
+                          setConfirmExportBoardId(null);
+                        }}
+                        className="text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 p-1 rounded text-sm"
+                        title="Delete board"
+                      >
+                        ✕
+                      </button>
+                    )
                   )}
                 </div>
               </div>

@@ -3,6 +3,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { nanoid } from 'nanoid';
+import { getAuth } from 'firebase/auth';
 import type { Board, Card, Column, ChecklistItem, KanbanStore, Notification, InstructionType } from '@/types';
 import {
   MAX_COLUMNS,
@@ -153,7 +154,7 @@ export const useKanbanStore = create<KanbanStore>()(
             boardId: '',
             cards: [],
           })),
-          ownerId: '', // Will be set when synced to Firebase
+          ownerId: getAuth().currentUser?.uid || '',
           sharedWith: [],
           sharedWithUserIds: [],
         };

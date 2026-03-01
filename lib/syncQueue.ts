@@ -6,10 +6,11 @@ import {
   getPendingCount,
   db,
 } from '@/lib/db';
-import { updateBoard, getBoardUpdatedAt, getBoard } from '@/lib/firebase/firestore';
+import { updateBoard, getBoard, createBoard } from '@/lib/firebase/firestore';
 import { useKanbanStore } from '@/lib/store';
 import { getBoardRemoteVersion, setBoardRemoteVersion } from '@/lib/firebase/storeSync';
 import { reinitializeDb } from '@/lib/firebase/config';
+import { getAuth } from 'firebase/auth';
 
 const MAX_RETRIES = 5;
 const BASE_DELAY_MS = 2000; // 2s, 4s, 8s, 16s, 32s
@@ -44,34 +45,44 @@ export async function processQueue(): Promise<void> {
     if (!useKanbanStore.getState().isOnline) break;
 
     if (op.retryCount >= MAX_RETRIES) {
-      console.error('[SyncQueue] Max retries exceeded for board:', op.boardId);
+      console.error('[SyncQueue] Max retries exceeded for board:', op.boardId, '— dropping from queue');
+      await removeOperation(op.id!);
+      completed++;
       continue;
     }
 
     try {
       await markOperationInProgress(op.id!);
 
-      // Conflict detection: check if remote changed while we were offline
-      const lastKnown = getBoardRemoteVersion(op.boardId);
-      if (lastKnown) {
-        const remoteUpdatedAt = await getBoardUpdatedAt(op.boardId);
-        if (remoteUpdatedAt && new Date(remoteUpdatedAt).getTime() > new Date(lastKnown).getTime()) {
+      // Use the current in-memory board data (more up-to-date than the queued snapshot)
+      const currentBoard = useKanbanStore.getState().boards.find(b => b.id === op.boardId);
+      const boardData = currentBoard || op.boardData;
+
+      // Check whether this board exists in Firebase yet
+      const remoteBoard = await getBoard(op.boardId);
+
+      if (!remoteBoard) {
+        // Board not in Firebase — create it
+        const ownerId = boardData.ownerId || getAuth().currentUser?.uid || '';
+        await createBoard(ownerId, { ...boardData, ownerId }, boardData.ownerEmail || undefined);
+      } else {
+        // Conflict detection: check if remote changed while we were offline
+        const lastKnown = getBoardRemoteVersion(op.boardId);
+        if (lastKnown && new Date(remoteBoard.updatedAt || 0).getTime() > new Date(lastKnown).getTime()) {
           console.warn(`[SyncQueue] Conflict detected for board ${op.boardId}`);
-          const remoteBoard = await getBoard(op.boardId);
-          if (remoteBoard) {
-            store.setConflictState({
-              boardId: op.boardId,
-              localBoard: op.boardData,
-              remoteBoard,
-            });
-            // Leave in queue — user must resolve conflict first
-            await db.syncQueue.update(op.id!, { status: 'pending' });
-            continue;
-          }
+          store.setConflictState({
+            boardId: op.boardId,
+            localBoard: boardData,
+            remoteBoard,
+          });
+          // Leave in queue — user must resolve conflict first
+          await db.syncQueue.update(op.id!, { status: 'pending' });
+          continue;
         }
+
+        await updateBoard(op.boardId, boardData);
       }
 
-      await updateBoard(op.boardId, op.boardData);
       setBoardRemoteVersion(op.boardId, new Date().toISOString());
       await removeOperation(op.id!);
       completed++;

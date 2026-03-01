@@ -16,6 +16,7 @@ import Button from '@/components/ui/Button';
 import { BOARD_BACKGROUNDS } from '@/lib/constants';
 
 const KeyboardShortcutsModal = dynamic(() => import('@/components/ui/KeyboardShortcutsModal'), { ssr: false });
+const AITasksModal = dynamic(() => import('./AITasksModal'), { ssr: false });
 
 const KanbanBoard = () => {
   const { user } = useAuth();
@@ -28,6 +29,7 @@ const KanbanBoard = () => {
   const [newColumnTitle, setNewColumnTitle] = useState('');
   const [triggerAddCardColumn, setTriggerAddCardColumn] = useState<string | null>(null);
   const [showBgPicker, setShowBgPicker] = useState(false);
+  const [showAITasksModal, setShowAITasksModal] = useState(false);
   const bgPickerRef = useRef<HTMLDivElement>(null);
 
   // Keyboard shortcuts
@@ -300,7 +302,7 @@ const KanbanBoard = () => {
               </div>
             )}
           </div>
-          <BoardHeader boardId={board.id} />
+          <BoardHeader boardId={board.id} onGenerateTasks={canEdit ? () => setShowAITasksModal(true) : undefined} />
           <p className={`mt-1 ${board.background ? 'text-white/80' : 'text-gray-600 dark:text-gray-400'}`}>
             {board.columns.length} column{board.columns.length !== 1 ? 's' : ''} • {' '}
             {board.columns.reduce((sum, col) => sum + col.cards.length, 0)} total card
@@ -399,6 +401,13 @@ const KanbanBoard = () => {
 
       {/* Keyboard Shortcuts Modal */}
       <KeyboardShortcutsModal isOpen={showHelp} onClose={() => setShowHelp(false)} />
+
+      {/* AI Task Generator Modal */}
+      <AITasksModal
+        isOpen={showAITasksModal}
+        onClose={() => setShowAITasksModal(false)}
+        boardId={board.id}
+      />
     </div>
   );
 };

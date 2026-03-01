@@ -476,6 +476,14 @@ export function subscribeToStoreChanges(user: User) {
 
             if (boardWithOwner.ownerId) {
               try {
+                // If this board has never been synced to Firebase, create it instead of updating
+                if (!boardRemoteVersions.has(board.id)) {
+                  await createBoard(user.uid, { ...board, ownerEmail: user.email || '' }, user.email || undefined);
+                  boardRemoteVersions.set(board.id, new Date().toISOString());
+                  boardBaseVersions.set(board.id, structuredClone(board));
+                  continue;
+                }
+
                 // Skip conflict check if a conflict dialog is already showing
                 const currentConflict = useKanbanStore.getState().conflictState;
                 if (currentConflict) {

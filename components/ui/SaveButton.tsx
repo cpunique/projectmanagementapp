@@ -149,27 +149,23 @@ const SaveButton = () => {
           return;
         }
 
-        if (boardWithOwner.ownerId) {
-          // Board already exists in Firebase - fetch latest and merge comments
-          const remoteBoard = await getBoard(currentBoard.id);
-          let boardToSave = currentBoard;
+        // Check if board already exists in Firebase
+        const remoteBoard = await getBoard(currentBoard.id);
 
-          if (remoteBoard) {
-            // Merge comments from both local and remote to prevent overwrites
-            boardToSave = mergeBoardWithRemote(currentBoard, remoteBoard);
-            console.log('[SaveButton] Merged local changes with remote board');
-          }
-
-          await updateBoard(currentBoard.id, boardToSave);
-          // Update boardRemoteVersions so the pending auto-save debounce doesn't
-          // see the server timestamp as "newer" and trigger a false positive conflict
-          setBoardRemoteVersion(currentBoard.id, new Date().toISOString());
-        } else {
-          // New board not yet in Firebase - create it with ownerId and ownerEmail
+        if (!remoteBoard) {
+          // New board — not yet in Firebase, create it
           const boardToCreate = { ...currentBoard, ownerId: user.uid, ownerEmail: user.email || '' };
           await createBoard(user.uid, boardToCreate, user.email || undefined);
           console.log('[SaveButton] Created new board in Firebase:', currentBoard.id);
+        } else {
+          // Existing board — merge comments then update
+          const boardToSave = mergeBoardWithRemote(currentBoard, remoteBoard);
+          console.log('[SaveButton] Merged local changes with remote board');
+          await updateBoard(currentBoard.id, boardToSave);
         }
+        // Update boardRemoteVersions so the pending auto-save debounce doesn't
+        // see the server timestamp as "newer" and trigger a false positive conflict
+        setBoardRemoteVersion(currentBoard.id, new Date().toISOString());
       }
 
       // Mark as saved (changes are always saved locally via Zustand persist)
