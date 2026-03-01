@@ -144,15 +144,24 @@ const BoardSwitcher = () => {
         <div className="py-2">
           {/* Board Search */}
           {boards.length > 4 && (
-            <div className="px-3 pb-2">
+            <div className="px-3 pb-2 relative">
               <input
                 type="text"
                 value={boardSearch}
                 onChange={(e) => setBoardSearch(e.target.value)}
                 placeholder="Search boards..."
-                className="w-full px-2.5 py-1.5 text-xs rounded-md border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-purple-500"
+                className="w-full px-2.5 py-1.5 pr-7 text-xs rounded-md border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-purple-500"
                 onClick={(e) => e.stopPropagation()}
               />
+              {boardSearch && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); setBoardSearch(''); }}
+                  className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                  tabIndex={-1}
+                >
+                  ✕
+                </button>
+              )}
             </div>
           )}
           {/* Board List */}
