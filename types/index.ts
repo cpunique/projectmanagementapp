@@ -162,6 +162,7 @@ export interface KanbanState {
   };
   // Internal state for demo mode - stored boards before entering demo
   _userBoardsBackup?: Board[];
+  _preDemoActiveBoard?: string | null;
   // Due dates panel state
   dueDatePanelOpen: boolean;
   // Activity feed panel state

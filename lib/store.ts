@@ -1119,24 +1119,26 @@ export const useKanbanStore = create<KanbanStore>()(
           const newDemoMode = !state.demoMode;
 
           if (newDemoMode) {
-            // Entering demo mode - save current user boards in state and show demo board
+            // Entering demo mode - save current user boards and activeBoard for restoration
             const demoBoard = createDemoBoard();
             return {
               demoMode: newDemoMode,
               boards: [demoBoard],
               activeBoard: demoBoard.id,
-              _userBoardsBackup: state.boards, // Save boards for restoration
+              _userBoardsBackup: state.boards,
+              _preDemoActiveBoard: state.activeBoard,
             };
           } else {
-            // Exiting demo mode - restore saved user boards
-            // BUT DO NOT change activeBoard - Firebase sync has already set the correct board
+            // Exiting demo mode - restore saved user boards and the board they were on
             const restoredBoards = state._userBoardsBackup;
+            const restoredActiveBoard = state._preDemoActiveBoard;
             if (restoredBoards && restoredBoards.length > 0) {
               return {
                 demoMode: newDemoMode,
                 boards: restoredBoards,
-                // activeBoard: KEEP CURRENT - Firebase has already set it to default board
+                activeBoard: restoredActiveBoard || restoredBoards[0]?.id || null,
                 _userBoardsBackup: undefined,
+                _preDemoActiveBoard: undefined,
               };
             } else {
               return {
@@ -1144,6 +1146,7 @@ export const useKanbanStore = create<KanbanStore>()(
                 boards: [createDefaultBoard()],
                 activeBoard: DEFAULT_BOARD_ID,
                 _userBoardsBackup: undefined,
+                _preDemoActiveBoard: undefined,
               };
             }
           }
@@ -1164,15 +1167,19 @@ export const useKanbanStore = create<KanbanStore>()(
               boards: [demoBoard],
               activeBoard: demoBoard.id,
               _userBoardsBackup: state.boards,
+              _preDemoActiveBoard: state.activeBoard,
             };
           } else {
-            // Exiting demo mode
+            // Exiting demo mode - restore boards and the board they were on
             const restoredBoards = state._userBoardsBackup;
+            const restoredActiveBoard = state._preDemoActiveBoard;
             if (restoredBoards && restoredBoards.length > 0) {
               return {
                 demoMode: false,
                 boards: restoredBoards,
+                activeBoard: restoredActiveBoard || restoredBoards[0]?.id || null,
                 _userBoardsBackup: undefined,
+                _preDemoActiveBoard: undefined,
               };
             } else {
               return {
@@ -1180,6 +1187,7 @@ export const useKanbanStore = create<KanbanStore>()(
                 boards: [createDefaultBoard()],
                 activeBoard: DEFAULT_BOARD_ID,
                 _userBoardsBackup: undefined,
+                _preDemoActiveBoard: undefined,
               };
             }
           }
