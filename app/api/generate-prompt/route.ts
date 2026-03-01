@@ -84,6 +84,7 @@ const GeneratePromptSchema = z.object({
   tags: z.array(z.string().max(50, 'Tag too long')).max(20, 'Too many tags').optional(),
   priority: z.enum(['low', 'medium', 'high']).optional(),
   structured: z.boolean().optional().default(false),
+  boardName: z.string().max(200, 'Board name too long').optional(),
 });
 
 export async function POST(request: Request) {
