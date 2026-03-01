@@ -450,7 +450,7 @@ const Column = ({
       </div>
 
       {/* Add Task Button — pinned to column bottom, always visible regardless of card count */}
-      {canEdit && !isAddingCard && !isDescopedColumn && (
+      {canEdit && !isAddingCard && !isDescopedColumn && isFirstColumn && (
         <div className="px-4 py-2 border-t border-gray-200 dark:border-gray-700 flex-shrink-0">
           <button
             onClick={() => setIsAddingCard(true)}
