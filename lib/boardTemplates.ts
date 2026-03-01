@@ -25,7 +25,7 @@ export const BOARD_TEMPLATES: BoardTemplate[] = [
     icon: '💻',
     columns: [
       { title: 'Backlog', order: 0 },
-      { title: 'Sprint', order: 1 },
+      { title: 'In Progress', order: 1 },
       { title: 'In Review', order: 2 },
       { title: 'Testing', order: 3 },
       { title: 'Done', order: 4 },

@@ -42,6 +42,7 @@ const BoardSwitcher = () => {
   const importInputRef = useRef<HTMLInputElement>(null);
   const [confirmDeleteBoardId, setConfirmDeleteBoardId] = useState<string | null>(null);
   const [confirmExportBoardId, setConfirmExportBoardId] = useState<string | null>(null);
+  const [boardSearch, setBoardSearch] = useState('');
 
   const currentBoard = boards.find((b) => b.id === activeBoard);
 
@@ -133,13 +134,33 @@ const BoardSwitcher = () => {
     </div>
   );
 
+  const filteredBoards = boardSearch.trim()
+    ? boards.filter((b) => b.name.toLowerCase().includes(boardSearch.toLowerCase()))
+    : boards;
+
   return (
     <>
       <Dropdown trigger={triggerContent} width="w-64">
         <div className="py-2">
+          {/* Board Search */}
+          {boards.length > 4 && (
+            <div className="px-3 pb-2">
+              <input
+                type="text"
+                value={boardSearch}
+                onChange={(e) => setBoardSearch(e.target.value)}
+                placeholder="Search boards..."
+                className="w-full px-2.5 py-1.5 text-xs rounded-md border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-purple-500"
+                onClick={(e) => e.stopPropagation()}
+              />
+            </div>
+          )}
           {/* Board List */}
           <div className="max-h-64 overflow-y-auto">
-            {boards.map((board) => (
+            {filteredBoards.length === 0 && boardSearch && (
+              <p className="px-3 py-3 text-xs text-gray-400 dark:text-gray-500 text-center">No boards match "{boardSearch}"</p>
+            )}
+            {filteredBoards.map((board) => (
               <div
                 key={board.id}
                 className={cn(
