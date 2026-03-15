@@ -59,14 +59,16 @@ export interface ActivityEntry {
 
 export interface Notification {
   id: string;
-  type: 'mention';
+  type: 'mention' | 'due_date';
   boardId: string;
   boardName: string;
   cardId: string;
   cardTitle: string;
-  commentId: string;
-  fromUserId: string;
-  fromUserEmail: string;
+  columnTitle?: string;      // due_date notifications
+  dueDate?: string;          // due_date notifications — ISO string
+  commentId?: string;        // mention notifications
+  fromUserId?: string;       // mention notifications
+  fromUserEmail?: string;    // mention notifications
   createdAt: string;
   read: boolean;
 }

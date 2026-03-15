@@ -171,10 +171,13 @@ service cloud.firestore {
       // Users can read their own notifications
       allow read: if isAuthenticated() && resource.data.targetUserId == request.auth.uid;
 
-      // Authenticated users can create notifications for any user (when mentioning someone)
+      // Authenticated users can create notifications:
+      // - mention: fromUserId must be the current user
+      // - due_date: self-notification, targetUserId must be the current user
       allow create: if isAuthenticated() &&
                       request.resource.data.targetUserId is string &&
-                      request.resource.data.fromUserId == request.auth.uid;
+                      (request.resource.data.fromUserId == request.auth.uid ||
+                       request.resource.data.targetUserId == request.auth.uid);
 
       // Users can update their own notifications (mark as read)
       allow update: if isAuthenticated() && resource.data.targetUserId == request.auth.uid;

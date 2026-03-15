@@ -8,11 +8,13 @@ import { BoardQueryHandler } from '@/components/layout/BoardQueryHandler';
 import AuthGate from '@/components/auth/AuthGate';
 import { MigrateLocalStorage } from '@/components/admin/MigrateLocalStorage';
 import { useOnboarding } from '@/lib/hooks/useOnboarding';
+import { useOverdueChecker } from '@/lib/hooks/useOverdueChecker';
 
 const OnboardingModal = dynamic(() => import('@/components/onboarding/OnboardingModal'), { ssr: false });
 
 function AppContent() {
   const { showOnboarding, completeOnboarding } = useOnboarding();
+  useOverdueChecker();
 
   return (
     <div className="flex flex-col h-full">

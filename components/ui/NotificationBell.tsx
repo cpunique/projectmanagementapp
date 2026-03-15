@@ -20,18 +20,23 @@ interface NotificationBellProps {
 export default function NotificationBell({ onNavigateToCard }: NotificationBellProps) {
   const { user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
-  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [remoteNotifications, setRemoteNotifications] = useState<Notification[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
 
   const switchBoard = useKanbanStore((state) => state.switchBoard);
+  // Local due-date notifications live in the store (persisted to localStorage, never synced to Firebase)
+  const localNotifications = useKanbanStore((state) => state.notifications);
+  const markLocalRead = useKanbanStore((state) => state.markNotificationRead);
+  const markAllLocalRead = useKanbanStore((state) => state.markAllNotificationsRead);
+  const clearLocalNotifications = useKanbanStore((state) => state.clearNotifications);
 
-  // Subscribe to Firebase notifications
+  // Subscribe to Firebase mention notifications only
   useEffect(() => {
     if (!user) {
-      setNotifications([]);
+      setRemoteNotifications([]);
       setIsLoading(false);
       setError(null);
       return;
@@ -43,18 +48,21 @@ export default function NotificationBell({ onNavigateToCard }: NotificationBellP
     const unsubscribe = subscribeToNotifications(
       user.uid,
       (newNotifications) => {
-        setNotifications(newNotifications);
+        // Only show mention-type from Firestore; due_date are handled locally
+        setRemoteNotifications(newNotifications.filter((n) => n.type === 'mention'));
         setIsLoading(false);
         setError(null);
       },
       (err) => {
-        console.error('[NotificationBell] Error:', err);
+        // Downgrade to warn — permission errors on the notification subscription
+        // shouldn't crash the overlay or block the rest of the app
+        console.warn('[NotificationBell] Subscription error:', err.message);
         setIsLoading(false);
-        // Check for specific error types
         if (err.message?.includes('index')) {
           setError('Database index required. Check browser console for link.');
         } else if (err.message?.includes('permission') || err.message?.includes('PERMISSION_DENIED')) {
-          setError('Deploy Firestore rules first.');
+          // Suppress — notification rules may not be deployed yet, bell still shows local notifications
+          setError(null);
         } else {
           setError('Failed to load notifications');
         }
@@ -66,7 +74,12 @@ export default function NotificationBell({ onNavigateToCard }: NotificationBellP
     };
   }, [user]);
 
-  const unreadCount = notifications.filter((n) => !n.read).length;
+  // Merge: local (due_date) + remote (mention), sorted newest first
+  const allNotifications: Notification[] = [...localNotifications, ...remoteNotifications].sort(
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  );
+
+  const unreadCount = allNotifications.filter((n) => !n.read).length;
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -80,42 +93,32 @@ export default function NotificationBell({ onNavigateToCard }: NotificationBellP
         setIsOpen(false);
       }
     }
-
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   const handleNotificationClick = async (notification: Notification) => {
-    // Mark as read in Firebase
-    await markNotificationAsRead(notification.id);
-
-    // Switch to the board
+    if (notification.type === 'due_date') {
+      markLocalRead(notification.id);
+    } else {
+      await markNotificationAsRead(notification.id);
+    }
     switchBoard(notification.boardId);
-
-    // Navigate to card if callback provided
     if (onNavigateToCard) {
       onNavigateToCard(notification.boardId, notification.cardId);
     }
-
     setIsOpen(false);
   };
 
   const handleMarkAllRead = async () => {
-    if (user) {
-      await markAllNotificationsAsRead(user.uid);
-    }
+    markAllLocalRead();
+    if (user) await markAllNotificationsAsRead(user.uid);
   };
 
   const handleClearAll = async () => {
-    if (user) {
-      await clearAllNotifications(user.uid);
-    }
+    clearLocalNotifications();
+    if (user) await clearAllNotifications(user.uid);
   };
-
-  // Sort notifications by date, newest first
-  const sortedNotifications = [...notifications].sort(
-    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-  );
 
   return (
     <div className="relative">
@@ -161,7 +164,7 @@ export default function NotificationBell({ onNavigateToCard }: NotificationBellP
             <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
               Notifications
             </h3>
-            {notifications.length > 0 && (
+            {allNotifications.length > 0 && (
               <div className="flex gap-2">
                 {unreadCount > 0 && (
                   <button
@@ -192,29 +195,17 @@ export default function NotificationBell({ onNavigateToCard }: NotificationBellP
               </div>
             ) : error ? (
               <div className="px-4 py-8 text-center">
-                <svg
-                  className="w-12 h-12 mx-auto text-red-400"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={1.5}
-                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-                  />
+                <svg className="w-12 h-12 mx-auto text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                 </svg>
-                <p className="mt-2 text-sm text-red-600 dark:text-red-400">
-                  {error}
-                </p>
+                <p className="mt-2 text-sm text-red-600 dark:text-red-400">{error}</p>
                 <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">
                   Run: firebase deploy --only firestore:rules
                 </p>
               </div>
-            ) : sortedNotifications.length > 0 ? (
+            ) : allNotifications.length > 0 ? (
               <ul className="divide-y divide-gray-100 dark:divide-gray-700">
-                {sortedNotifications.map((notification) => (
+                {allNotifications.map((notification) => (
                   <li key={notification.id}>
                     <button
                       onClick={() => handleNotificationClick(notification)}
@@ -233,18 +224,38 @@ export default function NotificationBell({ onNavigateToCard }: NotificationBellP
                         </div>
 
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm text-gray-900 dark:text-gray-100">
-                            <span className="font-medium">
-                              {notification.fromUserEmail.split('@')[0]}
-                            </span>
-                            {' mentioned you in '}
-                            <span className="font-medium text-purple-600 dark:text-purple-400">
-                              {notification.cardTitle}
-                            </span>
-                          </p>
-                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                            {notification.boardName} • {formatTimeAgo(notification.createdAt)}
-                          </p>
+                          {notification.type === 'due_date' ? (
+                            <>
+                              <p className="text-sm text-gray-900 dark:text-gray-100">
+                                <span className="font-medium text-orange-600 dark:text-orange-400">
+                                  {notification.dueDate && new Date(notification.dueDate).setHours(0,0,0,0) < new Date().setHours(0,0,0,0)
+                                    ? 'Overdue: '
+                                    : 'Due today: '}
+                                </span>
+                                <span className="font-medium">{notification.cardTitle}</span>
+                              </p>
+                              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                                {notification.boardName}
+                                {notification.columnTitle ? ` · ${notification.columnTitle}` : ''}
+                                {' • '}{formatTimeAgo(notification.createdAt)}
+                              </p>
+                            </>
+                          ) : (
+                            <>
+                              <p className="text-sm text-gray-900 dark:text-gray-100">
+                                <span className="font-medium">
+                                  {notification.fromUserEmail?.split('@')[0]}
+                                </span>
+                                {' mentioned you in '}
+                                <span className="font-medium text-purple-600 dark:text-purple-400">
+                                  {notification.cardTitle}
+                                </span>
+                              </p>
+                              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                                {notification.boardName} • {formatTimeAgo(notification.createdAt)}
+                              </p>
+                            </>
+                          )}
                         </div>
                       </div>
                     </button>
@@ -270,7 +281,7 @@ export default function NotificationBell({ onNavigateToCard }: NotificationBellP
                   No notifications yet
                 </p>
                 <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">
-                  You'll be notified when someone @mentions you
+                  You'll be notified about overdue cards and @mentions
                 </p>
               </div>
             )}

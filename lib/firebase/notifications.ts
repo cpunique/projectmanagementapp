@@ -199,6 +199,28 @@ export async function clearAllNotifications(userId: string): Promise<boolean> {
 }
 
 /**
+ * Create a due-date notification for a single user (the board owner)
+ * Called by useOverdueChecker when a card is overdue or due today
+ */
+export async function createDueDateNotification(
+  targetUserId: string,
+  params: {
+    boardId: string;
+    boardName: string;
+    cardId: string;
+    cardTitle: string;
+    columnTitle: string;
+    dueDate: string;
+  }
+): Promise<string | null> {
+  return createNotification(targetUserId, {
+    type: 'due_date',
+    ...params,
+    read: false,
+  });
+}
+
+/**
  * Create notifications for all mentioned users
  * Called from the store when a comment with mentions is added
  */
