@@ -168,7 +168,7 @@ const Card = ({ card, boardId, columnId, onDragStart, onDragEnd, isDragging, can
             setIsModalOpen(true);
           }
         }}
-        className={`group relative rounded-xl border cursor-pointer transition-all duration-200 ease-out w-60 flex flex-col overflow-hidden ${
+        className={`group relative rounded-xl border cursor-pointer transition-all duration-200 ease-out w-full sm:w-60 flex flex-col overflow-hidden ${
           isDragging ? 'opacity-50 scale-105' : isDescoped ? 'opacity-60 grayscale-[30%]' : 'opacity-100'
         } border-gray-200/50 dark:border-gray-700/50 bg-white dark:bg-gray-800`}
         style={{

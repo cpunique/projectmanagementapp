@@ -215,7 +215,7 @@ const KanbanBoard = () => {
         <div className="absolute inset-0 bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 -z-10" />
       )}
 
-      <div className="py-6 overflow-visible" style={{ marginLeft: '2rem', marginRight: '2rem' }}>
+      <div className="py-4 sm:py-6 overflow-visible px-3 sm:px-8">
         {/* Board Title */}
         <div className="mb-6">
           <div className="flex items-center gap-3 mb-2">
@@ -318,8 +318,8 @@ const KanbanBoard = () => {
         )}
 
         {/* Columns Grid */}
-        <div className="overflow-x-auto overflow-y-visible pb-4 h-[calc(100vh-200px)]">
-          <div className="flex gap-4 min-w-min items-start h-full">
+        <div className="overflow-x-auto overflow-y-visible pb-4 h-[calc(100svh-160px)] sm:h-[calc(100vh-200px)] snap-x snap-mandatory sm:snap-none scroll-smooth">
+          <div className="flex gap-3 sm:gap-4 min-w-min items-start h-full">
             {board.columns.filter((c) => !c.archived).map((column, index) => (
               <Column
                 key={column.id}
@@ -346,7 +346,7 @@ const KanbanBoard = () => {
 
             {/* Add Column Button/Input */}
             {canEdit && (isAddingColumn ? (
-              <div className="w-72 flex-shrink-0 bg-gray-100 dark:bg-gray-800 rounded-lg p-4 shadow-sm mt-4">
+              <div className="w-[85vw] sm:w-72 flex-shrink-0 snap-center sm:snap-start bg-gray-100 dark:bg-gray-800 rounded-lg p-4 shadow-sm mt-4">
                 <h3 className="font-bold text-sm text-gray-900 dark:text-white mb-3">
                   New Column
                 </h3>

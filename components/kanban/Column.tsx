@@ -227,7 +227,7 @@ const Column = ({
       }}
       onDragOver={onColumnDragOver}
       className={`
-        w-72 flex-shrink-0 rounded-lg flex flex-col my-4 transition-all overflow-hidden max-h-full
+        w-[85vw] sm:w-72 flex-shrink-0 snap-center sm:snap-start rounded-lg flex flex-col my-2 sm:my-4 transition-all overflow-hidden max-h-full
         ${isDraggingColumn
           ? 'opacity-50 cursor-grabbing shadow-2xl scale-105'
           : 'opacity-100 cursor-grab shadow-sm hover:shadow-md'
@@ -250,7 +250,7 @@ const Column = ({
       }}
     >
       {/* Column Header */}
-      <div className="group border-b border-gray-300 dark:border-gray-700" style={{ paddingTop: '1.5rem', paddingBottom: '1.5rem', paddingLeft: '1.5rem', paddingRight: '1rem' }}>
+      <div className="group border-b border-gray-300 dark:border-gray-700 px-3 pt-4 pb-4 sm:pt-6 sm:pb-6 sm:pl-6 sm:pr-4">
         <div className="flex items-center justify-between mb-2">
           <div className="mr-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 cursor-grab active:cursor-grabbing transition-colors flex-shrink-0">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
