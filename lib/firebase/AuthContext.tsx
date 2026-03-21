@@ -116,18 +116,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const auth = getAuth();
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
 
-      // Initialize legal consent in Firestore
+      // Initialize user document WITHOUT pre-stamping consent.
+      // The ToS gate modal will show after account creation and record
+      // consent only when the user actually clicks Accept.
       try {
         await initializeUserLegalConsent(
           userCredential.user.uid,
           email,
-          true, // User accepted ToS during signup
-          true // User accepted Privacy Policy during signup
+          false, // consent not yet given — gate will prompt
+          false  // consent not yet given — gate will prompt
         );
       } catch (legalError) {
         console.error('[Auth] Failed to initialize legal consent, but user account was created:', legalError);
-        // Don't fail signup if legal consent initialization fails - user can still use the app
-        // and will be prompted to accept on next login
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to create account';
