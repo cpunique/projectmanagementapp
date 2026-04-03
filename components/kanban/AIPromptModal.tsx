@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useKanbanStore } from '@/lib/store';
@@ -44,6 +44,29 @@ const AIPromptModal = ({ isOpen, onClose, card, boardId }: AIPromptModalProps) =
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const warningRef = useRef<HTMLDivElement>(null);
+
+  // Completeness score: count how many fields beyond title are included
+  const richFieldCount = [
+    includeDescription && !!card.description,
+    includeNotes && !!card.notes,
+    includeChecklist && !!(card.checklist && card.checklist.length > 0),
+    includeTags && !!(card.tags && card.tags.length > 0),
+    includeBoardContext && !!board?.description,
+  ].filter(Boolean).length;
+
+  const completenessWarning =
+    richFieldCount === 0
+      ? { level: 'red' as const, message: 'Title only — prompt will be generic. Add a description, notes, or checklist for better results.' }
+      : richFieldCount === 1
+      ? { level: 'amber' as const, message: 'Low context — more detail produces a stronger, more specific prompt.' }
+      : null;
+
+  useEffect(() => {
+    if (completenessWarning && warningRef.current) {
+      warningRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  }, [richFieldCount]);
 
   if (!isOpen) return null;
 
@@ -365,6 +388,24 @@ const AIPromptModal = ({ isOpen, onClose, card, boardId }: AIPromptModalProps) =
                         </label>
                       )}
                     </div>
+
+                    {/* Completeness warning */}
+                    {completenessWarning && (
+                      <div ref={warningRef} className={`flex items-start gap-2.5 rounded-lg px-3.5 py-3 border ${
+                        completenessWarning.level === 'red'
+                          ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'
+                          : 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800'
+                      }`}>
+                        <span className="text-base shrink-0">{completenessWarning.level === 'red' ? '⚠️' : '💡'}</span>
+                        <p className={`text-xs leading-relaxed ${
+                          completenessWarning.level === 'red'
+                            ? 'text-red-700 dark:text-red-300'
+                            : 'text-amber-700 dark:text-amber-300'
+                        }`}>
+                          {completenessWarning.message}
+                        </p>
+                      </div>
+                    )}
                   </motion.div>
                 )}
 

@@ -131,14 +131,14 @@ export function subscribeToPresence(
         callback(onlineUserIds);
       },
       (error) => {
-        console.error('[Presence] Subscription error:', error);
+        console.warn('[Presence] Subscription error:', error);
         callback([]);
       }
     );
 
     return unsubscribe;
   } catch (error) {
-    console.error('[Presence] Failed to subscribe to presence:', error);
+    console.warn('[Presence] Failed to subscribe to presence:', error);
     return () => {};
   }
 }

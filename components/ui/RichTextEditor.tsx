@@ -34,7 +34,7 @@ const RichTextEditor = ({
         }),
         Link.configure({
           openOnClick: false,
-          autolink: true,
+          autolink: false,
           HTMLAttributes: {
             target: '_blank',
             rel: 'noopener noreferrer',

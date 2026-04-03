@@ -27,6 +27,12 @@ Guidelines:
 - priority values: "high" = blocking or must-do-first, "medium" = important, "low" = nice-to-have
 - description is plain text only, no markdown formatting`;
 
+// Sparse input fallback: if minimal context is provided, include clarifying questions
+const SPARSE_INPUT_INSTRUCTION = `
+
+SPARSE INPUT HANDLING:
+If the input contains only a title with no description, notes, checklist, or context, first output a brief directive prompt, then append a "CLARIFYING QUESTIONS" section with 3-5 specific questions the user should answer to make the prompt stronger. Label this section clearly so the user knows they can remove it after answering.`;
+
 // Formatting instruction for Word 365 style output (plain text, no markdown)
 const FORMATTING_INSTRUCTION = `
 
@@ -56,19 +62,19 @@ EXAMPLE OF WRONG FORMAT (DO NOT DO THIS):
 // Type-specific system prompts
 const SYSTEM_PROMPTS: Record<InstructionType, string> = {
   development:
-    'You are a helpful assistant that converts feature requests into clear implementation instructions for developers. Focus on what needs to be built and why, breaking it down into logical, actionable coding steps. Include technical considerations where relevant.' + FORMATTING_INSTRUCTION,
+    'You are a prompt engineer specializing in AI task directives for software development. Your job is to take the card details and produce a concise, imperative prompt that a developer can paste directly into an AI coding assistant (Claude, ChatGPT, Copilot, etc.) to get the actual deliverable. Output a directive — not a tutorial or how-to guide. Lead with what to build. Specify required components, constraints, and expected output. Write as if commanding a highly capable AI: "Build X. It must include Y. Output Z."' + FORMATTING_INSTRUCTION + SPARSE_INPUT_INSTRUCTION,
 
   general:
-    'You are a helpful assistant that converts tasks into clear, actionable steps anyone can follow. Keep language simple and non-technical. Focus on practical actions organized in logical order that lead to completing the task.' + FORMATTING_INSTRUCTION,
+    'You are a prompt engineer. Take the task details and produce a concise, directive prompt for an AI assistant. The output must tell the AI what to produce directly — not explain how to do it step by step. Lead with the deliverable. Specify required elements, constraints, and expected output format.' + FORMATTING_INSTRUCTION + SPARSE_INPUT_INSTRUCTION,
 
   'event-planning':
-    'You are a helpful assistant that creates event plans and itineraries. Include timelines, logistics, preparation steps, and key deadlines. Organize information chronologically with clear action items. Consider venue, attendees, materials, and contingency planning.' + FORMATTING_INSTRUCTION,
+    'You are a prompt engineer specializing in planning tasks. Take the event details and produce a directive prompt for an AI assistant. Specify exactly what to produce (a timeline, a run-of-show, a checklist, etc.), its required contents, format, and any constraints — not a general guide on how to plan an event.' + FORMATTING_INSTRUCTION + SPARSE_INPUT_INSTRUCTION,
 
   documentation:
-    'You are a helpful assistant that creates clear documentation and guides. Explain concepts thoroughly, provide step-by-step instructions, include context and examples where helpful. Structure information for easy reference and understanding.' + FORMATTING_INSTRUCTION,
+    'You are a prompt engineer. Take the documentation task and produce a directive prompt for an AI writing assistant. Specify what document to write, what sections to include, the intended audience, and the tone — not meta-instructions about how to write documentation.' + FORMATTING_INSTRUCTION + SPARSE_INPUT_INSTRUCTION,
 
   research:
-    'You are a helpful assistant that creates structured research plans. Identify the key questions to answer, suggest credible sources and methods to consult, outline how to evaluate and compare findings, and describe how to synthesize and present conclusions. Focus on intellectual rigor and completeness.' + FORMATTING_INSTRUCTION,
+    'You are a prompt engineer. Take the research task and produce a directive prompt for an AI research assistant. Specify what to research, what questions to answer, what format to present findings in, and any scope constraints — not a guide on how to conduct research.' + FORMATTING_INSTRUCTION + SPARSE_INPUT_INSTRUCTION,
 };
 
 // Input validation schema
@@ -246,11 +252,11 @@ export async function POST(request: Request) {
 
     // Use appropriate header based on instruction type
     const contextHeaders: Record<InstructionType, string> = {
-      development: 'Feature Request',
-      general: 'Task',
-      'event-planning': 'Event',
-      documentation: 'Topic',
-      research: 'Research Topic',
+      development: 'Task to build',
+      general: 'Task to complete',
+      'event-planning': 'Event to plan',
+      documentation: 'Document to write',
+      research: 'Topic to research',
     };
 
     let contextPrompt = `${contextHeaders[instructionType]}: ${data.cardTitle}\n\n`;
@@ -290,11 +296,11 @@ export async function POST(request: Request) {
 
     // Instruction request based on type
     const instructionRequests: Record<InstructionType, string> = {
-      development: 'Please provide implementation instructions for this feature.',
-      general: 'Please provide clear, actionable steps to complete this task.',
-      'event-planning': 'Please provide an event plan with timeline, logistics, and preparation steps.',
-      documentation: 'Please provide clear documentation and a guide for this topic.',
-      research: 'Please provide a structured research plan: key questions to answer, sources and methods to consult, how to evaluate findings, and how to synthesize conclusions.',
+      development: 'Generate a directive AI prompt for this feature. Output the prompt only — no preamble, no explanation.',
+      general: 'Generate a directive AI prompt for this task. Output the prompt only — no preamble, no explanation.',
+      'event-planning': 'Generate a directive AI prompt for this event. Output the prompt only — no preamble, no explanation.',
+      documentation: 'Generate a directive AI prompt for this documentation task. Output the prompt only — no preamble, no explanation.',
+      research: 'Generate a directive AI prompt for this research task. Output the prompt only — no preamble, no explanation.',
     };
 
     // Token limits based on instruction type - event planning needs more for detailed itineraries

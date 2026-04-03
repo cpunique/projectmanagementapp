@@ -446,6 +446,23 @@ function AITab() {
         <Item label="Regenerate">Click "Regenerate" to go back to Step 1 and generate a new version (e.g. with different style or fields).</Item>
       </Section>
 
+      <Section title="Generate Task Cards">
+        <div className="flex items-center gap-2 mb-3">
+          <span className="text-sm font-medium text-gray-800 dark:text-gray-200">What it does</span>
+          <span className="text-xs font-semibold bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300 px-2 py-0.5 rounded-full">Pro</span>
+        </div>
+        <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed mb-3">
+          Describe a goal and AI generates a full set of task cards — each with a title, priority, and description — ready to add to your board in one click.
+        </p>
+        <Item label="How to open">Click the ✦ sparkle icon in the board header (next to the board name area).</Item>
+        <Item label="Step 1 — Describe your goal">Type what you want to build or accomplish (e.g. "Build a user authentication system"). Choose a planning style that matches your project type.</Item>
+        <Item label="Step 2 — AI generates">The AI produces an overview and a list of task cards, each with a suggested title, priority (low / medium / high), and a short description.</Item>
+        <Item label="Step 3 — Review & create">Toggle individual cards on or off, edit any title inline, then click "Create Cards". Selected cards are added to the first column of your board.</Item>
+        <Item label="Planning styles">Same five styles as AI Instructions — Development, General Tasks, Event Planning, Documentation, Research. Defaults to your board's Purpose setting.</Item>
+        <Item label="Destination column">Cards always land in the first (leftmost) non-archived column. Move them from there as needed.</Item>
+        <Tip>Generate Task Cards is great for bootstrapping a new board — describe your project goal and get a structured backlog in seconds instead of creating cards one by one.</Tip>
+      </Section>
+
       <Section title="Board Purpose Setting">
         <Item label="What it is">Each board has a "Purpose" that sets the default instruction style for all cards on that board.</Item>
         <Item label="Where to set">In the board header — look for the purpose badge (e.g. "Development" or "General Tasks") and click it to change.</Item>

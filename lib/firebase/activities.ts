@@ -84,7 +84,7 @@ export function subscribeToActivities(
     return onSnapshot(
       q,
       (snapshot) => { callback(docsToActivities(snapshot)); },
-      (error) => { console.error('[Activities] Subscription error:', error); }
+      (error) => { console.warn('[Activities] Subscription error:', error); }
     );
   } catch (err) {
     // Firestore SDK v12 bug: AsyncQueue enters permanently failed state after
