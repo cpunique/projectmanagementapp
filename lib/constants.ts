@@ -63,7 +63,7 @@ export const BOARD_BACKGROUNDS: { label: string; value: string | undefined }[] =
 
 export const CARD_COLORS = [
   "#ffffff", // White/Default
-  "#fecaca", // Red 200
+  "#ef4444", // Red 500
   "#fcd34d", // Amber 200
   "#86efac", // Green 200
   "#a7f3d0", // Emerald 200

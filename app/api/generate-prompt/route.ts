@@ -9,7 +9,7 @@ import { canAccessProFeaturesById, isProUserId } from '@/lib/features/featureGat
 type InstructionType = 'development' | 'general' | 'event-planning' | 'documentation' | 'research';
 
 // System prompt for structured JSON task output (board-level AI task generation)
-const STRUCTURED_SYSTEM_PROMPT = `You are a task planning assistant. Break down the given goal into actionable kanban cards.
+const STRUCTURED_SYSTEM_PROMPT = `You are a task planning assistant. Break down the given goal into fully populated, actionable kanban cards.
 
 Respond ONLY with valid JSON — no markdown, no code fences, no text outside the JSON object.
 
@@ -17,7 +17,16 @@ Return exactly this shape:
 {
   "overview": "2-3 sentence plain-text summary of the plan",
   "tasks": [
-    { "title": "Action-oriented task title", "priority": "high", "description": "1-2 sentence plain-text description" }
+    {
+      "title": "Action-oriented task title",
+      "priority": "high",
+      "description": "1-2 sentence plain-text description of what this task involves",
+      "checklist": ["Subtask one", "Subtask two", "Subtask three"],
+      "notes": "Relevant context, gotchas, or implementation considerations for this specific task. Plain text only.",
+      "tags": ["tag1", "tag2"],
+      "color": "#ef4444",
+      "suggestedDayOffset": 3
+    }
   ]
 }
 
@@ -25,7 +34,12 @@ Guidelines:
 - Generate 4-10 tasks (scale with complexity of the goal)
 - Titles must be imperative: "Set up Firebase Auth" not "Firebase Auth Setup"
 - priority values: "high" = blocking or must-do-first, "medium" = important, "low" = nice-to-have
-- description is plain text only, no markdown formatting`;
+- description is plain text only, no markdown formatting
+- checklist: 2-5 concrete subtasks for this card. Each is a short action phrase.
+- notes: 1-3 sentences of context, gotchas, or considerations specific to this task. Omit if nothing meaningful to add (use empty string "").
+- tags: 1-3 short lowercase tags relevant to this task (e.g. "auth", "backend", "ui", "security")
+- color: choose based on priority — high="#ef4444", medium="#f59e0b", low="#22c55e", none="#ffffff"
+- suggestedDayOffset: integer number of days from today this task should ideally be completed by, based on its complexity and dependencies relative to other tasks. First tasks should be low (1-3), later/dependent tasks higher.`;
 
 // Sparse input fallback: if minimal context is provided, include clarifying questions
 const SPARSE_INPUT_INSTRUCTION = `
@@ -79,7 +93,7 @@ const SYSTEM_PROMPTS: Record<InstructionType, string> = {
 
 // Input validation schema
 const GeneratePromptSchema = z.object({
-  cardTitle: z.string().min(1, 'Card title is required').max(200, 'Card title too long'),
+  cardTitle: z.string().min(1, 'Card title is required').max(500, 'Card title too long'),
   instructionType: z.enum(['development', 'general', 'event-planning', 'documentation', 'research']).optional().default('development'),
   description: z.string().max(1000, 'Description too long').optional(),
   notes: z.string().max(2000, 'Notes too long').optional(),
@@ -204,7 +218,7 @@ export async function POST(request: Request) {
           },
           body: JSON.stringify({
             model,
-            max_tokens: 2048,
+            max_tokens: 4096,
             messages: [{ role: 'user', content: `${STRUCTURED_SYSTEM_PROMPT}\n\n${structuredUserMsg}` }],
           }),
         });
@@ -222,7 +236,7 @@ export async function POST(request: Request) {
         // Strip potential markdown code fences Claude may wrap around JSON
         const cleaned = rawText.replace(/^```json\s*/i, '').replace(/```\s*$/, '').trim();
 
-        let parsed: { overview: string; tasks: { title: string; priority: string; description: string }[] };
+        let parsed: { overview: string; tasks: { title: string; priority: string; description: string; checklist?: string[]; notes?: string; tags?: string[]; color?: string; suggestedDayOffset?: number }[] };
         try {
           parsed = JSON.parse(cleaned);
         } catch {

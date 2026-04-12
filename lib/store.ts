@@ -184,6 +184,12 @@ export const useKanbanStore = create<KanbanStore>()(
             hasUnsavedChanges: true,
           };
         });
+        // Delete from Firestore so it doesn't get restored on next sync
+        import('@/lib/firebase/firestore').then(({ deleteBoard: deleteFirestoreBoard }) => {
+          deleteFirestoreBoard(boardId).catch((err) => {
+            console.warn('[store] Failed to delete board from Firestore:', err);
+          });
+        });
       },
 
       updateBoard: (boardId: string, name: string) => {
@@ -611,6 +617,26 @@ export const useKanbanStore = create<KanbanStore>()(
         import('@/lib/firebase/activities').then(({ logActivity }) => {
           logActivity(boardId, { eventType: 'card_archived', cardId, cardTitle: card?.title }).catch(() => {});
         }).catch(() => {});
+      },
+
+      archiveColumnCards: (boardId: string, columnId: string) => {
+        // Archive all active cards in the column in a single atomic set() call
+        set((state) => ({
+          boards: state.boards.map((b) =>
+            b.id !== boardId ? b : {
+              ...b,
+              columns: b.columns.map((c) =>
+                c.id !== columnId ? c : {
+                  ...c,
+                  cards: c.cards.map((card) =>
+                    card.archived ? card : { ...card, archived: true, updatedAt: new Date().toISOString() }
+                  ),
+                }
+              ),
+            }
+          ),
+          hasUnsavedChanges: true,
+        }));
       },
 
       restoreCard: (boardId: string, cardId: string) => {

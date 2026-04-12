@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useKanbanStore } from '@/lib/store';
@@ -23,6 +23,11 @@ interface GeneratedTask {
   title: string;
   priority: 'low' | 'medium' | 'high';
   description: string;
+  checklist?: string[];
+  notes?: string;
+  tags?: string[];
+  color?: string;
+  suggestedDayOffset?: number;
   included: boolean;
 }
 
@@ -41,18 +46,29 @@ const PRIORITY_BADGE: Record<'low' | 'medium' | 'high', string> = {
 };
 
 const AITasksModal = ({ isOpen, onClose, boardId }: AITasksModalProps) => {
-  const { boards, addCard } = useKanbanStore();
+  const { boards, addCard, archiveColumnCards } = useKanbanStore();
   const { user } = useAuth();
   const { showToast } = useToast();
   const board = boards.find((b) => b.id === boardId);
 
   const [step, setStep] = useState<Step>(1);
   const [goal, setGoal] = useState('');
+  const [goalError, setGoalError] = useState(false);
+
+  // Restore last goal from localStorage whenever the modal opens for this board
+  useEffect(() => {
+    if (isOpen) {
+      const saved = localStorage.getItem(`kanban-ai-goal-${boardId}`);
+      if (saved) setGoal(saved);
+    }
+  }, [isOpen, boardId]);
+  const [shakeKey, setShakeKey] = useState(0);
   const [instructionType, setInstructionType] = useState<InstructionType>(board?.purpose || 'development');
   const [overview, setOverview] = useState('');
   const [tasks, setTasks] = useState<GeneratedTask[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [replaceExisting, setReplaceExisting] = useState(false);
 
   if (!isOpen) return null;
 
@@ -104,7 +120,12 @@ const AITasksModal = ({ isOpen, onClose, boardId }: AITasksModalProps) => {
   }
 
   const handleGenerate = async () => {
-    if (!goal.trim()) return;
+    if (!goal.trim()) {
+      setGoalError(true);
+      setShakeKey(k => k + 1);
+      return;
+    }
+    localStorage.setItem(`kanban-ai-goal-${boardId}`, goal.trim());
     setIsLoading(true);
     setError(null);
     setStep(2);
@@ -154,11 +175,28 @@ const AITasksModal = ({ isOpen, onClose, boardId }: AITasksModalProps) => {
     const selected = tasks.filter((t) => t.included);
     if (selected.length === 0) return;
 
+    // Archive all active cards in the column atomically before adding new ones
+    if (replaceExisting) {
+      archiveColumnCards(boardId, firstColumn.id);
+    }
+
+    const today = new Date();
     for (const task of selected) {
+      const dueDate = task.suggestedDayOffset
+        ? new Date(today.getTime() + task.suggestedDayOffset * 86400000).toISOString().split('T')[0]
+        : undefined;
+
       addCard(boardId, firstColumn.id, {
         title: task.title,
         priority: task.priority,
         description: task.description,
+        ...(task.checklist && task.checklist.length > 0 && {
+          checklist: task.checklist.map((text, i) => ({ id: `cl-${Date.now()}-${i}`, text, completed: false, order: i })),
+        }),
+        ...(task.notes && { notes: task.notes }),
+        ...(task.tags && task.tags.length > 0 && { tags: task.tags }),
+        ...(task.color && { color: task.color }),
+        ...(dueDate && { dueDate }),
       });
     }
 
@@ -168,10 +206,10 @@ const AITasksModal = ({ isOpen, onClose, boardId }: AITasksModalProps) => {
 
   const handleClose = () => {
     setStep(1);
-    setGoal('');
     setOverview('');
     setTasks([]);
     setError(null);
+    setReplaceExisting(false);
     onClose();
   };
 
@@ -222,17 +260,30 @@ const AITasksModal = ({ isOpen, onClose, boardId }: AITasksModalProps) => {
                   >
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        What do you want to build or accomplish?
+                        What do you want to build or accomplish? <span className="text-red-500">*</span>
                       </label>
-                      <input
-                        type="text"
-                        value={goal}
-                        onChange={(e) => setGoal(e.target.value)}
-                        onKeyDown={(e) => e.key === 'Enter' && goal.trim() && handleGenerate()}
-                        placeholder="e.g. Build a user authentication system"
-                        className="w-full px-4 py-2.5 border-2 border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:border-purple-500 focus:ring-4 focus:ring-purple-100 dark:focus:ring-purple-900/30 transition-all duration-200"
-                        autoFocus
-                      />
+                      <div key={shakeKey} style={shakeKey > 0 ? { animation: 'shake 0.4s ease-in-out' } : {}}>
+                        <textarea
+                          value={goal}
+                          onChange={(e) => { setGoal(e.target.value); if (goalError) setGoalError(false); }}
+                          onKeyDown={(e) => e.key === 'Enter' && e.metaKey && handleGenerate()}
+                          placeholder="e.g. Build a user authentication system with email/password, Google sign-in, and role-based access"
+                          rows={3}
+                          maxLength={500}
+                          className={`w-full px-4 py-2.5 border-2 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none resize-none ${
+                            goalError
+                              ? 'border-red-400 dark:border-red-500 focus:border-red-400 focus:ring-4 focus:ring-red-100 dark:focus:ring-red-900/30'
+                              : 'border-gray-300 dark:border-gray-600 focus:border-purple-500 focus:ring-4 focus:ring-purple-100 dark:focus:ring-purple-900/30'
+                          }`}
+                          autoFocus
+                        />
+                        <p className="mt-1 text-right text-xs text-gray-400 dark:text-gray-500">{goal.length}/500</p>
+                      </div>
+                      {goalError && (
+                        <p className="mt-1.5 text-xs text-red-500 dark:text-red-400">
+                          Please describe what you want to build or accomplish.
+                        </p>
+                      )}
                     </div>
 
                     <div>
@@ -289,6 +340,41 @@ const AITasksModal = ({ isOpen, onClose, boardId }: AITasksModalProps) => {
                     exit={{ opacity: 0, y: -10 }}
                     className="space-y-4"
                   >
+                    {/* Goal used for generation */}
+                    {goal && (
+                      <div className="flex items-start gap-2 bg-gray-50 dark:bg-gray-700/40 rounded-lg px-4 py-3">
+                        <span className="text-xs text-gray-400 dark:text-gray-500 shrink-0 mt-0.5">Goal</span>
+                        <p className="text-sm text-gray-700 dark:text-gray-300 leading-snug">{goal}</p>
+                      </div>
+                    )}
+
+                    {/* Existing cards warning — shown prominently before the task list */}
+                    {firstColumn && firstColumn.cards.filter((c) => !c.archived).length > 0 && (
+                      <div className={`rounded-lg border px-4 py-3 transition-colors ${
+                        replaceExisting
+                          ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-300 dark:border-amber-700'
+                          : 'bg-yellow-50 dark:bg-yellow-900/10 border-yellow-300 dark:border-yellow-700/50'
+                      }`}>
+                        <p className="text-sm font-medium text-yellow-800 dark:text-yellow-300 mb-1">
+                          ⚠️ "{firstColumn.title}" already has {firstColumn.cards.filter((c) => !c.archived).length} card{firstColumn.cards.filter((c) => !c.archived).length !== 1 ? 's' : ''}
+                        </p>
+                        <p className="text-xs text-yellow-700 dark:text-yellow-400 mb-3">
+                          New cards will be added alongside them. You can also archive the existing ones first to start fresh.
+                        </p>
+                        <label className="flex items-center gap-2.5 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={replaceExisting}
+                            onChange={(e) => setReplaceExisting(e.target.checked)}
+                            className="w-4 h-4 rounded border-yellow-400 text-amber-600 focus:ring-amber-500 cursor-pointer"
+                          />
+                          <span className="text-sm font-medium text-yellow-800 dark:text-yellow-300">
+                            Archive existing cards first and start fresh
+                          </span>
+                        </label>
+                      </div>
+                    )}
+
                     {overview && (
                       <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg px-4 py-3">
                         <p className="text-sm text-purple-800 dark:text-purple-300">{overview}</p>
@@ -299,32 +385,69 @@ const AITasksModal = ({ isOpen, onClose, boardId }: AITasksModalProps) => {
                       {tasks.map((task, index) => (
                         <div
                           key={index}
-                          className={`flex items-start gap-3 p-3 rounded-lg border transition-colors ${
+                          className={`rounded-lg border transition-colors overflow-hidden ${
                             task.included
                               ? 'border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800/50'
                               : 'border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/20 opacity-50'
                           }`}
                         >
-                          <input
-                            type="checkbox"
-                            checked={task.included}
-                            onChange={() => toggleTask(index)}
-                            className="mt-1 w-4 h-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500 cursor-pointer shrink-0"
-                          />
-                          <div className="flex-1 min-w-0">
+                          {/* Color strip */}
+                          {task.color && task.color !== '#ffffff' && (
+                            <div className="h-1.5 w-full" style={{ backgroundColor: task.color }} />
+                          )}
+
+                          <div className="flex items-start gap-3 p-3">
                             <input
-                              type="text"
-                              value={task.title}
-                              onChange={(e) => updateTaskTitle(index, e.target.value)}
-                              className="w-full text-sm font-medium text-gray-900 dark:text-white bg-transparent border-none outline-none focus:ring-0 p-0"
+                              type="checkbox"
+                              checked={task.included}
+                              onChange={() => toggleTask(index)}
+                              className="mt-1 w-4 h-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500 cursor-pointer shrink-0"
                             />
-                            {task.description && (
-                              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate">{task.description}</p>
-                            )}
+                            <div className="flex-1 min-w-0 space-y-1.5">
+                              {/* Title */}
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <input
+                                  type="text"
+                                  value={task.title}
+                                  onChange={(e) => updateTaskTitle(index, e.target.value)}
+                                  className="flex-1 min-w-0 text-sm font-medium text-gray-900 dark:text-white bg-transparent border-none outline-none focus:ring-0 p-0"
+                                />
+                                <span className={`shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${PRIORITY_BADGE[task.priority] || PRIORITY_BADGE.medium}`}>
+                                  {task.priority}
+                                </span>
+                              </div>
+
+                              {/* Description */}
+                              {task.description && (
+                                <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">{task.description}</p>
+                              )}
+
+                              {/* Checklist preview */}
+                              {task.checklist && task.checklist.length > 0 && (
+                                <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
+                                  <span>☐</span>
+                                  <span>{task.checklist.length} subtask{task.checklist.length !== 1 ? 's' : ''}: {task.checklist.slice(0, 2).join(', ')}{task.checklist.length > 2 ? '…' : ''}</span>
+                                </div>
+                              )}
+
+                              {/* Tags + due date */}
+                              <div className="flex items-center gap-2 flex-wrap">
+                                {task.tags && task.tags.map((tag) => (
+                                  <span key={tag} className="inline-flex items-center px-1.5 py-0.5 rounded text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300">
+                                    {tag}
+                                  </span>
+                                ))}
+                                {task.suggestedDayOffset && (
+                                  <span className="text-xs text-gray-400 dark:text-gray-500">
+                                    📅 ~{task.suggestedDayOffset}d
+                                  </span>
+                                )}
+                                {task.notes && (
+                                  <span className="text-xs text-gray-400 dark:text-gray-500">📝 notes</span>
+                                )}
+                              </div>
+                            </div>
                           </div>
-                          <span className={`shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${PRIORITY_BADGE[task.priority] || PRIORITY_BADGE.medium}`}>
-                            {task.priority}
-                          </span>
                         </div>
                       ))}
                     </div>
@@ -347,7 +470,7 @@ const AITasksModal = ({ isOpen, onClose, boardId }: AITasksModalProps) => {
                   <Button variant="outline" onClick={handleClose}>Cancel</Button>
                   <Button
                     onClick={handleGenerate}
-                    disabled={!goal.trim() || isLoading}
+                    disabled={isLoading}
                     className="bg-purple-600 hover:bg-purple-700 text-white"
                   >
                     ✦ Generate Tasks

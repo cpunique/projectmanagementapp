@@ -226,6 +226,7 @@ export interface KanbanActions {
   assignCard: (boardId: string, cardId: string, userId: string) => void;
   unassignCard: (boardId: string, cardId: string, userId: string) => void;
   archiveCard: (boardId: string, cardId: string) => void;
+  archiveColumnCards: (boardId: string, columnId: string) => void;
   restoreCard: (boardId: string, cardId: string) => void;
   copyCardToBoard: (sourceBoardId: string, cardId: string, targetBoardId: string) => void;
   addDependency: (boardId: string, cardId: string, blockerCardId: string) => void;
