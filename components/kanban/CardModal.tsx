@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { nanoid } from 'nanoid';
 import { useKanbanStore } from '@/lib/store';
 import { useAuth } from '@/lib/firebase/AuthContext';
@@ -77,10 +77,17 @@ const CardModal = ({ isOpen, onClose, card, boardId, canEdit = false }: CardModa
   const [checklist, setChecklist] = useState<ChecklistItem[]>(card?.checklist || []);
   const [checklistInput, setChecklistInput] = useState('');
 
+  // Auto-save state and refs
+  const [saveStatus, setSaveStatus] = useState<'saved' | 'unsaved' | 'saving'>('saved');
+  const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isSavingRef = useRef(false); // prevents collaboration sync from overwriting mid-save
+  const cardIdRef = useRef<string | null>(card?.id || null); // tracks card switches to skip initial save
+
   // Sync all state with card prop when card changes (including when a new card is selected)
-  // Also sync when card.updatedAt changes to support real-time collaboration
+  // Also sync when card.updatedAt changes to support real-time collaboration.
+  // Skipped when isSavingRef is true — we caused the update, no need to re-sync.
   useEffect(() => {
-    if (card) {
+    if (card && !isSavingRef.current) {
       setTitle(card.title || '');
       setDescription(card.description || '');
       setNotes(card.notes || '');
@@ -93,6 +100,9 @@ const CardModal = ({ isOpen, onClose, card, boardId, canEdit = false }: CardModa
       setTagInput('');
       setChecklistInput('');
       setSelectedTag(null);
+      // Reset card tracking ref and status on card switch
+      cardIdRef.current = card.id;
+      setSaveStatus('saved');
     }
   }, [card?.id, card?.updatedAt]); // Re-sync when card ID or updatedAt changes (collaboration support)
 
@@ -113,32 +123,78 @@ const CardModal = ({ isOpen, onClose, card, boardId, canEdit = false }: CardModa
     return () => observer.disconnect();
   }, []);
 
-  const handleSave = () => {
-    if (card && title.trim()) {
-      // Validate notes length
-      const MAX_NOTES_LENGTH = 10000; // 10KB
-      if (notes.length > MAX_NOTES_LENGTH) {
-        showToast(`Notes cannot exceed ${MAX_NOTES_LENGTH} characters. Current: ${notes.length}`, 'warning');
-        return;
-      }
+  const MAX_NOTES_LENGTH = 10000;
 
-      // If color is empty string (user selected "Default"), save as undefined so it adapts to theme changes
-      const colorToSave = color === '' ? undefined : color;
-
-      updateCard(boardId, card.id, {
-        title,
-        description,
-        notes,
-        priority,
-        dueDate,
-        tags,
-        tagColors: Object.keys(tagColors).length > 0 ? tagColors : undefined,
-        color: colorToSave,
-        checklist,
-      });
-      onClose();
+  const performAutoSave = useCallback(() => {
+    if (!card || !title.trim() || !canEdit) return;
+    if (notes.length > MAX_NOTES_LENGTH) {
+      showToast(`Notes too long (${notes.length}/${MAX_NOTES_LENGTH} chars). Shorten before changes are saved.`, 'warning');
+      setSaveStatus('unsaved');
+      return;
     }
-  };
+
+    isSavingRef.current = true;
+    setSaveStatus('saving');
+
+    updateCard(boardId, card.id, {
+      title: title.trim(),
+      description,
+      notes,
+      priority,
+      dueDate,
+      tags,
+      tagColors: Object.keys(tagColors).length > 0 ? tagColors : undefined,
+      color: color === '' ? undefined : color,
+      checklist,
+    });
+
+    setSaveStatus('saved');
+
+    // Allow the collaboration sync effect to re-engage after our update propagates
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      isSavingRef.current = false;
+    }));
+  }, [card, boardId, title, description, notes, priority, dueDate, tags, tagColors, color, checklist, canEdit, updateCard, showToast]);
+
+  // Auto-save: debounce any field change by 1500ms.
+  // Skips on card switch (cardIdRef guard). Skips if state matches card (no-op save).
+  useEffect(() => {
+    if (!card || !canEdit) return;
+
+    // Skip if this is a card switch (sync effect will have just reset state)
+    if (cardIdRef.current !== card.id) {
+      cardIdRef.current = card.id;
+      return;
+    }
+
+    // Skip if nothing has actually changed from the persisted card
+    const nothingChanged =
+      title === (card.title || '') &&
+      description === (card.description || '') &&
+      notes === (card.notes || '') &&
+      priority === card.priority &&
+      dueDate === (card.dueDate || '') &&
+      JSON.stringify(tags) === JSON.stringify(card.tags || []) &&
+      color === (card.color || '');
+    if (nothingChanged) return;
+
+    setSaveStatus('unsaved');
+    if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
+    autoSaveTimerRef.current = setTimeout(performAutoSave, 1500);
+
+    return () => { if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current); };
+  }, [title, description, notes, priority, dueDate, tags, color]); // checklist excluded — saved immediately by individual store actions
+
+  // Flush any pending auto-save immediately (used when closing the modal)
+  const flushAndClose = useCallback(() => {
+    if (autoSaveTimerRef.current) {
+      clearTimeout(autoSaveTimerRef.current);
+      autoSaveTimerRef.current = null;
+    }
+    if (saveStatus === 'unsaved') performAutoSave();
+    onClose();
+  }, [saveStatus, performAutoSave, onClose]);
+
 
   const handleAddChecklistItem = () => {
     if (checklistInput.trim() && card) {
@@ -267,33 +323,41 @@ const CardModal = ({ isOpen, onClose, card, boardId, canEdit = false }: CardModa
   if (!card) return null;
 
   const footer = (
-    <div className="flex gap-3 justify-center">
-      {canEdit && (
+    <div className="flex items-center justify-between gap-3 w-full">
+      {/* Save status indicator */}
+      <div className="text-xs min-w-[80px]">
+        {saveStatus === 'saving' && (
+          <span className="text-gray-400 dark:text-gray-500">Saving...</span>
+        )}
+        {saveStatus === 'saved' && (
+          <span className="text-green-600 dark:text-green-400">✓ Saved</span>
+        )}
+        {saveStatus === 'unsaved' && (
+          <span className="text-amber-600 dark:text-amber-400">Unsaved changes</span>
+        )}
+      </div>
+
+      <div className="flex gap-3">
+        {canEdit && (
+          <button
+            onClick={() => {
+              archiveCard(boardId, card.id);
+              showToast('Card archived', 'info');
+              onClose();
+            }}
+            className="min-w-[80px] px-4 py-2 text-orange-600 hover:bg-orange-50 dark:text-orange-400 dark:hover:bg-orange-900/20 border border-orange-300 dark:border-orange-700 rounded-lg transition-colors font-medium text-xs"
+            title="Archive this card (can be restored from the Archive panel)"
+          >
+            Archive
+          </button>
+        )}
         <button
-          onClick={() => {
-            archiveCard(boardId, card.id);
-            showToast('Card archived', 'info');
-            onClose();
-          }}
-          className="min-w-[80px] px-4 py-2 text-orange-600 hover:bg-orange-50 dark:text-orange-400 dark:hover:bg-orange-900/20 border border-orange-300 dark:border-orange-700 rounded-lg transition-colors font-medium text-xs"
-          title="Archive this card (can be restored from the Archive panel)"
+          onClick={flushAndClose}
+          className="min-w-[80px] px-6 py-2 border border-gray-300 text-gray-900 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-100 dark:hover:bg-gray-900 rounded-lg transition-colors duration-200 font-medium shadow-sm hover:shadow-md text-xs"
         >
-          Archive
+          Close
         </button>
-      )}
-      <button
-        onClick={onClose}
-        className="min-w-[80px] px-6 py-2 border border-gray-300 text-gray-900 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-100 dark:hover:bg-gray-900 rounded-lg transition-colors duration-200 font-medium shadow-sm hover:shadow-md text-xs"
-      >
-        Cancel
-      </button>
-      <button
-        onClick={handleSave}
-        disabled={!title.trim()}
-        className="min-w-[80px] px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors duration-200 font-medium shadow-sm hover:shadow-md text-xs disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-        Save
-      </button>
+      </div>
     </div>
   );
 
