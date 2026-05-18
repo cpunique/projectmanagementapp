@@ -4,9 +4,9 @@ import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { nanoid } from 'nanoid';
 import { useKanbanStore } from '@/lib/store';
 import { useAuth } from '@/lib/firebase/AuthContext';
+import { flushPendingSync } from '@/lib/firebase/storeSync';
 import Modal from '@/components/ui/Modal';
 import Input from '@/components/ui/Input';
-import Button from '@/components/ui/Button';
 import RichTextEditor from '@/components/ui/RichTextEditor';
 import CommentThread from './CommentThread';
 import { Card, ChecklistItem, MentionedUser } from '@/types';
@@ -194,6 +194,25 @@ const CardModal = ({ isOpen, onClose, card, boardId, canEdit = false }: CardModa
     if (saveStatus === 'unsaved') performAutoSave();
     onClose();
   }, [saveStatus, performAutoSave, onClose]);
+
+  // Force-write to Firestore when page is hidden (sleep, tab switch, close).
+  // Cancels the 2s Firestore debounce and writes immediately so data survives sleep.
+  useEffect(() => {
+    const handleHide = () => {
+      if (autoSaveTimerRef.current) {
+        clearTimeout(autoSaveTimerRef.current);
+        autoSaveTimerRef.current = null;
+        performAutoSave();
+      }
+      flushPendingSync();
+    };
+    document.addEventListener('visibilitychange', handleHide);
+    window.addEventListener('beforeunload', handleHide);
+    return () => {
+      document.removeEventListener('visibilitychange', handleHide);
+      window.removeEventListener('beforeunload', handleHide);
+    };
+  }, [performAutoSave]);
 
 
   const handleAddChecklistItem = () => {

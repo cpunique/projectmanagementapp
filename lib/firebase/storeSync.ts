@@ -370,6 +370,23 @@ async function syncActionToFirebase(userId: string) {
   }
 }
 
+// Module-level sync state so flushPendingSync() can cancel and immediately execute
+let _moduleSyncTimeout: ReturnType<typeof setTimeout> | null = null;
+let _pendingFlushFn: (() => Promise<void>) | null = null;
+
+/** Cancel the pending Firestore debounce and write immediately. Call on page hide / unload. */
+export async function flushPendingSync(): Promise<void> {
+  if (_moduleSyncTimeout) {
+    clearTimeout(_moduleSyncTimeout);
+    _moduleSyncTimeout = null;
+  }
+  if (_pendingFlushFn) {
+    const fn = _pendingFlushFn;
+    _pendingFlushFn = null;
+    await fn();
+  }
+}
+
 /**
  * Subscribe to store changes and sync with Firebase
  * Returns an unsubscribe function
@@ -432,9 +449,14 @@ export function subscribeToStoreChanges(user: User) {
           );
         }
 
-        // Debounce the sync to avoid too many Firebase calls
+        // Debounce the sync to avoid too many Firebase calls.
+        // Also register with module-level variables so flushPendingSync() can force-write.
         clearTimeout(syncTimeout);
-        syncTimeout = setTimeout(async () => {
+        if (_moduleSyncTimeout) clearTimeout(_moduleSyncTimeout);
+
+        const doWrite = async () => {
+          _pendingFlushFn = null;
+          _moduleSyncTimeout = null;
           // If offline, enqueue all changed boards and skip Firebase
           if (!navigator.onLine) {
             for (const board of changedBoards) {
@@ -554,7 +576,11 @@ export function subscribeToStoreChanges(user: User) {
               console.error('Failed to sync default board preference:', error);
             }
           }
-        }, 2000); // Increased to 2 seconds to reduce write frequency
+        };
+
+        // Register so flushPendingSync() can force-write before page sleep/unload
+        _pendingFlushFn = doWrite;
+        _moduleSyncTimeout = syncTimeout = setTimeout(doWrite, 2000); // 2s debounce to reduce write frequency
       }
     }
   );

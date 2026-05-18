@@ -41,6 +41,12 @@ Guidelines:
 - color: choose based on priority — high="#ef4444", medium="#f59e0b", low="#22c55e", none="#ffffff"
 - suggestedDayOffset: integer number of days from today this task should ideally be completed by, based on its complexity and dependencies relative to other tasks. First tasks should be low (1-3), later/dependent tasks higher.`;
 
+// Grounding constraint: output must be traceable to provided card fields only
+const GROUNDING_INSTRUCTION = `
+
+GROUNDING RULE — STRICTLY ENFORCED:
+Only output content that is directly traceable to the card fields or project context provided. Do not infer, assume, or fabricate details that are not present in the input. If a field is empty or absent, do not fill it with plausible-sounding content. When the same card is submitted multiple times, the output must remain consistent — variance between runs is a sign of hallucination.`;
+
 // Sparse input fallback: if minimal context is provided, include clarifying questions
 const SPARSE_INPUT_INSTRUCTION = `
 
@@ -76,19 +82,19 @@ EXAMPLE OF WRONG FORMAT (DO NOT DO THIS):
 // Type-specific system prompts
 const SYSTEM_PROMPTS: Record<InstructionType, string> = {
   development:
-    'You are a prompt engineer specializing in AI task directives for software development. Your job is to take the card details and produce a concise, imperative prompt that a developer can paste directly into an AI coding assistant (Claude, ChatGPT, Copilot, etc.) to get the actual deliverable. Output a directive — not a tutorial or how-to guide. Lead with what to build. Specify required components, constraints, and expected output. Write as if commanding a highly capable AI: "Build X. It must include Y. Output Z."' + FORMATTING_INSTRUCTION + SPARSE_INPUT_INSTRUCTION,
+    'You are a prompt engineer specializing in AI task directives for software development. Your job is to take the card details and produce a concise, imperative prompt that a developer can paste directly into an AI coding assistant (Claude, ChatGPT, Copilot, etc.) to get the actual deliverable. Output a directive — not a tutorial or how-to guide. Lead with what to build. Specify required components, constraints, and expected output. Write as if commanding a highly capable AI: "Build X. It must include Y. Output Z."' + GROUNDING_INSTRUCTION + FORMATTING_INSTRUCTION + SPARSE_INPUT_INSTRUCTION,
 
   general:
-    'You are a prompt engineer. Take the task details and produce a concise, directive prompt for an AI assistant. The output must tell the AI what to produce directly — not explain how to do it step by step. Lead with the deliverable. Specify required elements, constraints, and expected output format.' + FORMATTING_INSTRUCTION + SPARSE_INPUT_INSTRUCTION,
+    'You are a prompt engineer. Take the task details and produce a concise, directive prompt for an AI assistant. The output must tell the AI what to produce directly — not explain how to do it step by step. Lead with the deliverable. Specify required elements, constraints, and expected output format.' + GROUNDING_INSTRUCTION + FORMATTING_INSTRUCTION + SPARSE_INPUT_INSTRUCTION,
 
   'event-planning':
-    'You are a prompt engineer specializing in planning tasks. Take the event details and produce a directive prompt for an AI assistant. Specify exactly what to produce (a timeline, a run-of-show, a checklist, etc.), its required contents, format, and any constraints — not a general guide on how to plan an event.' + FORMATTING_INSTRUCTION + SPARSE_INPUT_INSTRUCTION,
+    'You are a prompt engineer specializing in planning tasks. Take the event details and produce a directive prompt for an AI assistant. Specify exactly what to produce (a timeline, a run-of-show, a checklist, etc.), its required contents, format, and any constraints — not a general guide on how to plan an event.' + GROUNDING_INSTRUCTION + FORMATTING_INSTRUCTION + SPARSE_INPUT_INSTRUCTION,
 
   documentation:
-    'You are a prompt engineer. Take the documentation task and produce a directive prompt for an AI writing assistant. Specify what document to write, what sections to include, the intended audience, and the tone — not meta-instructions about how to write documentation.' + FORMATTING_INSTRUCTION + SPARSE_INPUT_INSTRUCTION,
+    'You are a prompt engineer. Take the documentation task and produce a directive prompt for an AI writing assistant. Specify what document to write, what sections to include, the intended audience, and the tone — not meta-instructions about how to write documentation.' + GROUNDING_INSTRUCTION + FORMATTING_INSTRUCTION + SPARSE_INPUT_INSTRUCTION,
 
   research:
-    'You are a prompt engineer. Take the research task and produce a directive prompt for an AI research assistant. Specify what to research, what questions to answer, what format to present findings in, and any scope constraints — not a guide on how to conduct research.' + FORMATTING_INSTRUCTION + SPARSE_INPUT_INSTRUCTION,
+    'You are a prompt engineer. Take the research task and produce a directive prompt for an AI research assistant. Specify what to research, what questions to answer, what format to present findings in, and any scope constraints — not a guide on how to conduct research.' + GROUNDING_INSTRUCTION + FORMATTING_INSTRUCTION + SPARSE_INPUT_INSTRUCTION,
 };
 
 // Input validation schema

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useKanbanStore } from '@/lib/store';
 import { useAuth } from '@/lib/firebase/AuthContext';
 import { updateBoard, createBoard, setUserDefaultBoard, getBoard } from '@/lib/firebase/firestore';
@@ -91,6 +91,7 @@ const SaveButton = () => {
   const [isVisible, setIsVisible] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [quotaExceeded, setQuotaExceeded] = useState(false);
+  const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Show button when there are unsaved changes AND user is authenticated
   useEffect(() => {
@@ -102,7 +103,7 @@ const SaveButton = () => {
   }, [hasUnsavedChanges, saveState, user]);
 
   // Handle save action
-  const handleSave = async () => {
+  const handleSave = useCallback(async () => {
     if (saveState === 'saving' || !user) return;
 
     setSaveState('saving');
@@ -223,7 +224,20 @@ const SaveButton = () => {
         setErrorMessage(null);
       }, 8000);
     }
-  };
+  }, [user, boards, activeBoard, defaultBoardId, saveState, quotaExceeded, markAsSaved, setSyncState, setLastSyncTime]);
+
+  // Auto-save: trigger handleSave 3s after unsaved changes appear
+  useEffect(() => {
+    if (hasUnsavedChanges && saveState === 'idle' && user) {
+      if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
+      autoSaveTimerRef.current = setTimeout(() => {
+        handleSave();
+      }, 3000);
+    }
+    return () => {
+      if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
+    };
+  }, [hasUnsavedChanges, saveState, user, handleSave]);
 
   // Keyboard shortcut: Cmd/Ctrl + S
   useEffect(() => {
