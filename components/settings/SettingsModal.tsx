@@ -23,6 +23,12 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   const [revoking, setRevoking] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [showRawToken, setShowRawToken] = useState(false);
+
+  const MCP_SERVER_URL = 'https://kando-mcp-server-production.up.railway.app/sse';
+
+  const buildMcpCommand = (token: string) =>
+    `claude mcp remove kando; claude mcp add kando ${MCP_SERVER_URL} --transport sse --scope user -H "Authorization: Bearer ${token}"`;
 
   const getIdToken = useCallback(async () => {
     if (!user) return null;
@@ -95,7 +101,7 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
 
   const handleCopy = () => {
     if (!newToken) return;
-    navigator.clipboard.writeText(newToken);
+    navigator.clipboard.writeText(buildMcpCommand(newToken));
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -126,8 +132,8 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
               <span className="text-xs px-1.5 py-0.5 rounded bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 font-medium">Pro</span>
             </div>
             <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
-              Generate a token so Claude Code can read your boards and cards via the Kan-do MCP server.
-              Copy the token once — it is not stored and cannot be retrieved again.
+              Generate a ready-to-run CLI command to connect Claude Code to your Kan-do boards.
+              Copy and paste it into your terminal once — it contains your secret token and won't be shown again.
             </p>
 
             {/* Generate form */}
@@ -153,26 +159,37 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
               <p className="text-xs text-red-500 mb-3">{error}</p>
             )}
 
-            {/* Newly generated token — show once */}
+            {/* Newly generated command — show once */}
             {newToken && (
               <div className="mb-4 p-3 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800">
                 <p className="text-xs font-medium text-green-800 dark:text-green-300 mb-2">
-                  Token generated — copy it now. You won't see it again.
+                  Command ready — copy and run in your terminal. You won't see this again.
                 </p>
-                <div className="flex items-center gap-2">
-                  <code className="flex-1 text-xs break-all font-mono text-green-900 dark:text-green-100 bg-green-100 dark:bg-green-900/40 px-2 py-1.5 rounded">
-                    {newToken}
+                <div className="flex items-start gap-2 mb-2">
+                  <code className="flex-1 text-xs break-all font-mono text-green-900 dark:text-green-100 bg-green-100 dark:bg-green-900/40 px-2 py-2 rounded leading-relaxed">
+                    {buildMcpCommand(newToken)}
                   </code>
                   <button
                     onClick={handleCopy}
-                    className="shrink-0 px-3 py-1.5 text-xs font-medium rounded bg-green-600 hover:bg-green-700 text-white transition-colors"
+                    className="shrink-0 px-3 py-1.5 text-xs font-medium rounded bg-green-600 hover:bg-green-700 text-white transition-colors mt-0.5"
                   >
-                    {copied ? 'Copied!' : 'Copy'}
+                    {copied ? 'Copied!' : 'Copy command'}
                   </button>
                 </div>
-                <p className="text-xs text-green-700 dark:text-green-400 mt-2">
-                  Add to Claude Code config: <code className="font-mono">~/.claude/mcp.json</code>
+                <p className="text-xs text-green-700 dark:text-green-400 mb-2">
+                  After running, restart Claude Code to load the new server.
                 </p>
+                <button
+                  onClick={() => setShowRawToken((v) => !v)}
+                  className="text-xs text-green-600 dark:text-green-500 underline underline-offset-2 hover:text-green-800 dark:hover:text-green-300 transition-colors"
+                >
+                  {showRawToken ? 'Hide raw token' : 'Show raw token (advanced)'}
+                </button>
+                {showRawToken && (
+                  <code className="block mt-2 text-xs break-all font-mono text-green-900 dark:text-green-100 bg-green-100 dark:bg-green-900/40 px-2 py-1.5 rounded">
+                    {newToken}
+                  </code>
+                )}
               </div>
             )}
 
