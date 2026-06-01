@@ -10,6 +10,7 @@
 
 import { initializeApp, getApps, cert } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
+import { getFirestore } from 'firebase-admin/firestore';
 
 function initAdmin() {
   if (getApps().length > 0) return;
@@ -23,7 +24,11 @@ function initAdmin() {
   initializeApp({ credential: cert(serviceAccount) });
 }
 
+initAdmin();
+
+export const adminAuth = getAuth();
+export const adminDb = getFirestore();
+
 export function getAdminAuth() {
-  initAdmin();
-  return getAuth();
+  return adminAuth;
 }
