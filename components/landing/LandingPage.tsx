@@ -56,28 +56,18 @@ const HERO_COLUMNS = [
 function MiniBoardVisual() {
   return (
     <div className="relative">
-      {/* Purple glow behind board */}
-      <div
-        aria-hidden="true"
-        style={{
-          position: 'absolute',
-          inset: '-30px',
-          background: 'radial-gradient(circle at 60% 40%, rgba(147,51,234,0.4), transparent 70%)',
-          filter: 'blur(40px)',
-          zIndex: -1,
-          borderRadius: '50%',
-        }}
-      />
-
-      {/* Glass board */}
+      {/* Glass board — glow lives on the panel itself via box-shadow so it contrasts
+          against the gradient mesh (which is already purple in this zone of the hero) */}
       <div
         className="rounded-[20px] p-5 glass-surface"
         style={{
-          background: 'rgba(35,31,28,0.55)',
-          border: '1px solid rgba(255,255,255,0.08)',
+          position: 'relative',
+          zIndex: 1,
+          background: 'rgba(35,31,28,0.7)',
+          border: '1px solid rgba(147,51,234,0.35)',
           backdropFilter: 'blur(20px) saturate(1.2)',
           WebkitBackdropFilter: 'blur(20px) saturate(1.2)',
-          boxShadow: '0 20px 60px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.06)',
+          boxShadow: '0 0 0 1px rgba(147,51,234,0.2), 0 0 40px rgba(147,51,234,0.5), 0 0 80px rgba(147,51,234,0.25), 0 20px 60px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.08)',
         }}
       >
         <div className="flex items-center gap-2 mb-4">
@@ -103,6 +93,7 @@ function MiniBoardVisual() {
                 {col.cards.map((card) => (
                   <div
                     key={card.title}
+                    className="landing-hover"
                     style={{
                       background: 'rgba(22,20,18,0.7)',
                       border: '1px solid rgba(255,255,255,0.06)',
@@ -393,7 +384,7 @@ export default function LandingPage() {
                   <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
                   </svg>
-                  See it in action
+                  See how it works
                 </a>
               </div>
 
@@ -609,10 +600,24 @@ export default function LandingPage() {
                 </button>
               </div>
 
-              {/* Pro plan */}
+              {/* Pro plan — ambient glow wrapper */}
+              <div className="relative">
+                <div
+                  aria-hidden="true"
+                  style={{
+                    position: 'absolute',
+                    inset: '-24px',
+                    background: 'radial-gradient(circle at 50% 50%, rgba(147,51,234,0.35), transparent 70%)',
+                    filter: 'blur(40px)',
+                    zIndex: 0,
+                    borderRadius: '28px',
+                  }}
+                />
               <div
-                className="rounded-[20px] p-8 flex flex-col relative glass-surface"
+                className="rounded-[20px] p-8 flex flex-col glass-surface"
                 style={{
+                  position: 'relative',
+                  zIndex: 1,
                   background: 'rgba(35,31,28,0.55)',
                   border: '1px solid rgba(147,51,234,0.5)',
                   backdropFilter: 'blur(16px)',
@@ -658,6 +663,7 @@ export default function LandingPage() {
                   Start Pro
                 </button>
               </div>
+              </div>{/* /Pro glow wrapper */}
             </div>
           </div>
         </section>
