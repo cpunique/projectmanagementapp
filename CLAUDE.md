@@ -145,6 +145,14 @@ producing false comments becomes a real concern before/at production. Preconditi
 backstop to hold: the activity feed must stay visible/accessible enough that users can
 reconcile comments against it.
 
+## Actor-Label Logic — Single Source of Truth
+
+Actor-label resolution (who performed an activity) is centralized in `lib/utils/getActorLabel.ts`. Logic: `actorType === 'agent'` → `"🤖 ${agentName ?? 'Claude'}"` first; else `actorId === currentUserId` → `"You"`; else email prefix / `"Someone"`.
+
+Was previously duplicated inline in `ActivityFeedPanel.tsx` and `CardActivityTimeline.tsx`. The duplication caused an attribution fix to half-land: the first fix corrected the board-level panel but left the card-modal timeline showing `"You moved…"` / `"You added a comment"` for MCP agent actions. The second copy was only found by grepping for the pattern.
+
+**Lesson:** when a fix appears not to work on production despite correct data and correct code, suspect a second copy of the logic before re-fixing the first copy. Same failure class as the two-codebase MCP enforcement split — a rule enforced in one place but silently duplicated-and-unfixed elsewhere. If actor-label logic ever needs to change (new actor type, label format), edit `lib/utils/getActorLabel.ts` only — both surfaces update automatically.
+
 ## Engineering Critical Path (next up)
 
 Stripe test mode → 3-board enforcement → `featureGate.ts` cleanup (remove the hardcoded UID allowlist — must precede Stripe live keys) → cancellation/downgrade → Stripe live keys → MCP Phase B (Pro gating, revocation on cancel, audit logging). Operational prereq: Loops account + API key + waitlist audience before the landing-page waitlist goes live.
