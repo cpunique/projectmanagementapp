@@ -63,6 +63,16 @@ service cloud.firestore {
       return boardId == 'default-board' && isAuthenticated();
     }
 
+    // Pro status, free-generation entitlement, and MCP tokens are set only by the
+    // Admin SDK (server-side API routes), which bypasses these rules entirely.
+    // Clients must never be able to set or change them directly.
+    function protectedUserFieldsUnchanged() {
+      return request.resource.data.get('isPro', false) == resource.data.get('isPro', false) &&
+             request.resource.data.get('freeGenerationUsed', false) == resource.data.get('freeGenerationUsed', false) &&
+             request.resource.data.get('freeGenerationClaimedAt', null) == resource.data.get('freeGenerationClaimedAt', null) &&
+             request.resource.data.get('mcpTokens', []) == resource.data.get('mcpTokens', []);
+    }
+
     // ============================================
     // Users Collection Rules
     // ============================================
@@ -74,11 +84,17 @@ service cloud.firestore {
       allow get: if isAuthenticated();
       allow list: if false;
 
-      // Users can create their own document
-      allow create: if isAuthenticated() && request.auth.uid == userId;
+      // Users can create their own document, but cannot set isPro/free-generation/
+      // mcpTokens fields on creation — those are server-only (Admin SDK bypasses this rule).
+      allow create: if isAuthenticated() && request.auth.uid == userId &&
+                      !('isPro' in request.resource.data) &&
+                      !('freeGenerationUsed' in request.resource.data) &&
+                      !('freeGenerationClaimedAt' in request.resource.data) &&
+                      !('mcpTokens' in request.resource.data);
 
-      // Users can update their own document
-      allow update: if isAuthenticated() && request.auth.uid == userId;
+      // Users can update their own document, but cannot change isPro/free-generation/mcpTokens fields.
+      allow update: if isAuthenticated() && request.auth.uid == userId &&
+                      protectedUserFieldsUnchanged();
 
       // Prevent user deletion
       allow delete: if false;
@@ -119,8 +135,11 @@ service cloud.firestore {
     // ============================================
 
     match /boards/{boardId}/activities/{activityId} {
-      // Read: Anyone who can read the board can read its activities
+      // Read: Anyone who can read the board can read its activities.
+      // exists() guard prevents a null-access crash in the rules engine when the parent
+      // board document doesn't exist yet (e.g. new board not yet flushed to Firebase).
       allow read: if isAuthenticated() &&
+                    exists(/databases/$(database)/documents/boards/$(boardId)) &&
                     (get(/databases/$(database)/documents/boards/$(boardId)).data.ownerId == request.auth.uid ||
                      (get(/databases/$(database)/documents/boards/$(boardId)).data.sharedWithUserIds != null &&
                       request.auth.uid in get(/databases/$(database)/documents/boards/$(boardId)).data.sharedWithUserIds));
@@ -153,8 +172,11 @@ service cloud.firestore {
     // ============================================
 
     match /boards/{boardId}/presence/{userId} {
-      // Read: same access check as the parent board
+      // Read: same access check as the parent board.
+      // exists() guard prevents a null-access crash in the rules engine when the parent
+      // board document doesn't exist yet (e.g. new board or demo board).
       allow read: if isAuthenticated() &&
+                    exists(/databases/$(database)/documents/boards/$(boardId)) &&
                     (get(/databases/$(database)/documents/boards/$(boardId)).data.ownerId == request.auth.uid ||
                      (get(/databases/$(database)/documents/boards/$(boardId)).data.sharedWithUserIds != null &&
                       request.auth.uid in get(/databases/$(database)/documents/boards/$(boardId)).data.sharedWithUserIds));

@@ -10,6 +10,11 @@
   80% { transform: translateX(5px); }
 }
 
+@keyframes fadeInScale {
+  0% { opacity: 0; transform: scale(0.96); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
 .shake {
   animation: shake 0.4s ease-in-out !important;
 }
@@ -21,16 +26,50 @@
 }
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #161412;
+  --foreground: #f5f0ee;
+
+  /* ── Elevation surfaces (dark-first; light mode = future [data-theme="light"] swap) ── */
+  --bg:        #161412;
+  --surface-1: #1d1a17;
+  --surface-2: #231f1c;
+  --surface-3: #2a2522;
+  --gutter:    20px;
+
+  /* ── Borders ── */
+  --border:    #322d2a;
+  --border-2:  #4a4240;
+
+  /* ── Text ── */
+  --text:      #f5f0ee;
+  --body:      #a89890;
+  --muted:     #6b5e58;
+
+  /* ── Accent ── */
+  --purple:    #9333ea;
+  --purple-l:  #c084fc;
+  --pink:      #f472b6;
+  --glow:      rgba(147,51,234,.45);
+
+  /* ── Status colors ── */
+  --green:     #4ade80;
+  --amber:     #fbbf24;
+  --red:       #fb7185;
+  --orange:    #fb923c;
+
+  /* ── Elevation shadows (from mockup) ── */
+  --shadow-1:  0 4px 14px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.05);
+  --shadow-2:  0 4px 14px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.05);
+  --shadow-2h: 0 8px 24px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.06);
+  --shadow-3:  0 12px 32px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.05);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
+/* Future light mode — flip these values; zero component changes needed */
+/* [data-theme="light"] { --bg: #f8f7f6; --surface-1: #fff; ... } */
+
+/* Dark-only app: --background/--foreground above are pinned to dark and must
+   NOT be overridden by prefers-color-scheme. An OS set to light mode must not
+   be able to flip this page light. */
 
 html {
   scroll-behavior: smooth;
@@ -92,4 +131,54 @@ body {
 
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
+}
+
+/* Glass morphism modal — using @supports to ensure browser support */
+@supports (backdrop-filter: blur(1px)) {
+  .auth-modal-glass {
+    background: rgba(42, 37, 34, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    border-radius: 18px;
+    backdrop-filter: blur(24px) saturate(1.2);
+    -webkit-backdrop-filter: blur(24px) saturate(1.2);
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    position: relative;
+  }
+}
+
+/* Fallback if backdrop-filter not supported */
+@supports not (backdrop-filter: blur(1px)) {
+  .auth-modal-glass {
+    background: rgba(42, 37, 34, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    border-radius: 18px;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    position: relative;
+  }
+}
+
+/* Dark theme select option styling */
+select option {
+  background: var(--surface-2);
+  color: var(--text);
+}
+
+/* Modal section container */
+.modal-section {
+  background: rgba(35, 31, 28, 0.4);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px;
+  margin-bottom: 12px;
+}
+
+/* Section label (uppercase accent) */
+.section-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.7px;
+  text-transform: uppercase;
+  color: var(--purple-l);
+  margin-bottom: 10px;
+  display: block;
 }

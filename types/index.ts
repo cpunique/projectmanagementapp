@@ -18,7 +18,9 @@ export interface CardComment {
   createdAt: string;
   updatedAt?: string;
   isEdited?: boolean;
-  mentions?: MentionedUser[]; // Users mentioned with @
+  mentions?: MentionedUser[];
+  authorType?: 'human' | 'agent';
+  agentName?: string;
 }
 
 // Activity Feed types
@@ -46,6 +48,8 @@ export interface ActivityEntry {
   actorId: string;
   actorEmail: string;
   createdAt: string;
+  actorType?: 'human' | 'agent';
+  agentName?: string;
   cardId?: string;
   cardTitle?: string;
   columnTitle?: string;
@@ -173,6 +177,20 @@ export interface KanbanState {
   analyticsPanelOpen: boolean;
   // Archive panel state
   archivePanelOpen: boolean;
+  // Mobile full-screen Alerts/Notifications takeover view state
+  mobileAlertsOpen: boolean;
+  // Mobile full-screen Search takeover view state
+  mobileSearchOpen: boolean;
+  // Card search scope toggle
+  searchScope: 'this-board' | 'all-boards';
+  // Incremented to signal search input to open/focus (Ctrl+/ shortcut)
+  searchFocusTick: number;
+  // Generic "open this card" deep-link target — set by notifications/search to
+  // programmatically open + scroll to a card from outside its own component tree
+  activeCardId: string | null;
+  // Create-board modal: cross-component trigger (e.g. from onboarding) to open
+  // the existing create-board flow owned by BoardSwitcher
+  createBoardModalOpen: boolean;
   dueDatePanelWidth: number;
   // Active view: board or calendar
   activeView: 'board' | 'calendar';
@@ -194,7 +212,7 @@ export interface KanbanState {
 
 export interface KanbanActions {
   // Board actions
-  addBoard: (name: string, description?: string, templateColumns?: { title: string; order: number }[]) => void;
+  addBoard: (name: string, description?: string, templateColumns?: { title: string; order: number; cards?: Card[] }[]) => void;
   deleteBoard: (boardId: string) => void;
   updateBoard: (boardId: string, name: string) => void;
   updateBoardDescription: (boardId: string, description: string) => void;
@@ -246,7 +264,7 @@ export interface KanbanActions {
   toggleChecklistItem: (boardId: string, cardId: string, itemId: string) => void;
 
   // Comment actions
-  addComment: (boardId: string, cardId: string, authorId: string, authorEmail: string, content: string, mentions?: MentionedUser[]) => void;
+  addComment: (boardId: string, cardId: string, authorId: string, authorEmail: string, content: string, mentions?: MentionedUser[], authorType?: 'human' | 'agent', agentName?: string) => void;
   editComment: (boardId: string, cardId: string, commentId: string, content: string, mentions?: MentionedUser[]) => void;
   deleteComment: (boardId: string, cardId: string, commentId: string) => void;
 
@@ -264,6 +282,8 @@ export interface KanbanActions {
   setSearchQuery: (query: string) => void;
   setFilters: (filters: KanbanState["filters"]) => void;
   clearFilters: () => void;
+  setSearchScope: (scope: 'this-board' | 'all-boards') => void;
+  triggerSearchFocus: () => void;
 
   // Due dates panel actions
   toggleDueDatePanel: () => void;
@@ -281,6 +301,16 @@ export interface KanbanActions {
   // Archive panel actions
   toggleArchivePanel: () => void;
   setArchivePanelOpen: (isOpen: boolean) => void;
+
+  // Mobile full-screen Alerts view actions
+  setMobileAlertsOpen: (isOpen: boolean) => void;
+  setMobileSearchOpen: (isOpen: boolean) => void;
+
+  // Card deep-link navigation (used by notifications now, search later)
+  setActiveCardId: (cardId: string | null) => void;
+
+  // Create-board modal actions (cross-component trigger)
+  setCreateBoardModalOpen: (isOpen: boolean) => void;
 
   // View actions
   setActiveView: (view: 'board' | 'calendar') => void;

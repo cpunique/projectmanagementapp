@@ -39,3 +39,11 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# local dev logs and artifacts
+*.log
+nul
+memory.md
+
+# design chat exports (large binary, not a project artifact)
+docs/*.zip
