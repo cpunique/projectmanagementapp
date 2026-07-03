@@ -1,14 +1,14 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/firebase/AuthContext';
 import Tooltip from '@/components/ui/Tooltip';
-import SettingsModal from '@/components/settings/SettingsModal';
 
 export default function UserMenu() {
+  const router = useRouter();
   const { user, signOut } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
-  const [settingsOpen, setSettingsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -42,7 +42,13 @@ export default function UserMenu() {
         className="flex items-center gap-1.5 p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
       >
         {/* Avatar Circle only — email shown in dropdown */}
-        <div className="w-8 h-8 rounded-full bg-purple-600 flex items-center justify-center text-white text-sm font-medium">
+        <div
+          className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-medium flex-shrink-0"
+          style={{
+            background: 'linear-gradient(135deg, #9333ea, #c084fc)',
+            boxShadow: '0 0 12px rgba(147,51,234,.45)',
+          }}
+        >
           {userInitials}
         </div>
         {/* Chevron */}
@@ -72,7 +78,7 @@ export default function UserMenu() {
 
           {/* Settings */}
           <button
-            onClick={() => { setSettingsOpen(true); setIsOpen(false); }}
+            onClick={() => { router.push('/settings'); setIsOpen(false); }}
             className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center gap-2"
           >
             <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -94,8 +100,6 @@ export default function UserMenu() {
           </button>
         </div>
       )}
-
-      <SettingsModal isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} />
     </div>
   );
 }
