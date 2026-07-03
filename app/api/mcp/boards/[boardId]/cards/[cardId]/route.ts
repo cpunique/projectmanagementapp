@@ -40,9 +40,9 @@ function findCard(
 // ── PATCH /api/mcp/boards/[boardId]/cards/[cardId] ───────────────────────────
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { boardId: string; cardId: string } }
+  { params }: { params: Promise<{ boardId: string; cardId: string }> }
 ) {
-  const { boardId, cardId } = params;
+  const { boardId, cardId } = await params;
 
   // Step 1: validate token + board-scope
   const claims = await validateMcpToken(req, boardId);
@@ -154,9 +154,9 @@ export async function PATCH(
 // Rate-limited at 5 deletes/min (stricter bucket) AND within the 20 writes/min global budget.
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { boardId: string; cardId: string } }
+  { params }: { params: Promise<{ boardId: string; cardId: string }> }
 ) {
-  const { boardId, cardId } = params;
+  const { boardId, cardId } = await params;
 
   const claims = await validateMcpToken(req, boardId);
   if (claims instanceof NextResponse) return claims;

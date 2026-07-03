@@ -14,9 +14,9 @@ type BoardDoc = { ownerId: string; editorUserIds?: string[]; columns: ColumnDoc[
 // ── POST /api/mcp/boards/[boardId]/cards/[cardId]/move ───────────────────────
 export async function POST(
   req: NextRequest,
-  { params }: { params: { boardId: string; cardId: string } }
+  { params }: { params: Promise<{ boardId: string; cardId: string }> }
 ) {
-  const { boardId, cardId } = params;
+  const { boardId, cardId } = await params;
 
   // Step 1: validate token + board-scope
   const claims = await validateMcpToken(req, boardId);

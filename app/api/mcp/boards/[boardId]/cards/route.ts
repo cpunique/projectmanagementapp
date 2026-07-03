@@ -41,9 +41,9 @@ type BoardDoc = {
 // POST /api/mcp/boards/[boardId]/cards
 export async function POST(
   req: NextRequest,
-  { params }: { params: { boardId: string } }
+  { params }: { params: Promise<{ boardId: string }> }
 ) {
-  const { boardId } = params;
+  const { boardId } = await params;
 
   const claims = await validateMcpToken(req, boardId);
   if (claims instanceof NextResponse) return claims;
