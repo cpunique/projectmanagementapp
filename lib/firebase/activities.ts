@@ -50,6 +50,8 @@ function docsToActivities(snapshot: import('firebase/firestore').QuerySnapshot):
       createdAt: data.createdAt instanceof Timestamp
         ? data.createdAt.toDate().toISOString()
         : data.createdAt || new Date().toISOString(),
+      actorType: data.actorType,
+      agentName: data.agentName,
       cardId: data.cardId,
       cardTitle: data.cardTitle,
       columnTitle: data.columnTitle,

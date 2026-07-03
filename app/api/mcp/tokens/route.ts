@@ -24,16 +24,19 @@ export async function GET(req: NextRequest) {
   if (!uid) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const userDoc = await adminDb.collection('users').doc(uid).get();
-  const tokens: Array<{ hash: string; label: string; createdAt: string; expiresAt?: string }> =
+  const tokens: Array<{ hash: string; label: string; createdAt: string; expiresAt?: string; boardId?: string; boardName?: string }> =
     userDoc.data()?.mcpTokens ?? [];
 
-  const metadata = tokens.map(({ label, createdAt, expiresAt }) => ({
+  const isPro: boolean = userDoc.data()?.isPro === true;
+
+  const metadata = tokens.map(({ label, createdAt, expiresAt, boardId, boardName }) => ({
     label,
     createdAt,
     expiresAt,
+    ...(boardId ? { boardId, boardName } : {}),
   }));
 
-  return NextResponse.json({ tokens: metadata });
+  return NextResponse.json({ tokens: metadata, isPro });
 }
 
 // POST /api/mcp/tokens — generate a new token
@@ -41,12 +44,25 @@ export async function POST(req: NextRequest) {
   const uid = await getUserIdFromRequest(req);
   if (!uid) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const body = await req.json().catch(() => ({}));
-  const label: string = body.label?.trim() || 'Claude Code';
-
   const userRef = adminDb.collection('users').doc(uid);
   const userDoc = await userRef.get();
-  const existing: Array<{ hash: string; label: string; createdAt: string }> =
+
+  // MCP token generation is a Pro feature — read from the real users/{uid}.isPro
+  // field (same pattern as the structured AI-generation gate), never the client.
+  if (userDoc.data()?.isPro !== true) {
+    return NextResponse.json({ error: 'upgrade_required' }, { status: 403 });
+  }
+
+  const body = await req.json().catch(() => ({}));
+  const label: string = body.label?.trim() || 'Claude Code';
+  const boardId: string | undefined = body.boardId?.trim() || undefined;
+  const boardName: string | undefined = body.boardName?.trim() || undefined;
+
+  if (!boardId) {
+    return NextResponse.json({ error: 'boardId is required' }, { status: 400 });
+  }
+
+  const existing: Array<{ hash: string; label: string; createdAt: string; boardId?: string; boardName?: string }> =
     userDoc.data()?.mcpTokens ?? [];
 
   if (existing.length >= MAX_TOKENS_PER_USER) {
@@ -67,6 +83,8 @@ export async function POST(req: NextRequest) {
     hash: tokenHash,
     label,
     createdAt: new Date().toISOString(),
+    boardId,
+    ...(boardName ? { boardName } : {}),
   };
 
   await userRef.update({
@@ -74,7 +92,7 @@ export async function POST(req: NextRequest) {
   });
 
   // Return the raw token once — it is never stored and cannot be retrieved again
-  return NextResponse.json({ token: rawToken, label });
+  return NextResponse.json({ token: rawToken, label, boardId, boardName });
 }
 
 // DELETE /api/mcp/tokens — revoke a token by label

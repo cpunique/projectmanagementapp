@@ -2,8 +2,80 @@
 // Version: 2 - Using direct fetch instead of SDK
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { Timestamp, FieldValue } from 'firebase-admin/firestore';
 import { aiPromptRatelimit } from '@/lib/ratelimit';
 import { canAccessProFeaturesById, isProUserId } from '@/lib/features/featureGate';
+
+// How long a claimed-but-not-finalized free generation blocks a second concurrent
+// request before it's treated as abandoned (e.g. server crashed mid-request) and
+// released. Long enough to cover a full Anthropic round trip with margin.
+const FREE_GEN_CLAIM_STALE_MS = 90_000;
+
+// Single source of truth for the model id, used whenever NEXT_PUBLIC_CLAUDE_MODEL
+// isn't set. Keep this as a non-dated alias (e.g. "claude-sonnet-4-6"), not a dated
+// snapshot (e.g. "claude-sonnet-4-20250514") — Anthropic retires dated snapshots,
+// which surfaces as a 404 here. Aliases get redirected forward instead of 404ing.
+const DEFAULT_CLAUDE_MODEL = 'claude-sonnet-4-6';
+
+// Anthropic returns 404 with error.type "not_found_error" both for bad model ids
+// and (separately) bad URLs — checking the type narrows it to "this model id is
+// wrong/retired" so the log points straight at the env var instead of needing
+// another round of guessing.
+function logIfModelNotFound(response: Response, message: any, model: string) {
+  if (response.status === 404 && message?.error?.type === 'not_found_error') {
+    console.error(
+      `[AI Prompt] Anthropic model "${model}" was not found (likely retired). ` +
+      `Update NEXT_PUBLIC_CLAUDE_MODEL in .env.local to a current model id.`
+    );
+  }
+}
+
+type FreeGenClaimResult = 'claimed' | 'used' | 'in_progress';
+
+// Atomically checks freeGenerationUsed and claims the freebie before the Anthropic
+// call is made, so two concurrent requests can't both proceed to generate. The actual
+// Anthropic call happens outside this transaction (external HTTP calls inside a
+// Firestore transaction risk duplicate calls on transaction retry under contention).
+async function claimFreeGeneration(userId: string): Promise<FreeGenClaimResult> {
+  const { adminDb } = await import('@/lib/firebase/admin');
+  const userRef = adminDb.collection('users').doc(userId);
+
+  return adminDb.runTransaction(async (tx) => {
+    const snap = await tx.get(userRef);
+    const d = snap.data() ?? {};
+
+    if (d.freeGenerationUsed === true) return 'used';
+
+    const claimedAtMs = d.freeGenerationClaimedAt?.toMillis ? d.freeGenerationClaimedAt.toMillis() : null;
+    const claimIsFresh = claimedAtMs !== null && Date.now() - claimedAtMs < FREE_GEN_CLAIM_STALE_MS;
+    if (claimIsFresh) return 'in_progress';
+
+    tx.set(userRef, { freeGenerationClaimedAt: Timestamp.now() }, { merge: true });
+    return 'claimed';
+  });
+}
+
+// Marks the free generation as permanently used. Only called after a successful
+// generation that returned usable cards — never before the Anthropic call, and never
+// for a failed/empty result.
+async function finalizeFreeGeneration(userId: string): Promise<void> {
+  const { adminDb } = await import('@/lib/firebase/admin');
+  const userRef = adminDb.collection('users').doc(userId);
+
+  await adminDb.runTransaction(async (tx) => {
+    const snap = await tx.get(userRef);
+    if (snap.data()?.freeGenerationUsed === true) return;
+    tx.set(userRef, { freeGenerationUsed: true, freeGenerationClaimedAt: FieldValue.delete() }, { merge: true });
+  });
+}
+
+// Releases the claim without marking the freebie used, leaving the user eligible to
+// retry. Called on any real failure: API/network error, or empty/malformed output.
+async function releaseFreeGenerationClaim(userId: string): Promise<void> {
+  const { adminDb } = await import('@/lib/firebase/admin');
+  const userRef = adminDb.collection('users').doc(userId);
+  await userRef.set({ freeGenerationClaimedAt: FieldValue.delete() }, { merge: true }).catch(() => {});
+}
 
 // Instruction type definitions
 type InstructionType = 'development' | 'general' | 'event-planning' | 'documentation' | 'research';
@@ -113,6 +185,120 @@ const GeneratePromptSchema = z.object({
   boardName: z.string().max(200, 'Board name too long').optional(),
 });
 
+// Structured mode (board-level "Generate Tasks" flow) — gated independently of
+// canAccessProFeaturesById/the env Pro allowlist. Pro is read from the real
+// users/{uid}.isPro field; non-Pro users get exactly one lifetime free generation,
+// enforced here, not on the client.
+async function handleStructuredGeneration(
+  userId: string,
+  data: { cardTitle: string; boardName?: string; description?: string },
+  apiKey: string
+) {
+  const { adminDb } = await import('@/lib/firebase/admin');
+  const userSnap = await adminDb.collection('users').doc(userId).get();
+  const userIsPro = userSnap.data()?.isPro === true;
+  let usingFreeGeneration = false;
+
+  if (!userIsPro) {
+    const claim = await claimFreeGeneration(userId);
+
+    if (claim === 'used') {
+      return NextResponse.json(
+        {
+          error: 'upgrade_required',
+          message: "You've used your free AI generation. Upgrade to Pro for unlimited task generation.",
+        },
+        { status: 403 }
+      );
+    }
+
+    if (claim === 'in_progress') {
+      return NextResponse.json(
+        { error: 'A generation is already in progress for this account. Please wait a moment and try again.' },
+        { status: 429 }
+      );
+    }
+
+    usingFreeGeneration = true;
+  }
+
+  const model = process.env.NEXT_PUBLIC_CLAUDE_MODEL || DEFAULT_CLAUDE_MODEL;
+  let structuredUserMsg = `Goal: ${data.cardTitle}\n`;
+  if (data.boardName) structuredUserMsg += `Board: ${data.boardName}\n`;
+  if (data.description) structuredUserMsg += `Context: ${data.description}\n`;
+
+  try {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+      },
+      body: JSON.stringify({
+        model,
+        max_tokens: 4096,
+        messages: [{ role: 'user', content: `${STRUCTURED_SYSTEM_PROMPT}\n\n${structuredUserMsg}` }],
+      }),
+    });
+
+    const message = await response.json();
+    if (!response.ok) {
+      logIfModelNotFound(response, message, model);
+      throw new Error(`API returned ${response.status}: ${message.error?.message || 'Unknown error'}`);
+    }
+
+    const rawText = message.content
+      .filter((block: any) => block.type === 'text')
+      .map((block: any) => block.text)
+      .join('\n');
+
+    // Strip potential markdown code fences Claude may wrap around JSON
+    const cleaned = rawText.replace(/^```json\s*/i, '').replace(/```\s*$/, '').trim();
+
+    let parsed: { overview: string; tasks: { title: string; priority: string; description: string; checklist?: string[]; notes?: string; tags?: string[]; color?: string; suggestedDayOffset?: number }[] };
+    try {
+      parsed = JSON.parse(cleaned);
+    } catch {
+      console.error('[AI Prompt] Failed to parse structured JSON:', cleaned.slice(0, 200));
+      if (usingFreeGeneration) await releaseFreeGenerationClaim(userId);
+      return NextResponse.json(
+        { error: 'Failed to parse task list. Please try again.' },
+        { status: 500 }
+      );
+    }
+
+    const usableTasks = Array.isArray(parsed.tasks)
+      ? parsed.tasks.filter((t) => typeof t?.title === 'string' && t.title.trim().length > 0)
+      : [];
+
+    if (usableTasks.length === 0) {
+      if (usingFreeGeneration) await releaseFreeGenerationClaim(userId);
+      return NextResponse.json(
+        { error: 'No usable tasks were generated. Please try again.' },
+        { status: 500 }
+      );
+    }
+
+    // Success with usable cards — this is the trigger to mark the freebie used,
+    // regardless of whether the user later likes/keeps the cards.
+    if (usingFreeGeneration) await finalizeFreeGeneration(userId);
+
+    return NextResponse.json({
+      overview: parsed.overview,
+      tasks: parsed.tasks,
+      remaining: userIsPro ? -1 : 0,
+    });
+  } catch (apiError: any) {
+    console.error('[AI Prompt] Structured API call failed:', {
+      name: apiError?.name,
+      message: apiError?.message,
+    });
+    if (usingFreeGeneration) await releaseFreeGenerationClaim(userId);
+    throw apiError;
+  }
+}
+
 export async function POST(request: Request) {
   try {
     // 1. Verify authentication
@@ -140,7 +326,46 @@ export async function POST(request: Request) {
       );
     }
 
-    // 2. Check Pro feature access
+    // 2. Validate and sanitize input — done early so we know data.structured
+    // before deciding which gating path applies.
+    const body = await request.json();
+
+    const validationResult = GeneratePromptSchema.safeParse(body);
+
+    if (!validationResult.success) {
+      console.error('[AI Prompt] Validation failed:', validationResult.error.issues);
+      return NextResponse.json(
+        {
+          error: 'Invalid input data',
+          details: validationResult.error.issues.map(e => ({
+            field: e.path.join('.') || 'root',
+            message: e.message
+          }))
+        },
+        { status: 400 }
+      );
+    }
+
+    const data = validationResult.data;
+
+    // 3. Check API key
+    const apiKey = process.env.ANTHROPIC_API_KEY;
+    if (!apiKey) {
+      console.error('[AI Prompt] Missing ANTHROPIC_API_KEY');
+      return NextResponse.json(
+        { error: 'Service temporarily unavailable' },
+        { status: 503 }
+      );
+    }
+
+    // 4a. Structured mode — board-level "Generate Tasks" flow. Gated by the real
+    // users/{uid}.isPro field plus one free lifetime generation, NOT by
+    // canAccessProFeaturesById/the env Pro allowlist.
+    if (data.structured) {
+      return await handleStructuredGeneration(userId, data, apiKey);
+    }
+
+    // 4b. Plain-text mode ("AI Instructions") — existing Pro gate + rate limiting, unchanged
     if (!canAccessProFeaturesById(userId)) {
       return NextResponse.json(
         { error: 'AI Instructions is a Pro feature. Upgrade to Pro to unlock unlimited AI-generated instructions.' },
@@ -148,7 +373,6 @@ export async function POST(request: Request) {
       );
     }
 
-    // 3. Rate limiting (skip for Pro users)
     const isProUser = isProUserId(userId);
     let remaining = -1; // -1 indicates unlimited for Pro users
 
@@ -176,97 +400,6 @@ export async function POST(request: Request) {
       }
     }
 
-    // 4. Validate and sanitize input
-    const body = await request.json();
-
-    const validationResult = GeneratePromptSchema.safeParse(body);
-
-    if (!validationResult.success) {
-      console.error('[AI Prompt] Validation failed:', validationResult.error.issues);
-      return NextResponse.json(
-        {
-          error: 'Invalid input data',
-          details: validationResult.error.issues.map(e => ({
-            field: e.path.join('.') || 'root',
-            message: e.message
-          }))
-        },
-        { status: 400 }
-      );
-    }
-
-    const data = validationResult.data;
-
-    // 5. Check API key
-    const apiKey = process.env.ANTHROPIC_API_KEY;
-    if (!apiKey) {
-      console.error('[AI Prompt] Missing ANTHROPIC_API_KEY');
-      return NextResponse.json(
-        { error: 'Service temporarily unavailable' },
-        { status: 503 }
-      );
-    }
-
-    // 6a. Structured mode — generate JSON task list for board-level card creation
-    if (data.structured) {
-      const model = process.env.NEXT_PUBLIC_CLAUDE_MODEL || 'claude-sonnet-4-20250514';
-      let structuredUserMsg = `Goal: ${data.cardTitle}\n`;
-      if (data.boardName) structuredUserMsg += `Board: ${data.boardName}\n`;
-      if (data.description) structuredUserMsg += `Context: ${data.description}\n`;
-
-      try {
-        const response = await fetch('https://api.anthropic.com/v1/messages', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-api-key': apiKey,
-            'anthropic-version': '2023-06-01',
-          },
-          body: JSON.stringify({
-            model,
-            max_tokens: 4096,
-            messages: [{ role: 'user', content: `${STRUCTURED_SYSTEM_PROMPT}\n\n${structuredUserMsg}` }],
-          }),
-        });
-
-        const message = await response.json();
-        if (!response.ok) {
-          throw new Error(`API returned ${response.status}: ${message.error?.message || 'Unknown error'}`);
-        }
-
-        const rawText = message.content
-          .filter((block: any) => block.type === 'text')
-          .map((block: any) => block.text)
-          .join('\n');
-
-        // Strip potential markdown code fences Claude may wrap around JSON
-        const cleaned = rawText.replace(/^```json\s*/i, '').replace(/```\s*$/, '').trim();
-
-        let parsed: { overview: string; tasks: { title: string; priority: string; description: string; checklist?: string[]; notes?: string; tags?: string[]; color?: string; suggestedDayOffset?: number }[] };
-        try {
-          parsed = JSON.parse(cleaned);
-        } catch {
-          console.error('[AI Prompt] Failed to parse structured JSON:', cleaned.slice(0, 200));
-          return NextResponse.json(
-            { error: 'Failed to parse task list. Please try again.' },
-            { status: 500 }
-          );
-        }
-
-        return NextResponse.json(
-          { overview: parsed.overview, tasks: parsed.tasks, remaining },
-          { headers: { 'X-RateLimit-Remaining': remaining.toString() } }
-        );
-      } catch (apiError: any) {
-        console.error('[AI Prompt] Structured API call failed:', {
-          name: apiError?.name,
-          message: apiError?.message,
-        });
-        throw apiError;
-      }
-    }
-
-    // 6b. Plain-text mode — existing flow unchanged
     const instructionType = data.instructionType as InstructionType;
     const systemPrompt = SYSTEM_PROMPTS[instructionType];
 
@@ -312,7 +445,7 @@ export async function POST(request: Request) {
     }
 
     // 7. Call Claude API using direct fetch
-    const model = process.env.NEXT_PUBLIC_CLAUDE_MODEL || 'claude-sonnet-4-20250514';
+    const model = process.env.NEXT_PUBLIC_CLAUDE_MODEL || DEFAULT_CLAUDE_MODEL;
 
     // Instruction request based on type
     const instructionRequests: Record<InstructionType, string> = {
@@ -366,6 +499,7 @@ ${instructionRequests[instructionType]}`;
           status: response.status,
           error: message,
         });
+        logIfModelNotFound(response, message, model);
         throw new Error(`API returned ${response.status}: ${message.error?.message || 'Unknown error'}`);
       }
 
@@ -415,7 +549,7 @@ ${instructionRequests[instructionType]}`;
       code: error?.code,
       headers: error?.headers,
       apiKeyExists: !!process.env.ANTHROPIC_API_KEY,
-      modelUsed: process.env.NEXT_PUBLIC_CLAUDE_MODEL || 'claude-sonnet-4-20250514',
+      modelUsed: process.env.NEXT_PUBLIC_CLAUDE_MODEL || DEFAULT_CLAUDE_MODEL,
       fullError: JSON.stringify(error, Object.getOwnPropertyNames(error)),
     });
 
