@@ -1,219 +1,170 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { motion, AnimatePresence } from 'framer-motion';
-import { useKanbanStore } from '@/lib/store';
-import BoardTemplateSelector from '@/components/kanban/BoardTemplateSelector';
-import { BOARD_TEMPLATES, type BoardTemplate } from '@/lib/boardTemplates';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 
 interface OnboardingModalProps {
   isOpen: boolean;
-  onComplete: () => void;
+  onDismiss: () => void;
+  onCreateFirstBoard: () => void;
 }
 
-type Step = 1 | 2 | 3;
+export default function OnboardingModal({ isOpen, onDismiss, onCreateFirstBoard }: OnboardingModalProps) {
+  const shouldReduceMotion = useReducedMotion();
 
-const FEATURE_TILES = [
-  { icon: '✦', title: 'AI Task Generation', desc: 'Describe a goal and let AI fill your board with tasks' },
-  { icon: '☁', title: 'Real-time Sync', desc: 'Your boards sync instantly across all devices' },
-  { icon: '👥', title: 'Collaboration', desc: 'Share boards and work together in real time' },
-];
+  useEffect(() => {
+    if (!isOpen) return;
+    document.body.style.overflow = 'hidden';
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onDismiss();
+    };
+    document.addEventListener('keydown', handleEscape);
+    return () => {
+      document.removeEventListener('keydown', handleEscape);
+      document.body.style.overflow = 'unset';
+    };
+  }, [isOpen, onDismiss]);
 
-const VALUE_BULLETS = [
-  { icon: '📋', text: 'Create boards for any project — work, personal, or team' },
-  { icon: '🔄', text: 'Sync instantly across all your devices' },
-  { icon: '✦', text: 'Generate tasks with AI so you can start building faster' },
-];
-
-export default function OnboardingModal({ isOpen, onComplete }: OnboardingModalProps) {
-  const { addBoard } = useKanbanStore();
-  const [step, setStep] = useState<Step>(1);
-  const [boardName, setBoardName] = useState('');
-  const [selectedTemplate, setSelectedTemplate] = useState<BoardTemplate>(BOARD_TEMPLATES[0]);
-  const [isCreating, setIsCreating] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  if (!isOpen || typeof window === 'undefined') return null;
-
-  const handleCreateBoard = async () => {
-    if (!boardName.trim() || isCreating) return;
-    setIsCreating(true);
-    addBoard(boardName.trim(), undefined, selectedTemplate.columns);
-    await new Promise((r) => setTimeout(r, 400));
-    setIsCreating(false);
-    setStep(3);
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') handleCreateBoard();
-  };
-
-  const stepDots = [1, 2, 3] as const;
+  if (typeof window === 'undefined') return null;
 
   return createPortal(
-    <div className="fixed inset-0 z-[60] flex items-center justify-center">
-      {/* Non-dismissible backdrop */}
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+    <>
+      <style>{`
+        .kdo-onb-root{position:fixed;inset:0;z-index:80;display:flex;align-items:center;justify-content:center;padding:32px}
+        .kdo-onb-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.5);z-index:1}
+        .kdo-onb-outer{position:relative;z-index:2;width:100%;display:flex;justify-content:center}
 
-      <div className="relative z-10 w-full max-w-lg mx-4 bg-white dark:bg-gray-800 rounded-2xl shadow-2xl overflow-hidden">
-        {/* Step indicator */}
-        <div className="flex items-center justify-center gap-2 pt-6 pb-0">
-          {stepDots.map((s) => (
-            <div
-              key={s}
-              className={`h-1.5 rounded-full transition-all duration-300 ${
-                s === step
-                  ? 'w-8 bg-purple-600'
-                  : s < step
-                  ? 'w-4 bg-purple-300'
-                  : 'w-4 bg-gray-200 dark:bg-gray-700'
-              }`}
+        .kdo-onb-modal{position:relative;width:440px;max-width:calc(100% - 40px);
+          background:rgba(42,37,34,.7);backdrop-filter:blur(24px) saturate(1.2);-webkit-backdrop-filter:blur(24px) saturate(1.2);
+          border:1px solid rgba(255,255,255,.09);border-radius:18px;
+          box-shadow:0 24px 60px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.08);
+          padding:34px 32px 26px;text-align:center}
+        @supports not (backdrop-filter: blur(1px)) { .kdo-onb-modal{ background:#2a2522; } }
+
+        .kdo-onb-close{position:absolute;top:16px;right:16px;width:30px;height:30px;border-radius:8px;border:1px solid transparent;
+          background:transparent;color:var(--muted);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .12s}
+        .kdo-onb-close:hover{background:var(--surface-2);color:var(--text)}
+
+        .kdo-onb-hero{width:64px;height:64px;border-radius:18px;background:linear-gradient(135deg,#9333ea,#7c1d6f);
+          display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:28px;margin:0 auto 20px;
+          box-shadow:0 0 38px var(--glow),inset 0 1px 0 rgba(255,255,255,.18)}
+
+        .kdo-onb-h{font-size:22px;font-weight:600;letter-spacing:-.4px;margin-bottom:9px;color:var(--text)}
+        .kdo-onb-sub{font-size:13.5px;color:var(--body);line-height:1.6;max-width:330px;margin:0 auto 22px}
+
+        .kdo-onb-tease{background:rgba(35,31,28,.5);border:1px solid var(--border);border-radius:14px;padding:16px;text-align:left;margin-bottom:24px}
+        .kdo-onb-tease-top{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+        .kdo-onb-tease-spark{width:30px;height:30px;border-radius:9px;background:rgba(147,51,234,.14);border:1px solid rgba(147,51,234,.3);
+          display:flex;align-items:center;justify-content:center;color:var(--purple-l);flex-shrink:0}
+        .kdo-onb-tease-ttl{flex:1;font-size:13px;font-weight:600;color:var(--text)}
+        .kdo-onb-pro-pill{font-size:9.5px;font-weight:700;letter-spacing:.5px;color:var(--purple-l);background:rgba(147,51,234,.14);
+          border:1px solid rgba(147,51,234,.3);padding:3px 8px;border-radius:99px}
+        .kdo-onb-tease-desc{font-size:12px;color:var(--body);line-height:1.55;margin-bottom:13px}
+
+        .kdo-onb-mini{display:flex;align-items:center;gap:10px}
+        .kdo-onb-mini-type{flex:1;background:rgba(22,20,18,.6);border:1px solid var(--border-2);border-radius:8px;padding:8px 10px;
+          font-size:10.5px;color:var(--muted);font-style:italic;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+        .kdo-onb-mini-arrow{color:var(--purple-l);flex-shrink:0;display:flex}
+        .kdo-onb-mini-board{display:flex;gap:3px;flex-shrink:0}
+        .kdo-onb-mc{width:16px;height:30px;border-radius:4px;background:var(--surface-3);border:1px solid var(--border)}
+        .kdo-onb-mc span{display:block;height:4px;margin:3px 2px;border-radius:2px;background:var(--purple);opacity:.55}
+        .kdo-onb-mc span:nth-child(2){opacity:.35}
+
+        .kdo-onb-btn-primary{width:100%;padding:13px;border-radius:11px;border:none;background:var(--purple);color:#fff;
+          font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;box-shadow:0 0 24px var(--glow);
+          display:flex;align-items:center;justify-content:center;gap:8px;transition:opacity .15s}
+        .kdo-onb-btn-primary:hover{opacity:.92}
+        .kdo-onb-btn-ghost{width:100%;padding:11px;margin-top:6px;border:none;background:transparent;color:var(--muted);
+          font-family:inherit;font-size:12.5px;font-weight:500;cursor:pointer}
+        .kdo-onb-btn-ghost:hover{color:var(--body)}
+
+        @media (max-width:560px){
+          .kdo-onb-root{align-items:flex-end;padding:0}
+          .kdo-onb-modal{width:100%;max-width:100%;border-radius:20px 20px 0 0;
+            padding:30px 22px calc(22px + env(safe-area-inset-bottom, 0px))}
+          .kdo-onb-btn-primary,.kdo-onb-btn-ghost{min-height:44px}
+          .kdo-onb-close{width:44px;height:44px;top:8px;right:8px}
+        }
+      `}</style>
+      <AnimatePresence>
+        {isOpen && (
+          <div className="kdo-onb-root">
+            <motion.div
+              className="kdo-onb-backdrop"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: shouldReduceMotion ? 0 : 0.18 }}
+              onClick={onDismiss}
             />
-          ))}
-        </div>
 
-        {/* Steps */}
-        <div className="px-8 pt-6 pb-2 min-h-[22rem] flex flex-col justify-center">
-          <AnimatePresence mode="wait">
-            {/* Step 1: Welcome */}
-            {step === 1 && (
-              <motion.div
-                key="step1"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.18 }}
-                className="flex flex-col items-center text-center"
-              >
-                <div className="w-16 h-16 rounded-full bg-purple-100 dark:bg-purple-900/40 flex items-center justify-center mb-5">
-                  <span className="text-3xl text-purple-600 dark:text-purple-400">✦</span>
-                </div>
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Welcome to Kan-do</h2>
-                <p className="text-gray-500 dark:text-gray-400 text-sm mb-6">
-                  Your personal kanban workspace — flexible, smart, and always in sync.
-                </p>
-                <ul className="w-full text-left space-y-3">
-                  {VALUE_BULLETS.map((b) => (
-                    <li key={b.text} className="flex items-start gap-3 text-sm text-gray-600 dark:text-gray-300">
-                      <span className="text-base shrink-0 mt-0.5">{b.icon}</span>
-                      <span>{b.text}</span>
-                    </li>
-                  ))}
-                </ul>
-              </motion.div>
-            )}
+            {/* OUTER: animation wrapper — transform/opacity only, no glass here.
+                backdrop-filter on the inner panel breaks under a transformed ancestor,
+                so the glass surface must live on a separate, static element. */}
+            <motion.div
+              className="kdo-onb-outer"
+              initial={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: 24, scale: 0.97 }}
+              animate={shouldReduceMotion ? { opacity: 1 } : { opacity: 1, y: 0, scale: 1 }}
+              exit={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: 24, scale: 0.97 }}
+              transition={{ duration: shouldReduceMotion ? 0 : 0.22, ease: [0.16, 1, 0.3, 1] }}
+            >
+              {/* INNER: static glass panel, no transform */}
+              <div className="kdo-onb-modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Welcome to Kan-do">
+                <button className="kdo-onb-close" title="Dismiss" aria-label="Dismiss" onClick={onDismiss}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                    <path d="M6 6l12 12M18 6L6 18" />
+                  </svg>
+                </button>
 
-            {/* Step 2: Create board */}
-            {step === 2 && (
-              <motion.div
-                key="step2"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.18 }}
-                className="flex flex-col gap-4"
-              >
-                <div className="text-center mb-1">
-                  <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-1">Create your first board</h2>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">Give it a name and pick a template to get started.</p>
+                <div className="kdo-onb-hero">K</div>
+                <div className="kdo-onb-h">Welcome to Kan-do</div>
+                <div className="kdo-onb-sub">
+                  A Kanban board that builds itself. Organize work your way — or let Kan-do do the heavy lifting.
                 </div>
-                <div>
-                  <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">Board name</label>
-                  <input
-                    ref={inputRef}
-                    type="text"
-                    autoFocus
-                    value={boardName}
-                    onChange={(e) => setBoardName(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                    placeholder="e.g. My Project, Q2 Roadmap..."
-                    className="w-full px-4 py-2.5 border-2 border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:border-purple-500 focus:ring-4 focus:ring-purple-100 dark:focus:ring-purple-900/30 transition-all duration-200"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">Template</label>
-                  <BoardTemplateSelector
-                    selected={selectedTemplate.id}
-                    onSelect={setSelectedTemplate}
-                  />
-                </div>
-              </motion.div>
-            )}
 
-            {/* Step 3: You're set */}
-            {step === 3 && (
-              <motion.div
-                key="step3"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.18 }}
-                className="flex flex-col items-center text-center"
-              >
-                <div className="w-16 h-16 rounded-full bg-green-100 dark:bg-green-900/40 flex items-center justify-center mb-5">
-                  <span className="text-3xl text-green-600 dark:text-green-400">✓</span>
-                </div>
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Your board is ready!</h2>
-                <p className="text-gray-500 dark:text-gray-400 text-sm mb-6">
-                  Here are a few things you can do right away.
-                </p>
-                <div className="w-full grid grid-cols-3 gap-3">
-                  {FEATURE_TILES.map((tile) => (
-                    <div
-                      key={tile.title}
-                      className="flex flex-col items-center text-center p-3 rounded-xl bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-700"
-                    >
-                      <span className="text-xl mb-1.5 text-purple-600 dark:text-purple-400">{tile.icon}</span>
-                      <p className="text-xs font-semibold text-gray-800 dark:text-white mb-1">{tile.title}</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">{tile.desc}</p>
+                <div className="kdo-onb-tease">
+                  <div className="kdo-onb-tease-top">
+                    <div className="kdo-onb-tease-spark">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M12 3l1.8 4.2L18 9l-4.2 1.8L12 15l-1.8-4.2L6 9l4.2-1.8z" />
+                        <path d="M19 14l.7 1.8L21.5 16.5l-1.8.7L19 19l-.7-1.8L16.5 16.5l1.8-.7z" />
+                      </svg>
                     </div>
-                  ))}
+                    <div className="kdo-onb-tease-ttl">Describe it, and it&apos;s built</div>
+                    <span className="kdo-onb-pro-pill">PRO</span>
+                  </div>
+                  <div className="kdo-onb-tease-desc">
+                    Tell Kan-do what you&apos;re working on in plain language, and it generates the columns and cards for you — a ready-to-work board in seconds.
+                  </div>
+                  <div className="kdo-onb-mini">
+                    <div className="kdo-onb-mini-type">&quot;Plan a product launch&hellip;&quot;</div>
+                    <div className="kdo-onb-mini-arrow">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M5 12h14M13 6l6 6-6 6" />
+                      </svg>
+                    </div>
+                    <div className="kdo-onb-mini-board">
+                      <div className="kdo-onb-mc"><span /><span /></div>
+                      <div className="kdo-onb-mc"><span /><span /></div>
+                      <div className="kdo-onb-mc"><span /></div>
+                    </div>
+                  </div>
                 </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
 
-        {/* Footer */}
-        <div className="px-8 py-5 flex items-center justify-between border-t border-gray-100 dark:border-gray-700 mt-2">
-          {/* Left */}
-          <div>
-            {step === 1 && (
-              <button
-                onClick={onComplete}
-                className="text-sm text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
-              >
-                Skip for now
-              </button>
-            )}
-            {step === 2 && (
-              <button
-                onClick={() => setStep(1)}
-                className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
-              >
-                ← Back
-              </button>
-            )}
+                <button className="kdo-onb-btn-primary" onClick={onCreateFirstBoard}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 5v14M5 12h14" />
+                  </svg>
+                  Create your first board
+                </button>
+                <button className="kdo-onb-btn-ghost" onClick={onDismiss}>I&apos;ll explore on my own</button>
+              </div>
+            </motion.div>
           </div>
-
-          {/* Right: CTA */}
-          <button
-            onClick={() => {
-              if (step === 1) setStep(2);
-              else if (step === 2) handleCreateBoard();
-              else onComplete();
-            }}
-            disabled={step === 2 && (!boardName.trim() || isCreating)}
-            className="px-5 py-2.5 rounded-lg bg-purple-600 hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-semibold transition-colors duration-150 shadow-sm"
-          >
-            {step === 1 && 'Get Started →'}
-            {step === 2 && (isCreating ? 'Creating...' : 'Create Board →')}
-            {step === 3 && 'Start Building'}
-          </button>
-        </div>
-      </div>
-    </div>,
+        )}
+      </AnimatePresence>
+    </>,
     document.body
   );
 }

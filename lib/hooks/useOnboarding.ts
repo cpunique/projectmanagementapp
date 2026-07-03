@@ -6,8 +6,9 @@ import { useAuth } from '@/lib/firebase/AuthContext';
 import { useKanbanStore } from '@/lib/store';
 import { getDb } from '@/lib/firebase/config';
 
-const ONBOARDING_KEY = 'kanban-onboarding-completed';
-const NEW_USER_THRESHOLD_MS = 60_000; // 60 seconds
+// Per-account key — must include uid so dismissing onboarding under one
+// account never silences it for a different account signed into the same browser.
+const ONBOARDING_KEY_PREFIX = 'kanban-onboarding-completed-';
 
 export function useOnboarding() {
   const { user, loading: authLoading, requiresToSAcceptance } = useAuth();
@@ -23,21 +24,23 @@ export function useOnboarding() {
     if (hasChecked.current) return;
     hasChecked.current = true;
 
+    const onboardingKey = ONBOARDING_KEY_PREFIX + user.uid;
+
     const detect = async () => {
       try {
-        // Signal 1: localStorage fast-path
-        if (localStorage.getItem(ONBOARDING_KEY) === 'true') return;
+        // Signal 1: localStorage fast-path, scoped per-account
+        if (localStorage.getItem(onboardingKey) === 'true') return;
 
-        // Signal 2: returning user by account age
-        const creationTime = user.metadata.creationTime;
-        if (creationTime && Date.now() - new Date(creationTime).getTime() > NEW_USER_THRESHOLD_MS) return;
-
-        // Signal 3: Firestore check (completed on another device)
+        // Signal 2: Firestore check (completed on another device, or
+        // backfilled for accounts that pre-date this feature)
         try {
           const userSnap = await getDoc(doc(getDb(), 'users', user.uid));
           if (userSnap.exists() && userSnap.data()?.onboardingCompleted === true) return;
         } catch {
-          // Firestore unavailable — proceed with onboarding rather than blocking
+          // Fail closed on any error (permission-denied mid auth-swap, network, etc.).
+          // Never show onboarding because a check errored — only show when a check
+          // succeeds and confirms the flag is absent.
+          return;
         }
 
         setShowOnboarding(true);
@@ -51,10 +54,10 @@ export function useOnboarding() {
 
   const completeOnboarding = () => {
     setShowOnboarding(false);
-    localStorage.setItem(ONBOARDING_KEY, 'true');
 
-    // Non-blocking Firestore write
     if (user) {
+      localStorage.setItem(ONBOARDING_KEY_PREFIX + user.uid, 'true');
+      // Non-blocking Firestore write
       setDoc(doc(getDb(), 'users', user.uid), { onboardingCompleted: true }, { merge: true }).catch(() => {});
     }
   };

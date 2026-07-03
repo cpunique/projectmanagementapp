@@ -14,22 +14,23 @@ export default function BoardTemplateSelector({ selected, onSelect }: BoardTempl
         <button
           key={template.id}
           onClick={() => onSelect(template)}
-          className={`text-left p-3 rounded-lg border-2 transition-all ${
+          className="text-left p-3 rounded-lg border-2 transition-all"
+          style={
             selected === template.id
-              ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20'
-              : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 bg-white dark:bg-gray-800'
-          }`}
+              ? { borderColor: 'var(--purple)', background: 'rgba(147,51,234,.12)' }
+              : { borderColor: 'var(--border)', background: 'var(--surface-2)' }
+          }
         >
           <div className="flex items-center gap-2 mb-1">
             <span className="text-lg">{template.icon}</span>
-            <span className="text-sm font-medium text-gray-900 dark:text-white">
+            <span className="text-sm font-medium" style={{ color: 'var(--text)' }}>
               {template.name}
             </span>
           </div>
-          <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-1">
+          <p className="text-xs line-clamp-1" style={{ color: 'var(--muted)' }}>
             {template.description}
           </p>
-          <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+          <p className="text-xs mt-1" style={{ color: 'var(--muted)' }}>
             {template.columns.length} columns
           </p>
         </button>

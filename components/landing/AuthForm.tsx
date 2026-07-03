@@ -64,19 +64,45 @@ export default function AuthForm() {
   const displayError = localError || error;
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 border-2 border-gray-200 dark:border-gray-700 mb-8">
+    <div
+      className="p-6 mb-8"
+      style={{
+        background: 'rgba(42, 37, 34, 0.7)',
+        border: '1px solid rgba(255, 255, 255, 0.09)',
+        borderRadius: '18px',
+        backdropFilter: 'blur(24px) saturate(1.2)',
+        WebkitBackdropFilter: 'blur(24px) saturate(1.2)',
+        boxShadow: '0 24px 60px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.08)',
+      }}
+    >
       {/* Tab Switcher */}
-      <div className="flex gap-2 mb-6 p-1 bg-gray-100 dark:bg-gray-900 rounded-lg">
+      <div style={{
+        display: 'flex',
+        gap: '8px',
+        marginBottom: '24px',
+        background: 'var(--surface-2)',
+        padding: '3px',
+        borderRadius: '11px',
+        border: '1px solid var(--border)',
+      }}>
         <button
           onClick={() => {
             setMode('signup');
             setLocalError(null);
           }}
-          className={`flex-1 py-2 rounded-md font-medium transition-all ${
-            mode === 'signup'
-              ? 'bg-white dark:bg-gray-700 text-purple-600 dark:text-purple-400 shadow-sm'
-              : 'text-gray-600 dark:text-gray-400'
-          }`}
+          style={{
+            flex: 1,
+            padding: '7px 18px',
+            borderRadius: '8px',
+            fontSize: '13px',
+            fontWeight: '500',
+            border: 'none',
+            cursor: 'pointer',
+            background: mode === 'signup' ? 'var(--purple)' : 'transparent',
+            color: mode === 'signup' ? '#fff' : 'var(--body)',
+            boxShadow: mode === 'signup' ? '0 0 16px var(--glow)' : 'none',
+            transition: 'all 0.2s',
+          }}
         >
           Sign Up
         </button>
@@ -85,19 +111,33 @@ export default function AuthForm() {
             setMode('login');
             setLocalError(null);
           }}
-          className={`flex-1 py-2 rounded-md font-medium transition-all ${
-            mode === 'login'
-              ? 'bg-white dark:bg-gray-700 text-purple-600 dark:text-purple-400 shadow-sm'
-              : 'text-gray-600 dark:text-gray-400'
-          }`}
+          style={{
+            flex: 1,
+            padding: '7px 18px',
+            borderRadius: '8px',
+            fontSize: '13px',
+            fontWeight: '500',
+            border: 'none',
+            cursor: 'pointer',
+            background: mode === 'login' ? 'var(--purple)' : 'transparent',
+            color: mode === 'login' ? '#fff' : 'var(--body)',
+            boxShadow: mode === 'login' ? '0 0 16px var(--glow)' : 'none',
+            transition: 'all 0.2s',
+          }}
         >
           Sign In
         </button>
       </div>
 
       {/* Email Input */}
-      <div className="mb-4">
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+      <div style={{ marginBottom: '16px' }}>
+        <label style={{
+          display: 'block',
+          fontSize: '13px',
+          fontWeight: '500',
+          color: 'var(--text)',
+          marginBottom: '8px',
+        }}>
           Email
         </label>
         <input
@@ -106,13 +146,36 @@ export default function AuthForm() {
           onChange={(e) => setEmail(e.target.value)}
           placeholder="your@email.com"
           disabled={loading}
-          className="w-full px-4 py-2.5 border-2 border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:border-purple-500 focus:ring-4 focus:ring-purple-100 dark:focus:ring-purple-900/30 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+          style={{
+            width: '100%',
+            padding: '10px 12px',
+            border: '1px solid var(--border-2)',
+            borderRadius: '10px',
+            background: 'rgba(22,20,18,.6)',
+            color: 'var(--text)',
+            fontSize: '13px',
+            fontFamily: 'inherit',
+          }}
+          onFocus={(e) => {
+            e.currentTarget.style.borderColor = 'var(--purple-l)';
+            e.currentTarget.style.boxShadow = '0 0 0 3px rgba(147,51,234,.18)';
+          }}
+          onBlur={(e) => {
+            e.currentTarget.style.borderColor = 'var(--border-2)';
+            e.currentTarget.style.boxShadow = 'none';
+          }}
         />
       </div>
 
       {/* Password Input */}
-      <div className="mb-4">
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+      <div style={{ marginBottom: '16px' }}>
+        <label style={{
+          display: 'block',
+          fontSize: '13px',
+          fontWeight: '500',
+          color: 'var(--text)',
+          marginBottom: '8px',
+        }}>
           Password
         </label>
         <input
@@ -126,7 +189,24 @@ export default function AuthForm() {
               handleEmailAuth();
             }
           }}
-          className="w-full px-4 py-2.5 border-2 border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:border-purple-500 focus:ring-4 focus:ring-purple-100 dark:focus:ring-purple-900/30 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+          style={{
+            width: '100%',
+            padding: '10px 12px',
+            border: '1px solid var(--border-2)',
+            borderRadius: '10px',
+            background: 'rgba(22,20,18,.6)',
+            color: 'var(--text)',
+            fontSize: '13px',
+            fontFamily: 'inherit',
+          }}
+          onFocus={(e) => {
+            e.currentTarget.style.borderColor = 'var(--purple-l)';
+            e.currentTarget.style.boxShadow = '0 0 0 3px rgba(147,51,234,.18)';
+          }}
+          onBlur={(e) => {
+            e.currentTarget.style.borderColor = 'var(--border-2)';
+            e.currentTarget.style.boxShadow = 'none';
+          }}
         />
       </div>
 
@@ -151,23 +231,65 @@ export default function AuthForm() {
       <button
         onClick={handleEmailAuth}
         disabled={loading}
-        className="w-full px-6 py-2.5 bg-purple-600 hover:bg-purple-700 disabled:bg-purple-400 text-white rounded-lg transition-colors duration-200 font-medium shadow-sm hover:shadow-md disabled:cursor-not-allowed mb-4"
+        style={{
+          width: '100%',
+          padding: '12px 16px',
+          background: 'var(--purple)',
+          color: '#fff',
+          border: 'none',
+          borderRadius: '10px',
+          fontSize: '13px',
+          fontWeight: '500',
+          cursor: loading ? 'not-allowed' : 'pointer',
+          opacity: loading ? '0.6' : '1',
+          boxShadow: '0 0 24px var(--glow)',
+          marginBottom: '16px',
+          transition: 'all 0.2s',
+        }}
       >
         {loading ? 'Loading...' : mode === 'login' ? 'Sign In' : 'Create Account'}
       </button>
 
       {/* Divider */}
-      <div className="flex items-center gap-4 my-4">
-        <div className="flex-1 h-px bg-gray-300 dark:bg-gray-600"></div>
-        <span className="text-sm text-gray-500 dark:text-gray-400">or</span>
-        <div className="flex-1 h-px bg-gray-300 dark:bg-gray-600"></div>
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '16px',
+        margin: '16px 0',
+      }}>
+        <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,.1)' }}></div>
+        <span style={{ fontSize: '12px', color: 'var(--body)' }}>or</span>
+        <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,.1)' }}></div>
       </div>
 
       {/* Google Sign-In Button */}
       <button
         onClick={handleGoogleSignIn}
         disabled={loading}
-        className="w-full px-6 py-2.5 border-2 border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed text-gray-900 dark:text-white transition-all duration-200 font-medium shadow-sm hover:shadow-md flex items-center justify-center gap-2 mb-4"
+        style={{
+          width: '100%',
+          padding: '12px 16px',
+          border: '1px solid var(--border-2)',
+          borderRadius: '10px',
+          background: 'rgba(255,255,255,.05)',
+          color: 'var(--text)',
+          fontSize: '13px',
+          fontWeight: '500',
+          cursor: loading ? 'not-allowed' : 'pointer',
+          opacity: loading ? '0.6' : '1',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '8px',
+          marginBottom: '16px',
+          transition: 'all 0.2s',
+        }}
+        onMouseEnter={(e) => {
+          if (!loading) e.currentTarget.style.background = 'rgba(255,255,255,.08)';
+        }}
+        onMouseLeave={(e) => {
+          if (!loading) e.currentTarget.style.background = 'rgba(255,255,255,.05)';
+        }}
       >
         <svg className="w-5 h-5" viewBox="0 0 24 24">
           <path

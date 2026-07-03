@@ -139,7 +139,7 @@ export default function ShareBoardModal({
         {/* Invite Section */}
         {isOwner && (
           <div className="space-y-4">
-            <h3 className="font-semibold text-gray-900 dark:text-gray-100">Invite People</h3>
+            <h3 className="font-semibold" style={{ color: 'var(--text)' }}>Invite People</h3>
             <div className="flex flex-col gap-3 sm:flex-row sm:gap-2">
               <div className="flex-1">
                 <Input
@@ -160,13 +160,15 @@ export default function ShareBoardModal({
               >
                 <button
                   onClick={() => setRole('editor')}
-                  className="block w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                  className="block w-full text-left px-4 py-2 transition-colors"
+                  style={{ color: 'var(--text)' }}
                 >
                   Editor
                 </button>
                 <button
                   onClick={() => setRole('viewer')}
-                  className="block w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                  className="block w-full text-left px-4 py-2 transition-colors"
+                  style={{ color: 'var(--text)' }}
                 >
                   Viewer
                 </button>
@@ -180,36 +182,37 @@ export default function ShareBoardModal({
                 Invite
               </Button>
             </div>
-            {error && <p className="text-red-500 text-sm">{error}</p>}
-            {success && <p className="text-green-600 dark:text-green-400 text-sm">{success}</p>}
+            {error && <p className="text-sm" style={{ color: 'var(--red)' }}>{error}</p>}
+            {success && <p className="text-sm" style={{ color: 'var(--green)' }}>{success}</p>}
           </div>
         )}
 
         {/* Collaborators List */}
         <div className="space-y-4">
-          <h3 className="font-semibold text-gray-900 dark:text-gray-100">People with Access</h3>
-          <div className="max-h-64 overflow-y-auto space-y-2 border border-gray-200 dark:border-gray-700 rounded-lg p-3">
+          <h3 className="font-semibold" style={{ color: 'var(--text)' }}>People with Access</h3>
+          <div className="max-h-64 overflow-y-auto space-y-2 rounded-lg p-3" style={{ border: '1px solid var(--border)' }}>
             {/* Owner */}
-            <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+            <div className="flex items-center gap-3 p-3 rounded-lg" style={{ background: 'var(--surface-2)' }}>
               <div className="relative">
-                <div className="w-8 h-8 rounded-full bg-purple-600 text-white flex items-center justify-center text-sm font-medium flex-shrink-0">
+                <div className="w-8 h-8 rounded-full text-white flex items-center justify-center text-sm font-medium flex-shrink-0" style={{ background: 'var(--purple)' }}>
                   {board.ownerId.charAt(0).toUpperCase()}
                 </div>
                 {isUserOnline(board.ownerId) && (
                   <div
-                    className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-gray-50 dark:border-gray-800"
+                    className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full"
+                    style={{ background: 'var(--green)', border: '2px solid var(--surface-2)' }}
                     title="Online"
                   />
                 )}
               </div>
               <div className="flex-1 min-w-0">
-                <div className="text-sm font-medium text-gray-900 dark:text-gray-100 flex items-center gap-2">
+                <div className="text-sm font-medium flex items-center gap-2" style={{ color: 'var(--text)' }}>
                   Owner
                   {isUserOnline(board.ownerId) && (
-                    <span className="text-xs text-green-600 dark:text-green-400">• Online</span>
+                    <span className="text-xs" style={{ color: 'var(--green)' }}>• Online</span>
                   )}
                 </div>
-                <div className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                <div className="text-xs truncate" style={{ color: 'var(--muted)' }}>
                   {currentUserId === board.ownerId ? 'You' : board.ownerId}
                 </div>
               </div>
@@ -223,27 +226,28 @@ export default function ShareBoardModal({
               localBoard.sharedWith.map((collab) => (
                 <div
                   key={collab.userId}
-                  className="flex items-center gap-3 p-3 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                  className="flex items-center gap-3 p-3 rounded-lg transition-colors hover:[background:var(--surface-2)]"
                 >
                   <div className="relative">
-                    <div className="w-8 h-8 rounded-full bg-blue-500 text-white flex items-center justify-center text-sm font-medium flex-shrink-0">
+                    <div className="w-8 h-8 rounded-full text-white flex items-center justify-center text-sm font-medium flex-shrink-0" style={{ background: 'var(--purple-l)' }}>
                       {collab.email.charAt(0).toUpperCase()}
                     </div>
                     {isUserOnline(collab.userId) && (
                       <div
-                        className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-white dark:border-gray-700"
+                        className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full"
+                        style={{ background: 'var(--green)', border: '2px solid var(--surface-1)' }}
                         title="Online"
                       />
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate flex items-center gap-2">
+                    <div className="text-sm font-medium truncate flex items-center gap-2" style={{ color: 'var(--text)' }}>
                       {collab.email}
                       {isUserOnline(collab.userId) && (
-                        <span className="text-xs text-green-600 dark:text-green-400">• Viewing</span>
+                        <span className="text-xs" style={{ color: 'var(--green)' }}>• Viewing</span>
                       )}
                     </div>
-                    <div className="text-xs text-gray-500 dark:text-gray-400">
+                    <div className="text-xs" style={{ color: 'var(--muted)' }}>
                       Added {new Date(collab.addedAt).toLocaleDateString()}
                     </div>
                   </div>
@@ -264,20 +268,23 @@ export default function ShareBoardModal({
                       >
                         <button
                           onClick={() => handleRoleChange(collab.userId, 'editor')}
-                          className="block w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                          className="block w-full text-left px-4 py-2 transition-colors"
+                          style={{ color: 'var(--text)' }}
                         >
                           Editor
                         </button>
                         <button
                           onClick={() => handleRoleChange(collab.userId, 'viewer')}
-                          className="block w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                          className="block w-full text-left px-4 py-2 transition-colors"
+                          style={{ color: 'var(--text)' }}
                         >
                           Viewer
                         </button>
                       </Dropdown>
                       <button
                         onClick={() => handleRemove(collab.userId, collab.email)}
-                        className="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 text-sm font-medium transition-colors"
+                        className="text-sm font-medium transition-colors"
+                        style={{ color: 'var(--red)' }}
                         title="Remove collaborator"
                       >
                         Remove
@@ -294,7 +301,7 @@ export default function ShareBoardModal({
                 </div>
               ))
             ) : (
-              <div className="text-center py-4 text-gray-500 dark:text-gray-400">
+              <div className="text-center py-4" style={{ color: 'var(--muted)' }}>
                 No collaborators yet. Share this board to get started!
               </div>
             )}
@@ -303,7 +310,7 @@ export default function ShareBoardModal({
 
         {/* Info Box */}
         {isOwner && (
-          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 text-sm text-blue-900 dark:text-blue-200">
+          <div className="rounded-lg p-3 text-sm" style={{ background: 'rgba(147,51,234,.08)', border: '1px solid rgba(147,51,234,.25)', color: 'var(--purple-l)' }}>
             <p className="font-medium mb-1">Sharing tips:</p>
             <ul className="list-disc list-inside space-y-1 text-xs">
               <li>Editors can view and modify all cards and columns</li>

@@ -122,24 +122,32 @@ export function DueDatePanel() {
           animate={{ x: 0 }}
           exit={{ x: '100%' }}
           transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-          style={{ width: `${dueDatePanelWidth}px` }}
           className={`
-            flex flex-col border-l border-gray-200 dark:border-gray-700
-            bg-white dark:bg-gray-800 h-full
-            overflow-hidden md:static fixed right-0 top-16 z-30 bottom-0
-            md:relative
+            flex flex-col h-full overflow-hidden md:static fixed right-0 top-16 z-30 bottom-0 md:relative
           `}
+          style={{
+            width: `${dueDatePanelWidth}px`,
+            background: 'var(--surface-1)',
+            borderLeftColor: 'var(--border)',
+            borderLeftWidth: '1px',
+            boxShadow: '-8px 0 40px rgba(0,0,0,.5)',
+            backdropFilter: 'blur(8px)',
+            WebkitBackdropFilter: 'blur(8px)',
+          }}
         >
           {/* Header */}
-          <div className={`
-            flex items-center justify-between px-4 py-4 border-b border-gray-200 dark:border-gray-700
-            flex-shrink-0 bg-gray-50 dark:bg-gray-900/50
-          `}>
+          <div
+            className="flex items-center justify-between px-4 py-4 flex-shrink-0"
+            style={{
+              borderBottomColor: 'var(--border)',
+              borderBottomWidth: '1px',
+            }}
+          >
             <div className="flex-1">
-              <h2 className="text-lg font-bold text-gray-900 dark:text-white">
+              <h2 className="text-lg font-bold" style={{ color: 'var(--text)' }}>
                 Due Dates
               </h2>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              <p className="text-xs mt-1" style={{ color: 'var(--muted)' }}>
                 {cardsWithDueDates.length} upcoming
               </p>
             </div>
@@ -164,11 +172,11 @@ export function DueDatePanel() {
                 {cardsWithDueDates.some((card) => isOverdue(card.dueDate!)) && (
                   <div>
                     <div className="flex items-center gap-2 mb-3">
-                      <div className="flex-1 h-0.5 bg-red-200 dark:bg-red-900/50"></div>
-                      <span className="text-xs font-bold text-red-600 dark:text-red-400 uppercase tracking-wide">
+                      <div className="flex-1 h-px" style={{ backgroundColor: 'rgba(251,113,133,.2)' }}></div>
+                      <span className="text-xs font-bold uppercase tracking-wide" style={{ color: '#fb7185' }}>
                         Overdue
                       </span>
-                      <div className="flex-1 h-0.5 bg-red-200 dark:bg-red-900/50"></div>
+                      <div className="flex-1 h-px" style={{ backgroundColor: 'rgba(251,113,133,.2)' }}></div>
                     </div>
                     <div className="space-y-2">
                       {cardsWithDueDates

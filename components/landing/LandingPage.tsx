@@ -8,21 +8,47 @@ import AuthForm from './AuthForm';
 function AuthModal({ onClose }: { onClose: () => void }) {
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div className="bg-[#231f1c] rounded-2xl shadow-2xl w-full max-w-md border border-[#322d2a] relative">
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 text-[#6b5e58] hover:text-[#f5f0ee] transition-colors z-10"
-          aria-label="Close"
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
-        <div className="p-2">
-          <AuthForm />
+      {/* OUTER: static wrapper (no animation yet) */}
+      <div
+        className="w-full max-w-md"
+      >
+        {/* INNER: glass surface using CSS class */}
+        <div className="auth-modal-glass" style={{ position: 'relative' }}>
+          <button
+            onClick={onClose}
+            style={{
+              position: 'absolute',
+              top: '16px',
+              right: '16px',
+              color: 'var(--muted)',
+              padding: '6px',
+              borderRadius: '8px',
+              border: 'none',
+              background: 'transparent',
+              cursor: 'pointer',
+              zIndex: 20,
+              transition: 'all 0.2s',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.color = 'var(--text)';
+              e.currentTarget.style.background = 'rgba(255,255,255,.1)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.color = 'var(--muted)';
+              e.currentTarget.style.background = 'transparent';
+            }}
+            aria-label="Close"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+          <div className="p-6">
+            <AuthForm />
+          </div>
         </div>
       </div>
     </div>

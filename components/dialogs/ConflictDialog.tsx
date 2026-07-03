@@ -104,31 +104,31 @@ export default function ConflictDialog() {
     >
       <div className="space-y-4">
         <div className="flex items-start gap-3">
-          <div className="flex-shrink-0 w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
-            <svg className="w-5 h-5 text-amber-600 dark:text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center" style={{ background: 'rgba(245,158,11,.15)' }}>
+            <svg className="w-5 h-5" style={{ color: 'var(--amber)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
             </svg>
           </div>
           <div>
-            <p className="text-sm text-gray-700 dark:text-gray-300">
-              <strong>{localBoard.name}</strong> was modified on another device or tab since your last sync.
+            <p className="text-sm" style={{ color: 'var(--body)' }}>
+              <strong style={{ color: 'var(--text)' }}>{localBoard.name}</strong> was modified on another device or tab since your last sync.
             </p>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+            <p className="text-xs mt-1" style={{ color: 'var(--muted)' }}>
               Remote change at: {remoteTime}
             </p>
           </div>
         </div>
 
         <div className="grid grid-cols-2 gap-3 text-sm">
-          <div className="p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
-            <div className="font-medium text-blue-700 dark:text-blue-300">Your version</div>
-            <div className="text-blue-600 dark:text-blue-400 mt-1">
+          <div className="p-3 rounded-lg" style={{ background: 'rgba(96,165,250,.1)', border: '1px solid rgba(96,165,250,.3)' }}>
+            <div className="font-medium" style={{ color: '#93c5fd' }}>Your version</div>
+            <div className="mt-1" style={{ color: '#93c5fd' }}>
               {localBoard.columns.length} columns, {localCardCount} cards
             </div>
           </div>
-          <div className="p-3 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800">
-            <div className="font-medium text-green-700 dark:text-green-300">Remote version</div>
-            <div className="text-green-600 dark:text-green-400 mt-1">
+          <div className="p-3 rounded-lg" style={{ background: 'rgba(74,222,128,.1)', border: '1px solid rgba(74,222,128,.3)' }}>
+            <div className="font-medium" style={{ color: 'var(--green)' }}>Remote version</div>
+            <div className="mt-1" style={{ color: 'var(--green)' }}>
               {remoteBoard.columns.length} columns, {remoteCardCount} cards
             </div>
           </div>
@@ -138,14 +138,16 @@ export default function ConflictDialog() {
           <button
             onClick={handleKeepMine}
             disabled={resolving}
-            className="flex-1 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-lg font-medium text-sm transition-colors"
+            className="flex-1 px-4 py-2.5 disabled:opacity-50 text-white rounded-lg font-medium text-sm transition-colors"
+            style={{ background: 'var(--purple)' }}
           >
             {resolving ? 'Saving...' : 'Keep my changes'}
           </button>
           <button
             onClick={handleUseRemote}
             disabled={resolving}
-            className="flex-1 px-4 py-2.5 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 disabled:opacity-50 text-gray-800 dark:text-gray-200 rounded-lg font-medium text-sm transition-colors"
+            className="flex-1 px-4 py-2.5 disabled:opacity-50 rounded-lg font-medium text-sm transition-colors"
+            style={{ background: 'var(--surface-3)', color: 'var(--text)' }}
           >
             {resolving ? 'Loading...' : 'Use remote version'}
           </button>

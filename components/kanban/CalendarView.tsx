@@ -124,68 +124,185 @@ export default function CalendarView({ boardId, canEdit }: CalendarViewProps) {
   };
 
   return (
-    <div className="flex flex-col h-full min-h-0 bg-gray-50 dark:bg-gray-900">
+    <div className="flex flex-col h-full min-h-0" style={{ background: 'var(--bg)' }}>
       {/* Calendar Header */}
-      <div className="flex items-center gap-3 px-4 py-3 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
-        <button
-          onClick={prevMonth}
-          className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-gray-600 dark:text-gray-400"
-          aria-label="Previous month"
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-          </svg>
-        </button>
+      <div className="flex items-center justify-between px-6 py-6 flex-shrink-0">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={prevMonth}
+            style={{
+              width: '36px',
+              height: '36px',
+              borderRadius: '10px',
+              background: 'var(--surface-2)',
+              border: '1px solid var(--border)',
+              color: 'var(--body)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              fontSize: '15px',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'var(--surface-3)';
+              e.currentTarget.style.color = 'var(--text)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'var(--surface-2)';
+              e.currentTarget.style.color = 'var(--body)';
+            }}
+            aria-label="Previous month"
+          >
+            ‹
+          </button>
 
-        <h2 className="text-lg font-bold text-gray-900 dark:text-white min-w-[180px] text-center">
-          {MONTHS[currentMonth.month]} {currentMonth.year}
-        </h2>
+          <h2 style={{
+            fontSize: '24px',
+            fontWeight: '600',
+            letterSpacing: '-0.5px',
+            color: 'var(--text)',
+            minWidth: '180px',
+            textAlign: 'center',
+          }}>
+            {MONTHS[currentMonth.month]} {currentMonth.year}
+          </h2>
 
-        <button
-          onClick={nextMonth}
-          className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-gray-600 dark:text-gray-400"
-          aria-label="Next month"
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-          </svg>
-        </button>
+          <button
+            onClick={nextMonth}
+            style={{
+              width: '36px',
+              height: '36px',
+              borderRadius: '10px',
+              background: 'var(--surface-2)',
+              border: '1px solid var(--border)',
+              color: 'var(--body)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              fontSize: '15px',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'var(--surface-3)';
+              e.currentTarget.style.color = 'var(--text)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'var(--surface-2)';
+              e.currentTarget.style.color = 'var(--body)';
+            }}
+            aria-label="Next month"
+          >
+            ›
+          </button>
 
-        <button
-          onClick={goToToday}
-          className="ml-1 px-3 py-1 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-gray-700 dark:text-gray-300"
-        >
-          Today
-        </button>
+          <button
+            onClick={goToToday}
+            style={{
+              marginLeft: '6px',
+              fontSize: '13px',
+              fontWeight: '500',
+              padding: '8px 16px',
+              borderRadius: '10px',
+              background: 'var(--surface-2)',
+              border: '1px solid var(--border-2)',
+              color: 'var(--text)',
+              cursor: 'pointer',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.borderColor = 'var(--purple-l)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.borderColor = 'var(--border-2)';
+            }}
+          >
+            Today
+          </button>
+        </div>
 
-        <span className="ml-auto text-xs text-gray-500 dark:text-gray-400">
-          {scheduledCards.length} scheduled · {unscheduledCards.length} unscheduled
-        </span>
+        <div style={{ fontSize: '13px', color: 'var(--body)' }}>
+          <span style={{ color: 'var(--purple-l)', fontWeight: '600' }}>{scheduledCards.length}</span> scheduled · <span style={{ color: 'var(--body)' }}>{unscheduledCards.length}</span> unscheduled
+        </div>
       </div>
 
-      {/* Day-of-week header */}
-      <div className="grid grid-cols-7 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 flex-shrink-0">
-        {WEEKDAYS.map((day) => (
-          <div key={day} className="py-2 text-center text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-            {day}
-          </div>
-        ))}
-      </div>
+      {/* Calendar Panel Container */}
+      <div style={{
+        margin: '24px',
+        background: 'var(--surface-1)',
+        border: '1px solid var(--border)',
+        borderRadius: '18px',
+        overflow: 'hidden',
+        boxShadow: '0 10px 40px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.05)',
+        display: 'flex',
+        flexDirection: 'column',
+        flex: 1,
+        minHeight: 0,
+      }}>
+        {/* Day-of-week header */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(7, 1fr)',
+          borderBottom: '1px solid var(--border)',
+          background: 'rgba(35,31,28,.5)',
+          flexShrink: 0,
+        }}>
+          {WEEKDAYS.map((day) => (
+            <div key={day} style={{
+              padding: '12px',
+              fontSize: '11px',
+              fontWeight: '600',
+              color: 'var(--muted)',
+              textTransform: 'uppercase',
+              letterSpacing: '0.7px',
+              textAlign: 'left',
+            }}>
+              {day}
+            </div>
+          ))}
+        </div>
 
-      {/* Calendar grid */}
-      <div className="flex-1 overflow-y-auto min-h-0">
-        <div className="grid grid-cols-7 h-full" style={{ gridAutoRows: 'minmax(100px, 1fr)' }}>
+        {/* Calendar grid */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(7, 1fr)',
+          gridAutoRows: '108px',
+          flex: 1,
+          overflow: 'hidden',
+        }}>
           {days.map(({ date, isCurrentMonth }, idx) => {
             const dateStr = toDateString(date);
             const isToday = dateStr === today;
             const dayCards = cardsByDate.get(dateStr) || [];
 
+            // Map priority to event chip class
+            const getPriorityClass = (priority: string) => {
+              if (priority === 'high') return { bg: 'rgba(244,63,94,.16)', color: '#fb7185' };
+              if (priority === 'medium') return { bg: 'rgba(251,191,36,.16)', color: '#fbbf24' };
+              if (priority === 'low') return { bg: 'rgba(74,222,128,.14)', color: '#4ade80' };
+              return { bg: 'rgba(147,51,234,.16)', color: 'var(--purple-l)' };
+            };
+
             return (
               <div
                 key={idx}
-                className={`border-b border-r border-gray-200 dark:border-gray-700 p-1 min-h-[100px] flex flex-col ${
-                  !isCurrentMonth ? 'bg-gray-50 dark:bg-gray-900/50' : 'bg-white dark:bg-gray-800'
-                } ${isToday ? 'ring-2 ring-inset ring-purple-500 dark:ring-purple-400' : ''}`}
+                style={{
+                  borderRight: idx % 7 !== 6 ? '1px solid var(--border)' : 'none',
+                  borderBottom: '1px solid var(--border)',
+                  padding: '8px 10px',
+                  position: 'relative',
+                  cursor: 'pointer',
+                  background: !isCurrentMonth ? 'rgba(0,0,0,.2)' : isToday ? 'rgba(147,51,234,.06)' : 'transparent',
+                  transition: 'background 0.15s',
+                }}
+                onMouseEnter={(e) => {
+                  if (isCurrentMonth && !isToday) {
+                    e.currentTarget.style.background = 'rgba(255,255,255,.02)';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (isCurrentMonth && !isToday) {
+                    e.currentTarget.style.background = 'transparent';
+                  }
+                }}
                 onClick={() => {
                   if (canEdit && isCurrentMonth && !quickAddDate) {
                     setQuickAddDate(dateStr);
@@ -194,38 +311,85 @@ export default function CalendarView({ boardId, canEdit }: CalendarViewProps) {
                 }}
               >
                 {/* Day number */}
-                <div className="flex items-center justify-between mb-1">
-                  <span
-                    className={`text-xs font-medium px-1 rounded ${
-                      !isCurrentMonth
-                        ? 'text-gray-400 dark:text-gray-600'
-                        : isToday
-                        ? 'bg-purple-600 text-white w-5 h-5 flex items-center justify-center rounded-full'
-                        : 'text-gray-700 dark:text-gray-300'
-                    }`}
-                  >
-                    {date.getDate()}
-                  </span>
+                <div style={{
+                  fontSize: '13px',
+                  fontWeight: '500',
+                  color: !isCurrentMonth ? 'var(--muted)' : 'var(--body)',
+                  opacity: !isCurrentMonth ? '0.4' : '1',
+                  ...(isToday && {
+                    background: 'var(--purple)',
+                    color: '#fff',
+                    width: '26px',
+                    height: '26px',
+                    borderRadius: '50%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    boxShadow: '0 0 14px var(--glow)',
+                  }),
+                }}>
+                  {date.getDate()}
                 </div>
 
                 {/* Card chips */}
-                <div className="flex flex-col gap-0.5 flex-1 overflow-hidden">
-                  {dayCards.slice(0, 3).map((card) => (
-                    <button
-                      key={card.id}
-                      onClick={(e) => { e.stopPropagation(); setSelectedCard(card); }}
-                      className={`text-left text-[11px] px-1.5 py-0.5 rounded border-l-2 truncate transition-colors ${
-                        card.priority
-                          ? PRIORITY_BORDER[card.priority] || 'border-l-gray-400'
-                          : 'border-l-gray-300 dark:border-l-gray-600'
-                      } bg-purple-50 dark:bg-purple-900/20 text-gray-800 dark:text-gray-200 hover:bg-purple-100 dark:hover:bg-purple-900/40`}
-                      title={card.title}
-                    >
-                      {card.title}
-                    </button>
-                  ))}
+                <div style={{
+                  marginTop: '6px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '3px',
+                  maxHeight: '60px',
+                  overflow: 'hidden',
+                }}>
+                  {dayCards.slice(0, 3).map((card) => {
+                    const priorityStyle = getPriorityClass(card.priority || 'medium');
+                    return (
+                      <button
+                        key={card.id}
+                        onClick={(e) => { e.stopPropagation(); setSelectedCard(card); }}
+                        style={{
+                          fontSize: '10px',
+                          fontWeight: '500',
+                          padding: '3px 7px',
+                          borderRadius: '6px',
+                          whiteSpace: 'nowrap',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '5px',
+                          background: priorityStyle.bg,
+                          color: priorityStyle.color,
+                          border: 'none',
+                          cursor: 'pointer',
+                          transition: 'opacity 0.15s',
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.opacity = '0.8';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.opacity = '1';
+                        }}
+                        title={card.title}
+                      >
+                        <span style={{
+                          display: 'inline-block',
+                          width: '5px',
+                          height: '5px',
+                          borderRadius: '50%',
+                          background: priorityStyle.color,
+                          flexShrink: 0,
+                        }}></span>
+                        {card.title}
+                      </button>
+                    );
+                  })}
                   {dayCards.length > 3 && (
-                    <span className="text-[10px] text-gray-400 dark:text-gray-500 px-1">
+                    <span style={{
+                      fontSize: '9px',
+                      color: 'var(--muted)',
+                      marginTop: '3px',
+                      paddingLeft: '2px',
+                    }}>
                       +{dayCards.length - 3} more
                     </span>
                   )}
@@ -234,8 +398,8 @@ export default function CalendarView({ boardId, canEdit }: CalendarViewProps) {
                 {/* Quick-add inline form */}
                 {quickAddDate === dateStr && (
                   <div
-                    className="mt-1"
                     onClick={(e) => e.stopPropagation()}
+                    style={{ marginTop: '4px' }}
                   >
                     <input
                       autoFocus
@@ -246,18 +410,43 @@ export default function CalendarView({ boardId, canEdit }: CalendarViewProps) {
                         if (e.key === 'Escape') { setQuickAddDate(null); setQuickAddTitle(''); }
                       }}
                       placeholder="Card title..."
-                      className="w-full text-xs px-1.5 py-1 rounded border border-purple-400 dark:border-purple-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-purple-500"
+                      style={{
+                        width: '100%',
+                        fontSize: '12px',
+                        padding: '4px 6px',
+                        borderRadius: '6px',
+                        border: '1px solid var(--border)',
+                        background: 'var(--surface-2)',
+                        color: 'var(--text)',
+                        fontFamily: 'inherit',
+                      }}
                     />
-                    <div className="flex gap-1 mt-0.5">
+                    <div style={{ display: 'flex', gap: '4px', marginTop: '4px' }}>
                       <button
                         onClick={handleQuickAdd}
-                        className="text-[10px] px-2 py-0.5 bg-purple-600 text-white rounded"
+                        style={{
+                          fontSize: '10px',
+                          padding: '4px 8px',
+                          background: 'var(--purple)',
+                          color: '#fff',
+                          border: 'none',
+                          borderRadius: '4px',
+                          cursor: 'pointer',
+                        }}
                       >
                         Add
                       </button>
                       <button
                         onClick={() => { setQuickAddDate(null); setQuickAddTitle(''); }}
-                        className="text-[10px] px-2 py-0.5 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
+                        style={{
+                          fontSize: '10px',
+                          padding: '4px 8px',
+                          background: 'transparent',
+                          color: 'var(--muted)',
+                          border: 'none',
+                          borderRadius: '4px',
+                          cursor: 'pointer',
+                        }}
                       >
                         Cancel
                       </button>
@@ -269,43 +458,98 @@ export default function CalendarView({ boardId, canEdit }: CalendarViewProps) {
           })}
         </div>
 
-        {/* Unscheduled section */}
-        <div className="border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
-          <button
-            onClick={() => setShowUnscheduled(!showUnscheduled)}
-            className="w-full flex items-center gap-2 px-4 py-3 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
-          >
-            <svg
-              className={`w-4 h-4 transition-transform ${showUnscheduled ? 'rotate-180' : ''}`}
-              fill="none" stroke="currentColor" viewBox="0 0 24 24"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-            </svg>
-            Unscheduled ({unscheduledCards.length})
-          </button>
+      </div>
 
-          {showUnscheduled && (
-            <div className="px-4 pb-4 flex flex-wrap gap-2">
-              {unscheduledCards.length === 0 && (
-                <p className="text-xs text-gray-400 dark:text-gray-500">No unscheduled cards</p>
-              )}
-              {unscheduledCards.map((card) => (
+      {/* Unscheduled section */}
+      <div style={{
+        borderTop: '1px solid var(--border)',
+        marginTop: '24px',
+        padding: '16px 24px',
+      }}>
+        <button
+          onClick={() => setShowUnscheduled(!showUnscheduled)}
+          style={{
+            width: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '0',
+            fontSize: '13px',
+            fontWeight: '500',
+            color: 'var(--text)',
+            background: 'transparent',
+            border: 'none',
+            cursor: 'pointer',
+          }}
+        >
+          <svg
+            style={{
+              width: '16px',
+              height: '16px',
+              transition: 'transform 0.2s',
+              transform: showUnscheduled ? 'rotate(180deg)' : 'rotate(0deg)',
+            }}
+            fill="none" stroke="currentColor" viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+          Unscheduled ({unscheduledCards.length})
+        </button>
+
+        {showUnscheduled && (
+          <div style={{
+            marginTop: '12px',
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: '8px',
+          }}>
+            {unscheduledCards.length === 0 && (
+              <p style={{ fontSize: '12px', color: 'var(--muted)' }}>No unscheduled cards</p>
+            )}
+            {unscheduledCards.map((card) => {
+              const priorityColors: Record<string, { bg: string; color: string; dot: string }> = {
+                high: { bg: 'rgba(244,63,94,.12)', color: '#fb7185', dot: '#fb7185' },
+                medium: { bg: 'rgba(251,191,36,.12)', color: '#fbbf24', dot: '#fbbf24' },
+                low: { bg: 'rgba(74,222,128,.12)', color: '#4ade80', dot: '#4ade80' },
+              };
+              const style = card.priority ? priorityColors[card.priority] : { bg: 'var(--surface-2)', color: 'var(--body)', dot: 'var(--border)' };
+
+              return (
                 <button
                   key={card.id}
                   onClick={() => setSelectedCard(card)}
-                  className={`text-left text-xs px-2 py-1 rounded-full border-l-2 ${
-                    card.priority
-                      ? PRIORITY_BORDER[card.priority] || 'border-l-gray-300'
-                      : 'border-l-gray-300 dark:border-l-gray-600'
-                  } bg-gray-50 dark:bg-gray-700/50 text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors max-w-[200px] truncate`}
+                  style={{
+                    fontSize: '12px',
+                    padding: '6px 12px',
+                    borderRadius: '8px',
+                    border: '1px solid var(--border)',
+                    background: style.bg,
+                    color: style.color,
+                    cursor: 'pointer',
+                    maxWidth: '200px',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                  }}
                   title={card.title}
                 >
+                  <span style={{
+                    display: 'inline-block',
+                    width: '4px',
+                    height: '4px',
+                    borderRadius: '50%',
+                    background: style.dot,
+                    flexShrink: 0,
+                  }}></span>
                   {card.title}
                 </button>
-              ))}
-            </div>
-          )}
-        </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* CardModal portal */}

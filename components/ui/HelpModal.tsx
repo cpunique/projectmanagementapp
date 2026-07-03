@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { createPortal } from 'react-dom';
 
 interface HelpModalProps {
@@ -41,7 +41,17 @@ const TABS: Tab[] = [
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="mb-6 last:mb-0">
-      <h3 className="text-sm font-bold text-purple-600 dark:text-purple-400 uppercase tracking-wider mb-3 pb-1.5 border-b border-gray-200 dark:border-gray-700">
+      <h3 style={{
+        fontSize: '11px',
+        fontWeight: 600,
+        letterSpacing: '0.7px',
+        textTransform: 'uppercase',
+        color: 'var(--purple-l)',
+        marginBottom: '10px',
+        paddingBottom: '8px',
+        borderBottom: '1px solid var(--border)',
+        display: 'block',
+      }}>
         {title}
       </h3>
       <div className="space-y-2">{children}</div>
@@ -52,24 +62,37 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 function Item({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="flex gap-3">
-      <span className="text-sm font-medium text-gray-800 dark:text-gray-200 min-w-[140px] shrink-0">{label}</span>
-      <span className="text-sm text-gray-600 dark:text-gray-400">{children}</span>
+      <span className="text-sm font-medium min-w-[140px] shrink-0" style={{ color: 'var(--text)' }}>{label}</span>
+      <span className="text-sm" style={{ color: 'var(--body)' }}>{children}</span>
     </div>
   );
 }
 
 function Tip({ children }: { children: React.ReactNode }) {
   return (
-    <div className="mt-3 flex gap-2 rounded-lg bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 px-3 py-2">
-      <span className="text-purple-500 shrink-0">💡</span>
-      <p className="text-xs text-purple-700 dark:text-purple-300">{children}</p>
+    <div
+      className="mt-3 flex gap-2 rounded-lg px-3 py-2"
+      style={{
+        background: 'rgba(147,51,234,.10)',
+        border: '1px solid rgba(147,51,234,.25)',
+      }}
+    >
+      <span className="shrink-0" style={{ color: 'var(--purple-l)' }}>💡</span>
+      <p className="text-xs" style={{ color: 'var(--purple-l)' }}>{children}</p>
     </div>
   );
 }
 
 function Kbd({ children }: { children: React.ReactNode }) {
   return (
-    <kbd className="inline-flex items-center justify-center min-w-[24px] h-6 px-1.5 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded text-[11px] font-mono font-medium text-gray-700 dark:text-gray-300 shadow-sm mx-0.5">
+    <kbd
+      className="inline-flex items-center justify-center min-w-[24px] h-6 px-1.5 rounded text-[11px] font-mono font-medium shadow-sm mx-0.5"
+      style={{
+        background: 'var(--surface-3)',
+        border: '1px solid var(--border-2)',
+        color: 'var(--text)',
+      }}
+    >
       {children}
     </kbd>
   );
@@ -78,7 +101,7 @@ function Kbd({ children }: { children: React.ReactNode }) {
 function ShortcutRow({ description, keys }: { description: string; keys: string[] }) {
   return (
     <div className="flex items-center justify-between py-1.5">
-      <span className="text-sm text-gray-700 dark:text-gray-300">{description}</span>
+      <span className="text-sm" style={{ color: 'var(--body)' }}>{description}</span>
       <div className="flex gap-1 ml-4">
         {keys.map((k) => (
           <Kbd key={k}>{k}</Kbd>
@@ -92,7 +115,7 @@ function GettingStartedTab() {
   return (
     <div>
       <Section title="Welcome to Kan-do">
-        <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
+        <p className="text-sm leading-relaxed" style={{ color: 'var(--body)' }}>
           Kan-do is a visual project management tool that helps you organize work into boards, columns, and cards.
           Think of it as a digital whiteboard with sticky notes — but with real-time collaboration, file attachments,
           analytics, and offline support.
@@ -109,26 +132,26 @@ function GettingStartedTab() {
         <div className="space-y-3">
           <div className="flex gap-3 items-start">
             <span className="w-6 h-6 rounded-full bg-purple-600 text-white text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">1</span>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              <strong className="text-gray-800 dark:text-gray-200">Create a board</strong> — Click the board name in the header, then "New Board". Pick a template or start blank.
+            <p className="text-sm" style={{ color: 'var(--body)' }}>
+              <strong style={{ color: 'var(--text)' }}>Create a board</strong> — Click the board name in the header, then "New Board". Pick a template or start blank.
             </p>
           </div>
           <div className="flex gap-3 items-start">
             <span className="w-6 h-6 rounded-full bg-purple-600 text-white text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">2</span>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              <strong className="text-gray-800 dark:text-gray-200">Add cards</strong> — Click "Add Card" at the bottom of any column, or press <Kbd>N</Kbd> to add to the first column.
+            <p className="text-sm" style={{ color: 'var(--body)' }}>
+              <strong style={{ color: 'var(--text)' }}>Add cards</strong> — Click "Add Card" at the bottom of any column, or press <Kbd>N</Kbd> to add to the first column.
             </p>
           </div>
           <div className="flex gap-3 items-start">
             <span className="w-6 h-6 rounded-full bg-purple-600 text-white text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">3</span>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              <strong className="text-gray-800 dark:text-gray-200">Move cards</strong> — Drag a card to a different column or position. Right-click for a move menu.
+            <p className="text-sm" style={{ color: 'var(--body)' }}>
+              <strong style={{ color: 'var(--text)' }}>Move cards</strong> — Drag a card to a different column or position. Right-click for a move menu.
             </p>
           </div>
           <div className="flex gap-3 items-start">
             <span className="w-6 h-6 rounded-full bg-purple-600 text-white text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">4</span>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              <strong className="text-gray-800 dark:text-gray-200">Save your work</strong> — Click the purple <strong>Save</strong> button that appears when you have unsaved changes.
+            <p className="text-sm" style={{ color: 'var(--body)' }}>
+              <strong style={{ color: 'var(--text)' }}>Save your work</strong> — Click the purple <strong style={{ color: 'var(--text)' }}>Save</strong> button that appears when you have unsaved changes.
             </p>
           </div>
         </div>
@@ -136,11 +159,13 @@ function GettingStartedTab() {
       </Section>
 
       <Section title="Header at a Glance">
-        <Item label="Left — Logo">App name and branding.</Item>
-        <Item label="Center — Board Switcher">Switch, create, rename, share, and export boards.</Item>
+        <Item label="Left — Logo">App name and branding (text hidden on very small phones to save space).</Item>
+        <Item label="Center — Board Switcher">Switch, create, rename, share, clone, and export boards.</Item>
+        <Item label="View toggle">Board / Calendar segmented control (desktop) — switch between the Kanban board and your Calendar view.</Item>
         <Item label="Right — Controls">
-          Search, Save, Notifications, Sync status, User menu, Demo mode, Activity feed, Analytics, Due dates panel, Keyboard shortcuts, Zoom, and Dark mode toggle.
+          Search icon, Notification bell, Save button, ⋮ More menu (Archive, Analytics, Due Dates, Activity feed, Help, Keyboard Shortcuts), and User menu.
         </Item>
+        <Item label="Mobile">On phones, the header shows the Notification bell, Save button, and User menu. View switching (Board/Calendar) and Search/Alerts move to the bottom tab bar. Board switching stays in the header on wider phones.</Item>
       </Section>
     </div>
   );
@@ -157,7 +182,7 @@ function BoardsTab() {
 
       <Section title="Managing Boards">
         <Item label="Switch Board">Click the board dropdown in the center of the header and select any board.</Item>
-        <Item label="Rename">Open the board dropdown → hover over a board → rename option.</Item>
+        <Item label="Rename">Open the board dropdown → double-click a board name to edit it inline. Press Enter to confirm or Esc to cancel.</Item>
         <Item label="Delete">Board dropdown → delete (not available if it's your only board).</Item>
         <Item label="Clone Board">Duplicate a board with all its columns and cards under a new name.</Item>
         <Item label="Set Default">Star icon next to a board — this board opens automatically when you log in.</Item>
@@ -174,12 +199,12 @@ function BoardsTab() {
         <Item label="Rename">Click a column title to edit it inline.</Item>
         <Item label="Reorder">Drag the column header to rearrange.</Item>
         <Item label="Delete">Column options → Delete.</Item>
-        <Item label="WIP Limit">Set a maximum number of cards per column. The column highlights red when you exceed the limit — a visual cue to focus on finishing before starting new work.</Item>
+        <Item label="WIP Limit">Set a maximum number of cards per column. The WIP limit counter turns red and shows a ⚠ warning when you exceed the limit — a visual cue to focus on finishing before starting new work.</Item>
       </Section>
 
       <Section title="Smart Columns">
         <Item label="Done columns">Columns named "Done", "Completed", "Finished", "Closed", or "Delivered" are treated as completed — cards in them are excluded from the Due Dates panel.</Item>
-        <Item label="Descoped columns">Columns named "Descoped", "Out of scope", or "Backlog" automatically mark cards moved into them with a "descoped" status (shown with strikethrough).</Item>
+        <Item label="Descoped columns">Columns named "Descoped" or "Out of scope" automatically mark cards moved into them with a "descoped" status (shown with strikethrough).</Item>
       </Section>
     </div>
   );
@@ -197,14 +222,14 @@ function CardsTab() {
       <Section title="Card Fields">
         <Item label="Title">The card name — shown on the board. Required.</Item>
         <Item label="Description">A short summary shown on the card front.</Item>
-        <Item label="Notes">Rich-text editor (bold, italic, lists, code blocks) for detailed information. Up to 10KB.</Item>
+        <Item label="Notes">Rich-text editor (bold, italic, lists, code blocks) for detailed information. Up to 10,000 characters.</Item>
         <Item label="Priority">Low (green), Medium (amber), or High (red). Shown as a colored badge on the card.</Item>
         <Item label="Due Date">Set a target completion date. Overdue cards are highlighted and appear in the Due Dates panel.</Item>
-        <Item label="Tags">Custom labels with individually chosen colors. Add as many as you like — they're searchable and filterable.</Item>
+        <Item label="Tags">Custom labels with individually chosen colors. Add as many as you like — they're searchable by typing the tag name.</Item>
         <Item label="Card Color">A color strip across the top of the card for visual organization. Choose from 9 colors or leave as default.</Item>
         <Item label="Checklist">Sub-tasks within a card. A progress bar shows completion percentage on the card face.</Item>
         <Item label="Comments">Threaded discussion on the card. Supports @mentions to notify collaborators.</Item>
-        <Item label="Attachments">Upload files (images, PDFs, Word, Excel, CSV, TXT). Max 5MB per file, 10 files per card. Images show a thumbnail.</Item>
+        <Item label="Attachments">Upload files (images, PDFs, Word, Excel, CSV, TXT). Max 10MB per file, 10 files per card. Images show a thumbnail.</Item>
         <Item label="Activity">A history tab in the card modal shows every change made to the card — who moved it, what was edited, when comments were added.</Item>
       </Section>
 
@@ -224,29 +249,37 @@ function CardsTab() {
 function SearchTab() {
   return (
     <div>
-      <Section title="Search Bar">
-        <Item label="Location">Click the search icon in the header (right of center). The bar expands inline.</Item>
-        <Item label="What it searches">Card titles, descriptions, and tags — across all columns of the active board.</Item>
-        <Item label="Real-time">Results filter as you type (300ms debounce — very fast).</Item>
-        <Item label="Highlight">Matching text is highlighted in yellow on matching cards.</Item>
-        <Item label="Clear">Click the ✕ inside the search bar, or press <Kbd>Esc</Kbd>.</Item>
+      <Section title="Opening Search">
+        <Item label="Desktop">Click the 🔍 search icon in the header. A floating glass panel drops down below it.</Item>
+        <Item label="Keyboard shortcut">Press <Kbd>Ctrl</Kbd>/<Kbd>⌘</Kbd> + <Kbd>/</Kbd> to open and focus the search panel from anywhere on the board.</Item>
+        <Item label="Mobile">Tap the Search tab in the bottom tab bar — a full-screen search overlay opens.</Item>
+      </Section>
+
+      <Section title="Scope Toggle">
+        <Item label="This board">Searches cards on your active board only. Results appear instantly as you type.</Item>
+        <Item label="All boards">Searches across every board you have access to. Results are grouped by board name. Clicking a result switches to that board and opens the card.</Item>
+        <Item label="Switching scope">Click "This board" or "All boards" at the top of the search panel. Your last-used scope is remembered.</Item>
+      </Section>
+
+      <Section title="What It Searches">
+        <Item label="Fields">Card titles, descriptions, and tags.</Item>
+        <Item label="Results">Shown as a flat list in the panel — card title, column name, and due date (if set). Title matches are highlighted in purple.</Item>
+        <Item label="Navigate">Click any result to jump to that card. If it's on a different board, the board switches automatically.</Item>
       </Section>
 
       <Section title="Filters">
-        <Item label="Priority">Toggle Low, Medium, and/or High. Multi-select — you can show just High, or High + Medium together.</Item>
-        <Item label="Overdue">Show only cards that have passed their due date.</Item>
-        <Item label="Tags">Filter by specific tags. Multi-select supported.</Item>
-        <Item label="Active indicator">A badge on the filter icon shows how many filters are currently active.</Item>
-        <Item label="Clear All">Single button resets all active search and filter criteria.</Item>
+        <Item label="Priority chips">High / Med / Low buttons in the panel header. Multi-select — combine High + Med, or any combination.</Item>
+        <Item label="Overdue">Show only cards past their due date. Works in both This board and All boards scopes.</Item>
+        <Item label="Combining">Text search and filter chips stack — "login bug" + High priority shows only high-priority cards with "login bug" in their title, description, or tags.</Item>
+        <Item label="Match count">The panel shows a live count ("3 matches on this board" or "7 matches across 2 boards") as you type.</Item>
       </Section>
 
-      <Section title="Combining Search and Filters">
-        <p className="text-sm text-gray-600 dark:text-gray-400">
-          Search and filters work together — you can type "login bug" in the search bar AND have "High priority" filter active at the same time. Only cards matching both criteria will show.
-        </p>
+      <Section title="Clearing Search">
+        <Item label="Clear text">Click the ✕ button inside the input field.</Item>
+        <Item label="Close panel">Press <Kbd>Esc</Kbd> to clear search and close the panel. Click outside the panel to close while keeping any active filters.</Item>
       </Section>
 
-      <Tip>Filters persist while you drag cards — so you can filter for "High priority" and drag those cards around without losing the filter state.</Tip>
+      <Tip>Use All-boards search to find a card when you can't remember which board it's on. Click the result to jump straight to it.</Tip>
     </div>
   );
 }
@@ -254,33 +287,47 @@ function SearchTab() {
 function PanelsTab() {
   return (
     <div>
+      <Section title="Opening Panels">
+        <p className="text-sm leading-relaxed" style={{ color: 'var(--body)' }}>
+          All panels are opened from the <strong style={{ color: 'var(--text)' }}>⋮ More</strong> menu in the top-right of the header (desktop). Each panel slides in from the right side of the board and can be open simultaneously with others. On mobile, tap the Alerts tab in the bottom tab bar to access notifications.
+        </p>
+      </Section>
+
       <Section title="Due Dates Panel  📅">
-        <Item label="Open">Click the 📅 calendar icon in the header. A red badge shows how many cards have due dates.</Item>
+        <Item label="Open">⋮ More → Due Dates. The label shows a count when cards have due dates set.</Item>
         <Item label="Content">All cards with a due date, sorted by urgency (overdue first, then soonest due). Excludes cards in "Done" columns.</Item>
-        <Item label="Click to navigate">Clicking a card in the panel scrolls to it on the board.</Item>
+        <Item label="Click to navigate">Click a card in the panel to scroll to it on the board.</Item>
         <Item label="Resize">Drag the left edge of the panel to resize it (280–600px). Your preferred width is saved.</Item>
       </Section>
 
-      <Section title="Activity Feed Panel  🕐">
-        <Item label="Open">Click the clock icon in the header. A purple badge shows unread activity count.</Item>
+      <Section title="Activity Feed Panel  ⏰">
+        <Item label="Open">⋮ More → Activity. The label shows an unread count when you have unseen activity.</Item>
         <Item label="Content">A live, chronological feed of everything happening on the board: cards added/moved/edited, columns changed, comments posted, board shared.</Item>
         <Item label="Real-time">Updates live as collaborators make changes — no refresh needed.</Item>
-        <Item label="Unread tracking">Activity is marked as "seen" when you open the panel. The badge clears automatically.</Item>
+        <Item label="Unread tracking">Activity is marked as "seen" when you open the panel. The count clears automatically.</Item>
         <Item label="Actors">Each event shows who performed the action and when (e.g. "2 minutes ago").</Item>
       </Section>
 
       <Section title="Analytics Panel  📊">
-        <Item label="Open">Click the bar chart icon in the header.</Item>
+        <Item label="Open">⋮ More → Analytics.</Item>
         <Item label="Content">
-          Visual breakdown of your board: total cards, cards per column (bar chart), priority distribution, tag frequency, due date status (overdue / due soon / future), and completion percentage.
+          Visual breakdown of your board: total cards, completion rate, priority distribution, cards per column (bar chart), tag frequency, card age distribution, and a 14-day activity heatmap.
         </Item>
         <Item label="Live updates">Reflects your current board state in real-time.</Item>
       </Section>
 
-      <Section title="Panel Tips">
-        <p className="text-sm text-gray-600 dark:text-gray-400">All three panels can be open simultaneously. They stack from the right side of the board. You can also use the board alongside any combination of panels.</p>
-        <Tip>The Activity Feed is the fastest way to catch up after being away — scroll it to see what your team did while you were offline.</Tip>
+      <Section title="Archive Panel  📦">
+        <Item label="Open">⋮ More → Archive.</Item>
+        <Item label="Content">Cards that have been archived (removed from active columns but not deleted). You can review and restore them at any time.</Item>
       </Section>
+
+      <Section title="Calendar View  📅">
+        <Item label="Switch views">Click Calendar in the Board / Calendar toggle in the header (desktop), or tap the Calendar tab on mobile.</Item>
+        <Item label="Content">All cards with a due date, laid out on a monthly calendar grid. Cards without due dates don't appear here.</Item>
+        <Item label="Navigate">Use the arrow buttons to go forward or back by month.</Item>
+      </Section>
+
+      <Tip>The Activity Feed is the fastest way to catch up after being away — scroll it to see what your team did while you were offline.</Tip>
     </div>
   );
 }
@@ -289,7 +336,7 @@ function CollaborationTab() {
   return (
     <div>
       <Section title="Sharing a Board">
-        <Item label="Open Share">Board switcher dropdown → share icon on the board → Invite by email.</Item>
+        <Item label="Open Share">Open the board switcher dropdown → click the ⎇ share icon next to the board you own → enter email addresses to invite collaborators.</Item>
         <Item label="Viewer role">Can see the board and all cards but cannot make any changes.</Item>
         <Item label="Editor role">Full access — can create, edit, move, and delete cards and columns.</Item>
         <Item label="Change roles">Board owner can upgrade/downgrade collaborators at any time.</Item>
@@ -347,13 +394,7 @@ function SyncTab() {
         <Item label="Status display">"Offline (N queued)" appears in the sync status when you have pending operations.</Item>
       </Section>
 
-      <Section title="System Health Dashboard">
-        <Item label="Open">Click the ℹ info icon next to the sync status in the header.</Item>
-        <Item label="Shows">Network status, sync state, last sync time, pending operation count, local storage usage, board document sizes, and total card count.</Item>
-        <Item label="Diagnose issues">If sync seems stuck, the health dashboard is the first place to check.</Item>
-      </Section>
-
-      <Tip>The app uses a local IndexedDB queue for offline operations — your changes survive browser restarts while offline and sync when you're back online.</Tip>
+      <Tip>The app uses a local queue for offline operations — your changes survive browser restarts while offline and sync automatically when you're back online.</Tip>
     </div>
   );
 }
@@ -361,7 +402,7 @@ function SyncTab() {
 function AITab() {
   return (
     <div>
-      {/* Pro badge */}
+      {/* Pro banner */}
       <div className="flex items-center gap-3 mb-5 p-4 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 text-white">
         <span className="text-3xl">✨</span>
         <div>
@@ -376,7 +417,7 @@ function AITab() {
       </div>
 
       <Section title="What It Does">
-        <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
+        <p className="text-sm leading-relaxed" style={{ color: 'var(--body)' }}>
           The AI Instructions feature reads your card's details and generates a ready-to-use prompt that you can paste into any AI tool (ChatGPT, Claude, Gemini, etc.) to get detailed implementation guidance.
           The generated instructions are tailored to the card's context — title, priority, checklist items, tags, and your project description.
         </p>
@@ -385,34 +426,49 @@ function AITab() {
       <Section title="How to Access">
         <Item label="Open a card">Click any card on the board to open its detail modal.</Item>
         <Item label="Spark icon">Click the ✨ spark / lightning bolt icon in the card modal header or toolbar.</Item>
-        <Item label="Pro required">If you're on the free plan, you'll see an upgrade prompt. Pro users have unlimited generations.</Item>
+        <Item label="Free vs Pro">Free plan users get one free lifetime generation; after that, an upgrade prompt appears. Pro users have unlimited generations.</Item>
       </Section>
 
       <Section title="Step 1 — Configure">
-        <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+        <p className="text-sm mb-3" style={{ color: 'var(--body)' }}>
           Before generating, choose what context to include and which instruction style to use.
         </p>
         <Item label="Instruction Style">Choose how the AI should frame the output:</Item>
         <div className="ml-4 mt-2 space-y-1.5">
           <div className="flex gap-2 text-sm">
             <span>💻</span>
-            <div><strong className="text-gray-800 dark:text-gray-200">Development</strong> <span className="text-gray-500 dark:text-gray-400">— Technical implementation instructions for developers (code, architecture, APIs).</span></div>
+            <div>
+              <strong style={{ color: 'var(--text)' }}>Development</strong>{' '}
+              <span style={{ color: 'var(--body)' }}>— Technical implementation instructions for developers (code, architecture, APIs).</span>
+            </div>
           </div>
           <div className="flex gap-2 text-sm">
             <span>📋</span>
-            <div><strong className="text-gray-800 dark:text-gray-200">General Tasks</strong> <span className="text-gray-500 dark:text-gray-400">— Simple actionable steps anyone can follow, no technical jargon.</span></div>
+            <div>
+              <strong style={{ color: 'var(--text)' }}>General Tasks</strong>{' '}
+              <span style={{ color: 'var(--body)' }}>— Simple actionable steps anyone can follow, no technical jargon.</span>
+            </div>
           </div>
           <div className="flex gap-2 text-sm">
             <span>📅</span>
-            <div><strong className="text-gray-800 dark:text-gray-200">Event Planning</strong> <span className="text-gray-500 dark:text-gray-400">— Timelines, logistics, preparation checklists, and coordination steps.</span></div>
+            <div>
+              <strong style={{ color: 'var(--text)' }}>Event Planning</strong>{' '}
+              <span style={{ color: 'var(--body)' }}>— Timelines, logistics, preparation checklists, and coordination steps.</span>
+            </div>
           </div>
           <div className="flex gap-2 text-sm">
             <span>📝</span>
-            <div><strong className="text-gray-800 dark:text-gray-200">Documentation</strong> <span className="text-gray-500 dark:text-gray-400">— Guides, explanations, how-tos, and reference material.</span></div>
+            <div>
+              <strong style={{ color: 'var(--text)' }}>Documentation</strong>{' '}
+              <span style={{ color: 'var(--body)' }}>— Guides, explanations, how-tos, and reference material.</span>
+            </div>
           </div>
           <div className="flex gap-2 text-sm">
             <span>🔬</span>
-            <div><strong className="text-gray-800 dark:text-gray-200">Research</strong> <span className="text-gray-500 dark:text-gray-400">— Structured research plans: key questions, sources to consult, how to evaluate and synthesize findings.</span></div>
+            <div>
+              <strong style={{ color: 'var(--text)' }}>Research</strong>{' '}
+              <span style={{ color: 'var(--body)' }}>— Structured research plans: key questions, sources to consult, how to evaluate and synthesize findings.</span>
+            </div>
           </div>
         </div>
         <div className="mt-3">
@@ -420,14 +476,14 @@ function AITab() {
         </div>
         <div className="mt-3">
           <Item label="Card data to include">Check or uncheck which card fields to send to the AI:</Item>
-          <div className="ml-4 mt-1.5 space-y-1 text-sm text-gray-600 dark:text-gray-400">
-            <p>• <strong className="text-gray-700 dark:text-gray-300">Title</strong> — always included, can't be removed</p>
-            <p>• <strong className="text-gray-700 dark:text-gray-300">Description</strong> — the card's short summary</p>
-            <p>• <strong className="text-gray-700 dark:text-gray-300">Notes</strong> — detailed rich-text content</p>
-            <p>• <strong className="text-gray-700 dark:text-gray-300">Checklist</strong> — sub-tasks (shows count)</p>
-            <p>• <strong className="text-gray-700 dark:text-gray-300">Tags</strong> — labels attached to the card</p>
-            <p>• <strong className="text-gray-700 dark:text-gray-300">Priority</strong> — low / medium / high</p>
-            <p>• <strong className="text-gray-700 dark:text-gray-300">Project Context</strong> — your board's description (only shown if the board has a description set)</p>
+          <div className="ml-4 mt-1.5 space-y-1 text-sm" style={{ color: 'var(--body)' }}>
+            <p>• <strong style={{ color: 'var(--text)' }}>Title</strong> — always included, can't be removed</p>
+            <p>• <strong style={{ color: 'var(--text)' }}>Description</strong> — the card's short summary</p>
+            <p>• <strong style={{ color: 'var(--text)' }}>Notes</strong> — detailed rich-text content</p>
+            <p>• <strong style={{ color: 'var(--text)' }}>Checklist</strong> — sub-tasks (shows count)</p>
+            <p>• <strong style={{ color: 'var(--text)' }}>Tags</strong> — labels attached to the card</p>
+            <p>• <strong style={{ color: 'var(--text)' }}>Priority</strong> — low / medium / high</p>
+            <p>• <strong style={{ color: 'var(--text)' }}>Project Context</strong> — your board's description (only shown if the board has a description set)</p>
           </div>
         </div>
         <Tip>The more context you include, the more specific and useful the generated instructions will be. For complex technical cards, including Notes and Checklist makes a big difference.</Tip>
@@ -448,10 +504,15 @@ function AITab() {
 
       <Section title="Generate Task Cards">
         <div className="flex items-center gap-2 mb-3">
-          <span className="text-sm font-medium text-gray-800 dark:text-gray-200">What it does</span>
-          <span className="text-xs font-semibold bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300 px-2 py-0.5 rounded-full">Pro</span>
+          <span className="text-sm font-medium" style={{ color: 'var(--text)' }}>What it does</span>
+          <span
+            className="text-xs font-semibold px-2 py-0.5 rounded-full"
+            style={{ background: 'rgba(147,51,234,.15)', color: 'var(--purple-l)' }}
+          >
+            Pro
+          </span>
         </div>
-        <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed mb-3">
+        <p className="text-sm leading-relaxed mb-3" style={{ color: 'var(--body)' }}>
           Describe a goal and AI generates a full set of task cards — each with a title, priority, and description — ready to add to your board in one click.
         </p>
         <Item label="How to open">Click the ✦ sparkle icon in the board header (next to the board name area).</Item>
@@ -480,6 +541,10 @@ function ShortcutsTab() {
         <ShortcutRow description="Close modal or cancel" keys={['Esc']} />
       </Section>
 
+      <Section title="Search">
+        <ShortcutRow description="Open card search panel" keys={['Ctrl', '/']} />
+      </Section>
+
       <Section title="Cards">
         <ShortcutRow description="Create new card (first column)" keys={['N']} />
       </Section>
@@ -489,12 +554,12 @@ function ShortcutsTab() {
       </Section>
 
       <Section title="Panels">
-        <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">Panel toggles are accessed via the header icons. Click the clock (🕐) for Activity Feed, calendar (📅) for Due Dates, bar chart (📊) for Analytics.</p>
+        <p className="text-sm mb-2" style={{ color: 'var(--body)' }}>Panels (Analytics, Due Dates, Activity, Archive) are opened via the ⋮ More menu in the header.</p>
       </Section>
 
       <Section title="Tips">
-        <div className="text-sm text-gray-600 dark:text-gray-400 space-y-2">
-          <p>Keyboard shortcuts are disabled while a modal is open or when focus is in a text input — so typing <strong>N</strong> in a card title field won't accidentally create a new card.</p>
+        <div className="text-sm space-y-2" style={{ color: 'var(--body)' }}>
+          <p>Keyboard shortcuts are disabled while a modal is open or when focus is in a text input — so typing <strong style={{ color: 'var(--text)' }}>N</strong> in a card title field won't accidentally create a new card.</p>
           <p>Press <Kbd>Esc</Kbd> to dismiss any open modal, dropdown, or panel.</p>
         </div>
       </Section>
@@ -516,6 +581,7 @@ const TAB_CONTENT: Record<TabId, React.ReactNode> = {
 
 export default function HelpModal({ isOpen, onClose }: HelpModalProps) {
   const [activeTab, setActiveTab] = useState<TabId>('getting-started');
+  const prefersReducedMotion = useReducedMotion();
 
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
@@ -525,12 +591,25 @@ export default function HelpModal({ isOpen, onClose }: HelpModalProps) {
     return () => window.removeEventListener('keydown', handleEscape);
   }, [isOpen, onClose]);
 
-  // Reset to first tab when reopened
   useEffect(() => {
     if (isOpen) setActiveTab('getting-started');
   }, [isOpen]);
 
   if (typeof window === 'undefined') return null;
+
+  const springTransition = prefersReducedMotion
+    ? { duration: 0 }
+    : { type: 'spring' as const, stiffness: 400, damping: 30 };
+
+  const modalInitial = prefersReducedMotion
+    ? { opacity: 0 }
+    : { opacity: 0, scale: 0.95, y: 10 };
+
+  const modalAnimate = { opacity: 1, scale: 1, y: 0 };
+
+  const modalExit = prefersReducedMotion
+    ? { opacity: 0 }
+    : { opacity: 0, scale: 0.95, y: 10 };
 
   return createPortal(
     <AnimatePresence>
@@ -546,95 +625,146 @@ export default function HelpModal({ isOpen, onClose }: HelpModalProps) {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.15 }}
-            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            transition={{ duration: prefersReducedMotion ? 0 : 0.15 }}
+            className="absolute inset-0 bg-black/50"
             onClick={onClose}
           />
 
-          {/* Modal */}
+          {/* Outer wrapper: animation only — no bg, no backdrop-filter (breaks under transform) */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 10 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 10 }}
-            transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-            className="relative bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-3xl h-[80vh] flex flex-col overflow-hidden"
+            initial={modalInitial}
+            animate={modalAnimate}
+            exit={modalExit}
+            transition={springTransition}
+            className="relative w-full max-w-3xl"
+            style={{ height: '80vh' }}
           >
-            {/* Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700 shrink-0">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-purple-600 flex items-center justify-center">
-                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </div>
-                <div>
-                  <h2 className="text-lg font-bold text-gray-900 dark:text-white">Help Guide</h2>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">Everything you need to know about Kan-do</p>
-                </div>
-              </div>
-              <button
-                onClick={onClose}
-                className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-gray-500 dark:text-gray-400"
-                aria-label="Close"
+            {/* Inner: glass panel — static div, no transform, so backdrop-filter renders */}
+            <div
+              style={{
+                width: '100%',
+                height: '100%',
+                background: 'rgba(29, 26, 23, 0.88)',
+                backdropFilter: 'blur(24px) saturate(1.2)',
+                WebkitBackdropFilter: 'blur(24px) saturate(1.2)',
+                border: '1px solid rgba(255,255,255,.07)',
+                borderRadius: '16px',
+                boxShadow: 'var(--shadow-3)',
+                display: 'flex',
+                flexDirection: 'column',
+                overflow: 'hidden',
+              }}
+            >
+              {/* Header */}
+              <div
+                className="flex items-center justify-between px-6 py-4 shrink-0"
+                style={{ borderBottom: '1px solid var(--border)' }}
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-
-            {/* Body: tabs + content */}
-            <div className="flex flex-1 overflow-hidden">
-              {/* Sidebar tabs */}
-              <nav className="w-44 shrink-0 border-r border-gray-200 dark:border-gray-700 overflow-y-auto py-2">
-                {TABS.map((tab) => (
-                  <button
-                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id)}
-                    className={`w-full flex items-center gap-2.5 px-4 py-2.5 text-sm transition-colors text-left ${
-                      activeTab === tab.id
-                        ? 'bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 font-medium border-r-2 border-purple-600'
-                        : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-gray-200'
-                    }`}
+                <div className="flex items-center gap-3">
+                  <div
+                    className="w-8 h-8 rounded-lg flex items-center justify-center"
+                    style={{ background: 'var(--purple)' }}
                   >
-                    <span className="text-base leading-none">{tab.icon}</span>
-                    <span className="leading-tight">{tab.label}</span>
-                  </button>
-                ))}
-              </nav>
-
-              {/* Content */}
-              <div className="flex-1 overflow-y-auto px-6 py-5">
-                <AnimatePresence mode="wait">
-                  <motion.div
-                    key={activeTab}
-                    initial={{ opacity: 0, x: 8 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -8 }}
-                    transition={{ duration: 0.12 }}
-                  >
-                    {TAB_CONTENT[activeTab]}
-                  </motion.div>
-                </AnimatePresence>
+                    <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-bold" style={{ color: 'var(--text)' }}>Help Guide</h2>
+                    <p className="text-xs" style={{ color: 'var(--muted)' }}>Everything you need to know about Kan-do</p>
+                  </div>
+                </div>
+                <button
+                  onClick={onClose}
+                  className="p-2 rounded-lg transition-colors"
+                  style={{ color: 'var(--muted)' }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,.06)'; e.currentTarget.style.color = 'var(--body)'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = ''; e.currentTarget.style.color = 'var(--muted)'; }}
+                  aria-label="Close"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
               </div>
-            </div>
 
-            {/* Footer */}
-            <div className="px-6 py-3 bg-gray-50 dark:bg-gray-900/50 border-t border-gray-200 dark:border-gray-700 shrink-0 flex items-center justify-between">
-              <p className="text-xs text-gray-500 dark:text-gray-400">
-                Press <Kbd>Esc</Kbd> to close
-              </p>
-              <div className="flex gap-1">
-                {TABS.map((t) => (
-                  <button
-                    key={t.id}
-                    onClick={() => setActiveTab(t.id)}
-                    className={`w-1.5 h-1.5 rounded-full transition-colors ${
-                      activeTab === t.id ? 'bg-purple-600' : 'bg-gray-300 dark:bg-gray-600'
-                    }`}
-                    aria-label={`Go to ${t.label}`}
-                  />
-                ))}
+              {/* Body: tabs + content */}
+              <div className="flex flex-1 overflow-hidden">
+                {/* Sidebar nav */}
+                <nav
+                  className="w-44 shrink-0 overflow-y-auto py-2"
+                  style={{ borderRight: '1px solid var(--border)' }}
+                >
+                  {TABS.map((tab) => (
+                    <button
+                      key={tab.id}
+                      onClick={() => setActiveTab(tab.id)}
+                      className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm transition-colors text-left"
+                      style={
+                        activeTab === tab.id
+                          ? {
+                              background: 'rgba(147,51,234,.15)',
+                              color: 'var(--purple-l)',
+                              fontWeight: 500,
+                              borderRight: '2px solid var(--purple)',
+                            }
+                          : { color: 'var(--body)' }
+                      }
+                      onMouseEnter={(e) => {
+                        if (activeTab !== tab.id) e.currentTarget.style.background = 'rgba(255,255,255,.04)';
+                      }}
+                      onMouseLeave={(e) => {
+                        if (activeTab !== tab.id) e.currentTarget.style.background = '';
+                      }}
+                    >
+                      <span className="text-base leading-none">{tab.icon}</span>
+                      <span className="leading-tight">{tab.label}</span>
+                    </button>
+                  ))}
+                </nav>
+
+                {/* Content pane */}
+                <div className="flex-1 overflow-y-auto px-6 py-5">
+                  <AnimatePresence mode="wait">
+                    <motion.div
+                      key={activeTab}
+                      initial={{ opacity: 0, x: prefersReducedMotion ? 0 : 8 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: prefersReducedMotion ? 0 : -8 }}
+                      transition={{ duration: prefersReducedMotion ? 0 : 0.12 }}
+                    >
+                      {TAB_CONTENT[activeTab]}
+                    </motion.div>
+                  </AnimatePresence>
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div
+                className="px-6 py-3 shrink-0 flex items-center justify-between"
+                style={{
+                  background: 'var(--surface-1)',
+                  borderTop: '1px solid var(--border)',
+                }}
+              >
+                <p className="text-xs" style={{ color: 'var(--muted)' }}>
+                  Press <Kbd>Esc</Kbd> to close
+                </p>
+                <div className="flex gap-1.5 items-center">
+                  {TABS.map((t) => (
+                    <button
+                      key={t.id}
+                      onClick={() => setActiveTab(t.id)}
+                      className="rounded-full transition-all"
+                      style={{
+                        width: activeTab === t.id ? '16px' : '6px',
+                        height: '6px',
+                        background: activeTab === t.id ? 'var(--purple)' : 'var(--border-2)',
+                      }}
+                      aria-label={`Go to ${t.label}`}
+                    />
+                  ))}
+                </div>
               </div>
             </div>
           </motion.div>

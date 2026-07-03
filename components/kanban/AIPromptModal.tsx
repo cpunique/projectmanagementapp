@@ -78,48 +78,25 @@ const AIPromptModal = ({ isOpen, onClose, card, boardId }: AIPromptModalProps) =
     return typeof window !== 'undefined'
       ? createPortal(
           <Modal isOpen={isOpen} onClose={onClose} contentClassName="max-w-sm">
-            <div className="w-full">
-              {/* Header */}
-              <div className="sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex items-center justify-between">
-                <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-                  Pro Feature
-                </h2>
-                <button
-                  onClick={onClose}
-                  className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 text-2xl leading-none"
-                >
-                  ✕
-                </button>
+            <div style={{ paddingLeft: '32px', paddingRight: '32px', paddingTop: '24px', paddingBottom: '24px', textAlign: 'center' }}>
+              <div style={{ width: '64px', height: '64px', margin: '0 auto 16px', borderRadius: '50%', background: 'rgba(147,51,234,.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <span style={{ fontSize: '32px' }}>✨</span>
               </div>
-
-              {/* Content */}
-              <div className="px-6 py-8 text-center">
-                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
-                  <span className="text-3xl">✨</span>
-                </div>
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                  AI Instructions is a Pro Feature
-                </h3>
-                <p className="text-gray-600 dark:text-gray-400 text-sm mb-6">
-                  Generate implementation instructions powered by AI to help you build faster.
-                  Upgrade to Pro to unlock this feature.
-                </p>
-                <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 text-left">
-                  <p className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">Pro includes:</p>
-                  <ul className="text-xs text-gray-600 dark:text-gray-400 space-y-1">
-                    <li>✓ Unlimited AI-generated instructions</li>
-                    <li>✓ Multiple instruction styles</li>
-                    <li>✓ Project context integration</li>
-                    <li>✓ Copy to clipboard & save to card</li>
-                  </ul>
-                </div>
-              </div>
-
-              {/* Footer */}
-              <div className="sticky bottom-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 px-6 py-4 flex justify-center">
-                <Button onClick={onClose} variant="outline">
-                  Close
-                </Button>
+              <h3 style={{ fontSize: '18px', fontWeight: '600', color: 'var(--text)', marginBottom: '8px' }}>
+                AI Instructions is a Pro Feature
+              </h3>
+              <p style={{ color: 'var(--body)', fontSize: '14px', marginBottom: '24px' }}>
+                Generate implementation instructions powered by AI to help you build faster.
+                Upgrade to Pro to unlock this feature.
+              </p>
+              <div style={{ background: 'rgba(35,31,28,.4)', border: '1px solid var(--border)', borderRadius: '12px', padding: '16px', textAlign: 'left', marginBottom: '24px' }}>
+                <p style={{ fontSize: '12px', fontWeight: '500', color: 'var(--text)', marginBottom: '8px' }}>Pro includes:</p>
+                <ul style={{ fontSize: '12px', color: 'var(--body)', margin: 0, padding: 0, listStyle: 'none' }}>
+                  <li>✓ Unlimited AI-generated instructions</li>
+                  <li>✓ Multiple instruction styles</li>
+                  <li>✓ Project context integration</li>
+                  <li>✓ Copy to clipboard & save to card</li>
+                </ul>
               </div>
             </div>
           </Modal>,
@@ -133,7 +110,6 @@ const AIPromptModal = ({ isOpen, onClose, card, boardId }: AIPromptModalProps) =
     setError(null);
 
     try {
-      // Get auth token
       const idToken = await user?.getIdToken();
       if (!idToken) {
         throw new Error('Authentication required. Please sign in to use AI features.');
@@ -202,304 +178,491 @@ const AIPromptModal = ({ isOpen, onClose, card, boardId }: AIPromptModalProps) =
     onClose();
   };
 
+  // Create footer component
+  const footerContent = (
+    <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
+      {step === 1 && (
+        <>
+          <Button onClick={handleClose} variant="outline">
+            Cancel
+          </Button>
+          <Button onClick={handleGenerate} isLoading={isLoading} disabled={isLoading} style={{
+            background: 'var(--purple)',
+            boxShadow: '0 0 24px var(--glow)',
+          }}>
+            Generate
+          </Button>
+        </>
+      )}
+
+      {step === 3 && (
+        <>
+          <Button onClick={handleRegenerate} variant="outline">
+            Regenerate
+          </Button>
+          <Button onClick={handleCopy} variant="secondary">
+            {copied ? '✓ Copied' : 'Copy to Clipboard'}
+          </Button>
+          <Button onClick={handleSave} style={{
+            background: 'var(--purple)',
+            boxShadow: '0 0 24px var(--glow)',
+          }}>
+            Save to Card
+          </Button>
+        </>
+      )}
+    </div>
+  );
+
   return typeof window !== 'undefined'
     ? createPortal(
-        <Modal isOpen={isOpen} onClose={handleClose}>
-          <div className="w-full max-w-2xl">
-            {/* Header */}
-            <div className="sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-                  {step === 1 ? 'Generate Instructions' : step === 2 ? 'Generating...' : 'Generated Instructions'}
-                </h2>
-                <span className="text-xs font-semibold text-purple-600 dark:text-purple-400 bg-purple-100 dark:bg-purple-900/50 px-2 py-0.5 rounded-full">Pro</span>
-              </div>
-              <button
-                onClick={handleClose}
-                className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 text-2xl leading-none"
+        <Modal isOpen={isOpen} onClose={handleClose} contentClassName="max-w-2xl" footer={footerContent}>
+          <AnimatePresence mode="wait">
+            {/* Step 1: Field Selection */}
+            {step === 1 && (
+              <motion.div
+                key="step1"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}
               >
-                ✕
-              </button>
-            </div>
-
-            {/* Content */}
-            <div className="px-6 py-6 max-h-96 overflow-y-auto">
-              <AnimatePresence mode="wait">
-                {/* Step 1: Field Selection */}
-                {step === 1 && (
-                  <motion.div
-                    key="step1"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    className="space-y-4"
+                {/* Instruction Type Selector */}
+                <div style={{ marginBottom: '24px' }}>
+                  <label className="section-label">
+                    Instruction Style
+                  </label>
+                  <select
+                    value={instructionType}
+                    onChange={(e) => setInstructionType(e.target.value as InstructionType)}
+                    style={{
+                      width: '100%',
+                      padding: '10px 12px',
+                      border: '1px solid var(--border-2)',
+                      borderRadius: '10px',
+                      background: 'rgba(22,20,18,.6)',
+                      color: 'var(--text)',
+                      fontSize: '13px',
+                      fontFamily: 'inherit',
+                      outline: 'none',
+                    }}
+                    onFocus={(e) => {
+                      e.currentTarget.style.borderColor = 'var(--purple-l)';
+                      e.currentTarget.style.boxShadow = '0 0 0 3px rgba(147,51,234,.18)';
+                    }}
+                    onBlur={(e) => {
+                      e.currentTarget.style.borderColor = 'var(--border-2)';
+                      e.currentTarget.style.boxShadow = 'none';
+                    }}
                   >
-                    {/* Instruction Type Selector */}
-                    <div className="mb-6">
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Instruction Style
-                      </label>
-                      <select
-                        value={instructionType}
-                        onChange={(e) => setInstructionType(e.target.value as InstructionType)}
-                        className="w-full px-4 py-2.5 border-2 border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:border-purple-500 focus:ring-4 focus:ring-purple-100 dark:focus:ring-purple-900/30 hover:border-gray-400 dark:hover:border-gray-500 transition-all duration-200 shadow-sm focus:shadow-md"
-                      >
-                        {INSTRUCTION_OPTIONS.map((option) => (
-                          <option key={option.value} value={option.value}>
-                            {option.icon} {option.label} - {option.description}
-                          </option>
-                        ))}
-                      </select>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1.5">
-                        {board?.purpose === instructionType
-                          ? '(Board default)'
-                          : `Board default: ${INSTRUCTION_OPTIONS.find(o => o.value === (board?.purpose || 'development'))?.label || 'Development'}`
-                        }
-                      </p>
+                    {INSTRUCTION_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.icon} {option.label} - {option.description}
+                      </option>
+                    ))}
+                  </select>
+                  <p style={{ fontSize: '12px', color: 'var(--body)', marginTop: '12px' }}>
+                    {board?.purpose === instructionType
+                      ? '(Board default)'
+                      : `Board default: ${INSTRUCTION_OPTIONS.find(o => o.value === (board?.purpose || 'development'))?.label || 'Development'}`
+                    }
+                  </p>
+                </div>
+
+                <p style={{ fontSize: '14px', color: 'var(--body)', marginBottom: '16px' }}>
+                  Select which card information to include:
+                </p>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  {/* Title - Always Included */}
+                  <label style={{
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    gap: '12px',
+                    padding: '16px',
+                    background: 'rgba(147,51,234,.2)',
+                    border: '1px solid var(--purple)',
+                    borderRadius: '12px',
+                    cursor: 'not-allowed',
+                  }}>
+                    <input
+                      type="checkbox"
+                      checked
+                      disabled
+                      style={{
+                        marginTop: '4px',
+                        accentColor: 'var(--purple)',
+                        cursor: 'not-allowed',
+                      }}
+                    />
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontWeight: '500', fontSize: '14px', color: 'var(--text)' }}>Card Title (Always Included)</div>
+                      <div style={{ fontSize: '12px', color: 'var(--body)', marginTop: '8px', overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>{card.title}</div>
                     </div>
+                  </label>
 
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                      Select which card information to include:
-                    </p>
-
-                    <div className="space-y-3">
-                      {/* Title - Always Included */}
-                      <label className="flex items-start gap-3 p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg border-2 border-purple-200 dark:border-purple-800">
-                        <input
-                          type="checkbox"
-                          checked
-                          disabled
-                          className="mt-1 w-4 h-4 accent-purple-600"
-                        />
-                        <div className="flex-1">
-                          <div className="font-medium text-sm text-gray-900 dark:text-white">Card Title (Always Included)</div>
-                          <div className="text-xs text-gray-600 dark:text-gray-400 line-clamp-2 mt-1">{card.title}</div>
-                        </div>
-                      </label>
-
-                      {/* Description */}
-                      {card.description && (
-                        <label className="flex items-start gap-3 p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-lg border-2 border-gray-200 dark:border-gray-700 cursor-pointer transition-colors">
-                          <input
-                            type="checkbox"
-                            checked={includeDescription}
-                            onChange={(e) => setIncludeDescription(e.target.checked)}
-                            className="mt-1 w-4 h-4 accent-purple-600"
-                          />
-                          <div className="flex-1">
-                            <div className="font-medium text-sm text-gray-900 dark:text-white">Description</div>
-                            <div className="text-xs text-gray-600 dark:text-gray-400 line-clamp-2 mt-1">
-                              {card.description}
-                            </div>
-                          </div>
-                        </label>
-                      )}
-
-                      {/* Notes */}
-                      {card.notes && (
-                        <label className="flex items-start gap-3 p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-lg border-2 border-gray-200 dark:border-gray-700 cursor-pointer transition-colors">
-                          <input
-                            type="checkbox"
-                            checked={includeNotes}
-                            onChange={(e) => setIncludeNotes(e.target.checked)}
-                            className="mt-1 w-4 h-4 accent-purple-600"
-                          />
-                          <div className="flex-1">
-                            <div className="font-medium text-sm text-gray-900 dark:text-white">Notes</div>
-                            <div className="text-xs text-gray-600 dark:text-gray-400 line-clamp-2 mt-1">
-                              {card.notes.replace(/<[^>]*>/g, '').substring(0, 100)}...
-                            </div>
-                          </div>
-                        </label>
-                      )}
-
-                      {/* Checklist */}
-                      {card.checklist && card.checklist.length > 0 && (
-                        <label className="flex items-start gap-3 p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-lg border-2 border-gray-200 dark:border-gray-700 cursor-pointer transition-colors">
-                          <input
-                            type="checkbox"
-                            checked={includeChecklist}
-                            onChange={(e) => setIncludeChecklist(e.target.checked)}
-                            className="mt-1 w-4 h-4 accent-purple-600"
-                          />
-                          <div className="flex-1">
-                            <div className="font-medium text-sm text-gray-900 dark:text-white">
-                              Checklist ({card.checklist.length} items)
-                            </div>
-                            <div className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                              {card.checklist.slice(0, 2).map(item => item.text).join(', ')}
-                              {card.checklist.length > 2 && '...'}
-                            </div>
-                          </div>
-                        </label>
-                      )}
-
-                      {/* Tags */}
-                      {card.tags && card.tags.length > 0 && (
-                        <label className="flex items-start gap-3 p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-lg border-2 border-gray-200 dark:border-gray-700 cursor-pointer transition-colors">
-                          <input
-                            type="checkbox"
-                            checked={includeTags}
-                            onChange={(e) => setIncludeTags(e.target.checked)}
-                            className="mt-1 w-4 h-4 accent-purple-600"
-                          />
-                          <div className="flex-1">
-                            <div className="font-medium text-sm text-gray-900 dark:text-white">Tags</div>
-                            <div className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                              {card.tags.join(', ')}
-                            </div>
-                          </div>
-                        </label>
-                      )}
-
-                      {/* Priority */}
-                      {card.priority && (
-                        <label className="flex items-start gap-3 p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-lg border-2 border-gray-200 dark:border-gray-700 cursor-pointer transition-colors">
-                          <input
-                            type="checkbox"
-                            checked={includePriority}
-                            onChange={(e) => setIncludePriority(e.target.checked)}
-                            className="mt-1 w-4 h-4 accent-purple-600"
-                          />
-                          <div className="flex-1">
-                            <div className="font-medium text-sm text-gray-900 dark:text-white">Priority</div>
-                            <div className="text-xs text-gray-600 dark:text-gray-400 mt-1 capitalize">
-                              {card.priority} priority
-                            </div>
-                          </div>
-                        </label>
-                      )}
-
-                      {/* Board Context */}
-                      {board?.description && (
-                        <label className="flex items-start gap-3 p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-lg border-2 border-gray-200 dark:border-gray-700 cursor-pointer transition-colors">
-                          <input
-                            type="checkbox"
-                            checked={includeBoardContext}
-                            onChange={(e) => setIncludeBoardContext(e.target.checked)}
-                            className="mt-1 w-4 h-4 accent-purple-600"
-                          />
-                          <div className="flex-1">
-                            <div className="font-medium text-sm text-gray-900 dark:text-white">Project Context</div>
-                            <div className="text-xs text-gray-600 dark:text-gray-400 line-clamp-2 mt-1">
-                              {board.description}
-                            </div>
-                          </div>
-                        </label>
-                      )}
-                    </div>
-
-                    {/* Completeness warning */}
-                    {completenessWarning && (
-                      <div ref={warningRef} className={`flex items-start gap-2.5 rounded-lg px-3.5 py-3 border ${
-                        completenessWarning.level === 'red'
-                          ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'
-                          : 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800'
-                      }`}>
-                        <span className="text-base shrink-0">{completenessWarning.level === 'red' ? '⚠️' : '💡'}</span>
-                        <p className={`text-xs leading-relaxed ${
-                          completenessWarning.level === 'red'
-                            ? 'text-red-700 dark:text-red-300'
-                            : 'text-amber-700 dark:text-amber-300'
-                        }`}>
-                          {completenessWarning.message}
-                        </p>
-                      </div>
-                    )}
-                  </motion.div>
-                )}
-
-                {/* Step 2: Loading */}
-                {step === 2 && (
-                  <motion.div
-                    key="step2"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    className="flex flex-col items-center justify-center py-16"
-                  >
-                    <div className="animate-spin rounded-full h-12 w-12 border-4 border-purple-200 dark:border-purple-800 border-t-purple-600 dark:border-t-purple-400 mb-4"></div>
-                    <p className="text-gray-600 dark:text-gray-400 text-sm">Generating implementation instructions...</p>
-                  </motion.div>
-                )}
-
-                {/* Step 3: Display & Edit */}
-                {step === 3 && (
-                  <motion.div
-                    key="step3"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    className="space-y-4"
-                  >
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Implementation Instructions
-                      </label>
-                      <textarea
-                        value={generatedPrompt}
-                        onChange={(e) => setGeneratedPrompt(e.target.value)}
-                        rows={8}
-                        className="w-full px-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:border-purple-500 focus:ring-4 focus:ring-purple-100 dark:focus:ring-purple-900/30 font-mono text-sm resize-none"
+                  {/* Description */}
+                  {card.description && (
+                    <label style={{
+                      display: 'flex',
+                      alignItems: 'flex-start',
+                      gap: '12px',
+                      padding: '16px',
+                      background: 'var(--surface-2)',
+                      border: '1px solid var(--border)',
+                      borderRadius: '12px',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s',
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = 'rgba(35,31,28,.6)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = 'var(--surface-2)';
+                    }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={includeDescription}
+                        onChange={(e) => setIncludeDescription(e.target.checked)}
+                        style={{
+                          marginTop: '4px',
+                          accentColor: 'var(--purple)',
+                        }}
                       />
-                      <div className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                        {generatedPrompt.length} characters
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontWeight: '500', fontSize: '14px', color: 'var(--text)' }}>Description</div>
+                        <div style={{ fontSize: '12px', color: 'var(--body)', marginTop: '8px', overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
+                          {card.description}
+                        </div>
                       </div>
-                    </div>
+                    </label>
+                  )}
 
-                    {error && (
-                      <div className="bg-red-50 dark:bg-red-900/20 border-2 border-red-200 dark:border-red-800 rounded-lg p-4">
-                        <p className="text-red-800 dark:text-red-200 text-sm">{error}</p>
+                  {/* Notes */}
+                  {card.notes && (
+                    <label style={{
+                      display: 'flex',
+                      alignItems: 'flex-start',
+                      gap: '12px',
+                      padding: '16px',
+                      background: 'var(--surface-2)',
+                      border: '1px solid var(--border)',
+                      borderRadius: '12px',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s',
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = 'rgba(35,31,28,.6)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = 'var(--surface-2)';
+                    }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={includeNotes}
+                        onChange={(e) => setIncludeNotes(e.target.checked)}
+                        style={{
+                          marginTop: '4px',
+                          accentColor: 'var(--purple)',
+                        }}
+                      />
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontWeight: '500', fontSize: '14px', color: 'var(--text)' }}>Notes</div>
+                        <div style={{ fontSize: '12px', color: 'var(--body)', marginTop: '8px', overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
+                          {card.notes.replace(/<[^>]*>/g, '').substring(0, 100)}...
+                        </div>
                       </div>
-                    )}
-                  </motion.div>
+                    </label>
+                  )}
+
+                  {/* Checklist */}
+                  {card.checklist && card.checklist.length > 0 && (
+                    <label style={{
+                      display: 'flex',
+                      alignItems: 'flex-start',
+                      gap: '12px',
+                      padding: '16px',
+                      background: 'var(--surface-2)',
+                      border: '1px solid var(--border)',
+                      borderRadius: '12px',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s',
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = 'rgba(35,31,28,.6)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = 'var(--surface-2)';
+                    }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={includeChecklist}
+                        onChange={(e) => setIncludeChecklist(e.target.checked)}
+                        style={{
+                          marginTop: '4px',
+                          accentColor: 'var(--purple)',
+                        }}
+                      />
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontWeight: '500', fontSize: '14px', color: 'var(--text)' }}>
+                          Checklist ({card.checklist.length} items)
+                        </div>
+                        <div style={{ fontSize: '12px', color: 'var(--body)', marginTop: '8px' }}>
+                          {card.checklist.slice(0, 2).map(item => item.text).join(', ')}
+                          {card.checklist.length > 2 && '...'}
+                        </div>
+                      </div>
+                    </label>
+                  )}
+
+                  {/* Tags */}
+                  {card.tags && card.tags.length > 0 && (
+                    <label style={{
+                      display: 'flex',
+                      alignItems: 'flex-start',
+                      gap: '12px',
+                      padding: '16px',
+                      background: 'var(--surface-2)',
+                      border: '1px solid var(--border)',
+                      borderRadius: '12px',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s',
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = 'rgba(35,31,28,.6)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = 'var(--surface-2)';
+                    }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={includeTags}
+                        onChange={(e) => setIncludeTags(e.target.checked)}
+                        style={{
+                          marginTop: '4px',
+                          accentColor: 'var(--purple)',
+                        }}
+                      />
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontWeight: '500', fontSize: '14px', color: 'var(--text)' }}>Tags</div>
+                        <div style={{ fontSize: '12px', color: 'var(--body)', marginTop: '8px' }}>
+                          {card.tags.join(', ')}
+                        </div>
+                      </div>
+                    </label>
+                  )}
+
+                  {/* Priority */}
+                  {card.priority && (
+                    <label style={{
+                      display: 'flex',
+                      alignItems: 'flex-start',
+                      gap: '12px',
+                      padding: '16px',
+                      background: 'var(--surface-2)',
+                      border: '1px solid var(--border)',
+                      borderRadius: '12px',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s',
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = 'rgba(35,31,28,.6)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = 'var(--surface-2)';
+                    }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={includePriority}
+                        onChange={(e) => setIncludePriority(e.target.checked)}
+                        style={{
+                          marginTop: '4px',
+                          accentColor: 'var(--purple)',
+                        }}
+                      />
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontWeight: '500', fontSize: '14px', color: 'var(--text)' }}>Priority</div>
+                        <div style={{ fontSize: '12px', color: 'var(--body)', marginTop: '8px', textTransform: 'capitalize' }}>
+                          {card.priority} priority
+                        </div>
+                      </div>
+                    </label>
+                  )}
+
+                  {/* Board Context */}
+                  {board?.description && (
+                    <label style={{
+                      display: 'flex',
+                      alignItems: 'flex-start',
+                      gap: '12px',
+                      padding: '16px',
+                      background: 'var(--surface-2)',
+                      border: '1px solid var(--border)',
+                      borderRadius: '12px',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s',
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = 'rgba(35,31,28,.6)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = 'var(--surface-2)';
+                    }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={includeBoardContext}
+                        onChange={(e) => setIncludeBoardContext(e.target.checked)}
+                        style={{
+                          marginTop: '4px',
+                          accentColor: 'var(--purple)',
+                        }}
+                      />
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontWeight: '500', fontSize: '14px', color: 'var(--text)' }}>Project Context</div>
+                        <div style={{ fontSize: '12px', color: 'var(--body)', marginTop: '8px', overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
+                          {board.description}
+                        </div>
+                      </div>
+                    </label>
+                  )}
+                </div>
+
+                {/* Completeness warning */}
+                {completenessWarning && (
+                  <div ref={warningRef} style={{
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    gap: '10px',
+                    borderRadius: '12px',
+                    padding: '14px',
+                    border: `1px solid ${completenessWarning.level === 'red' ? '#fb7185' : '#fbbf24'}`,
+                    background: completenessWarning.level === 'red' ? 'rgba(251,113,133,.1)' : 'rgba(251,191,36,.1)',
+                  }}>
+                    <span style={{ fontSize: '16px', flexShrink: 0 }}>{completenessWarning.level === 'red' ? '⚠️' : '💡'}</span>
+                    <p style={{
+                      fontSize: '12px',
+                      lineHeight: '1.5',
+                      color: completenessWarning.level === 'red' ? '#fb7185' : '#fbbf24',
+                      margin: 0,
+                    }}>
+                      {completenessWarning.message}
+                    </p>
+                  </div>
                 )}
+              </motion.div>
+            )}
 
-                {/* Error State */}
-                {error && step === 1 && (
-                  <motion.div
-                    key="error"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="bg-red-50 dark:bg-red-900/20 border-2 border-red-200 dark:border-red-800 rounded-lg p-4"
-                  >
-                    <p className="text-red-800 dark:text-red-200 text-sm font-medium mb-3">{error}</p>
-                    <Button onClick={() => setError(null)} variant="outline" size="sm">
-                      Try Again
-                    </Button>
-                  </motion.div>
+            {/* Step 2: Loading */}
+            {step === 2 && (
+              <motion.div
+                key="step2"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  paddingTop: '64px',
+                  paddingBottom: '64px',
+                }}
+              >
+                <div style={{
+                  width: '48px',
+                  height: '48px',
+                  border: '4px solid rgba(147,51,234,.2)',
+                  borderTop: '4px solid var(--purple)',
+                  borderRadius: '50%',
+                  animation: 'spin 1s linear infinite',
+                  marginBottom: '16px',
+                }} />
+                <p style={{ color: 'var(--body)', fontSize: '14px' }}>Generating implementation instructions...</p>
+              </motion.div>
+            )}
+
+            {/* Step 3: Display & Edit */}
+            {step === 3 && (
+              <motion.div
+                key="step3"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}
+              >
+                <div>
+                  <label style={{ display: 'block', fontSize: '13px', fontWeight: 500, color: 'var(--text)', marginBottom: '8px' }}>
+                    Implementation Instructions
+                  </label>
+                  <textarea
+                    value={generatedPrompt}
+                    onChange={(e) => setGeneratedPrompt(e.target.value)}
+                    rows={8}
+                    style={{
+                      width: '100%',
+                      padding: '12px',
+                      border: '1px solid var(--border-2)',
+                      borderRadius: '10px',
+                      background: 'rgba(22,20,18,.6)',
+                      color: 'var(--text)',
+                      fontSize: '13px',
+                      fontFamily: 'monospace',
+                      resize: 'none',
+                      outline: 'none',
+                    }}
+                    onFocus={(e) => {
+                      e.currentTarget.style.borderColor = 'var(--purple-l)';
+                      e.currentTarget.style.boxShadow = '0 0 0 3px rgba(147,51,234,.18)';
+                    }}
+                    onBlur={(e) => {
+                      e.currentTarget.style.borderColor = 'var(--border-2)';
+                      e.currentTarget.style.boxShadow = 'none';
+                    }}
+                  />
+                  <div style={{ fontSize: '12px', color: 'var(--body)', marginTop: '8px' }}>
+                    {generatedPrompt.length} characters
+                  </div>
+                </div>
+
+                {error && (
+                  <div style={{
+                    background: 'rgba(251,113,133,.1)',
+                    border: '1px solid #fb7185',
+                    borderRadius: '12px',
+                    padding: '14px',
+                  }}>
+                    <p style={{ color: '#fb7185', fontSize: '14px', margin: 0 }}>{error}</p>
+                  </div>
                 )}
-              </AnimatePresence>
-            </div>
+              </motion.div>
+            )}
 
-            {/* Footer */}
-            <div className="sticky bottom-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 px-6 py-4 flex gap-3 justify-center">
-              {step === 1 && (
-                <>
-                  <Button onClick={handleClose} variant="outline">
-                    Cancel
-                  </Button>
-                  <Button onClick={handleGenerate} isLoading={isLoading} disabled={isLoading}>
-                    Generate
-                  </Button>
-                </>
-              )}
-
-              {step === 3 && (
-                <>
-                  <Button onClick={handleRegenerate} variant="outline">
-                    Regenerate
-                  </Button>
-                  <Button onClick={handleCopy} variant="secondary">
-                    {copied ? '✓ Copied' : 'Copy to Clipboard'}
-                  </Button>
-                  <Button onClick={handleSave} variant="primary">
-                    Save to Card
-                  </Button>
-                </>
-              )}
-            </div>
-          </div>
+            {/* Error State */}
+            {error && step === 1 && (
+              <motion.div
+                key="error"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                style={{
+                  background: 'rgba(251,113,133,.1)',
+                  border: '1px solid #fb7185',
+                  borderRadius: '12px',
+                  padding: '16px',
+                }}
+              >
+                <p style={{ color: '#fb7185', fontSize: '14px', fontWeight: '500', marginBottom: '12px' }}>{error}</p>
+                <Button onClick={() => setError(null)} variant="outline" size="sm">
+                  Try Again
+                </Button>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </Modal>,
         document.body
       )

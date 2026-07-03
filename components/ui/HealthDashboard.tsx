@@ -39,21 +39,14 @@ export default function HealthDashboard({ isOpen, onClose }: HealthDashboardProp
 
   const boardSizes = boards.map((b) => {
     const json = JSON.stringify(b);
-    return { name: b.name, sizeKB: Math.round(json.length / 1024 * 10) / 10 };
+    return { id: b.id, name: b.name, sizeKB: Math.round(json.length / 1024 * 10) / 10 };
   });
 
   const formatBytes = (bytes: number) => {
     if (bytes < 1024) return `${bytes} B`;
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-  };
-
-  const syncStatusColor: Record<string, string> = {
-    synced: 'text-green-600 dark:text-green-400',
-    syncing: 'text-blue-600 dark:text-blue-400',
-    error: 'text-red-600 dark:text-red-400',
-    offline: 'text-yellow-600 dark:text-yellow-400',
-    idle: 'text-gray-500 dark:text-gray-400',
+    if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+    return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`;
   };
 
   const syncStatusLabel: Record<string, string> = {
@@ -64,87 +57,132 @@ export default function HealthDashboard({ isOpen, onClose }: HealthDashboardProp
     idle: 'Idle',
   };
 
+  const getStatusColor = (value: string): string => {
+    const v = (value || '').toLowerCase().trim();
+    if (['online', 'synced', 'connected', 'ok'].includes(v)) return 'var(--green)';
+    if (['idle', 'syncing', 'pending', 'slow'].includes(v)) return 'var(--amber)';
+    if (['offline', 'error', 'disconnected', 'failed'].includes(v)) return 'var(--red)';
+    return 'var(--body)';
+  };
+
+  const modalSectionStyle = {
+    background: 'var(--surface-2)',
+    border: '1px solid var(--border)',
+    borderRadius: '12px',
+    padding: '14px',
+    boxShadow: '0 4px 14px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.05)',
+  };
+
+  const cardStyle = {
+    background: 'var(--surface-2)',
+    border: '1px solid var(--border)',
+    borderRadius: '12px',
+    padding: '12px',
+    boxShadow: '0 4px 14px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.05)',
+  };
+
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="System Health" contentClassName="max-w-md">
-      <div className="space-y-4">
-        {/* Connectivity */}
-        <div className="grid grid-cols-2 gap-3">
-          <div className="p-3 rounded-lg bg-gray-50 dark:bg-gray-700/50">
-            <div className="text-xs text-gray-500 dark:text-gray-400">Network</div>
-            <div className={`text-sm font-medium mt-0.5 ${isOnline ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', overflowY: 'auto', minHeight: 0 }}>
+        {/* Network & Sync Status - elevated cards */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+          <div style={cardStyle}>
+            <div style={{ fontSize: '10.5px', color: 'var(--muted)', marginBottom: '6px', textTransform: 'uppercase', fontWeight: 600, letterSpacing: '0.5px' }}>Network</div>
+            <div style={{ fontSize: '13px', fontWeight: 600, color: getStatusColor(isOnline ? 'Online' : 'Offline') }}>
               {isOnline ? 'Online' : 'Offline'}
             </div>
           </div>
-          <div className="p-3 rounded-lg bg-gray-50 dark:bg-gray-700/50">
-            <div className="text-xs text-gray-500 dark:text-gray-400">Sync Status</div>
-            <div className={`text-sm font-medium mt-0.5 ${syncStatusColor[syncState] || ''}`}>
+          <div style={cardStyle}>
+            <div style={{ fontSize: '10.5px', color: 'var(--muted)', marginBottom: '6px', textTransform: 'uppercase', fontWeight: 600, letterSpacing: '0.5px' }}>Sync Status</div>
+            <div style={{ fontSize: '13px', fontWeight: 600, color: getStatusColor(syncState) }}>
               {syncStatusLabel[syncState] || syncState}
             </div>
           </div>
         </div>
 
-        {/* Sync details */}
-        <div className="p-3 rounded-lg bg-gray-50 dark:bg-gray-700/50 space-y-2">
-          <div className="flex justify-between text-sm">
-            <span className="text-gray-600 dark:text-gray-400">Last sync</span>
-            <span className="text-gray-800 dark:text-gray-200">
-              {lastSyncTime ? new Date(lastSyncTime).toLocaleTimeString() : 'Never'}
-            </span>
-          </div>
-          <div className="flex justify-between text-sm">
-            <span className="text-gray-600 dark:text-gray-400">Pending operations</span>
-            <span className={`font-medium ${(pendingCount || pendingOperations) > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-gray-800 dark:text-gray-200'}`}>
-              {pendingCount || pendingOperations}
-            </span>
-          </div>
-        </div>
-
-        {/* Data summary */}
-        <div className="p-3 rounded-lg bg-gray-50 dark:bg-gray-700/50 space-y-2">
-          <div className="text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wide">Data</div>
-          <div className="flex justify-between text-sm">
-            <span className="text-gray-600 dark:text-gray-400">Boards</span>
-            <span className="text-gray-800 dark:text-gray-200">{boards.length}</span>
-          </div>
-          <div className="flex justify-between text-sm">
-            <span className="text-gray-600 dark:text-gray-400">Total cards</span>
-            <span className="text-gray-800 dark:text-gray-200">{totalCards}</span>
+        {/* Sync Details */}
+        <div style={modalSectionStyle}>
+          <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--purple-l)', textTransform: 'uppercase', letterSpacing: '0.7px', marginBottom: '12px' }}>Sync Details</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12.5px' }}>
+              <span style={{ color: 'var(--body)' }}>Last sync</span>
+              <span style={{ color: 'var(--text)' }}>
+                {lastSyncTime ? new Date(lastSyncTime).toLocaleTimeString() : 'Never'}
+              </span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12.5px' }}>
+              <span style={{ color: 'var(--body)' }}>Pending</span>
+              <span style={{ fontWeight: 600, color: (pendingCount || pendingOperations) > 0 ? 'var(--amber)' : 'var(--text)' }}>
+                {pendingCount || pendingOperations}
+              </span>
+            </div>
           </div>
         </div>
 
-        {/* Board document sizes */}
+        {/* Data */}
+        <div style={modalSectionStyle}>
+          <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--purple-l)', textTransform: 'uppercase', letterSpacing: '0.7px', marginBottom: '12px' }}>Data</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12.5px' }}>
+              <span style={{ color: 'var(--body)' }}>Boards</span>
+              <span style={{ color: 'var(--text)' }}>{boards.length}</span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12.5px' }}>
+              <span style={{ color: 'var(--body)' }}>Total cards</span>
+              <span style={{ color: 'var(--text)' }}>{totalCards}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Board Sizes */}
         {boardSizes.length > 0 && (
-          <div className="p-3 rounded-lg bg-gray-50 dark:bg-gray-700/50 space-y-2">
-            <div className="text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wide">Board Sizes</div>
-            {boardSizes.map((b) => (
-              <div key={b.name} className="flex justify-between text-sm">
-                <span className="text-gray-600 dark:text-gray-400 truncate max-w-[60%]">{b.name}</span>
-                <span className="text-gray-800 dark:text-gray-200">{b.sizeKB} KB</span>
-              </div>
-            ))}
+          <div style={modalSectionStyle}>
+            <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--purple-l)', textTransform: 'uppercase', letterSpacing: '0.7px', marginBottom: '12px' }}>Board Sizes</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              {boardSizes.map((b) => (
+                <div key={b.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12.5px' }}>
+                  <span style={{ color: 'var(--body)', maxWidth: '70%', overflow: 'hidden', textOverflow: 'ellipsis' }}>{b.name}</span>
+                  <span style={{ color: 'var(--text)', whiteSpace: 'nowrap', marginLeft: '8px' }}>{b.sizeKB} KB</span>
+                </div>
+              ))}
+            </div>
           </div>
         )}
 
-        {/* Storage estimate */}
+        {/* Browser Storage */}
         {storageEstimate && (
-          <div className="p-3 rounded-lg bg-gray-50 dark:bg-gray-700/50 space-y-2">
-            <div className="text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wide">Browser Storage</div>
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-600 dark:text-gray-400">Used</span>
-              <span className="text-gray-800 dark:text-gray-200">{formatBytes(storageEstimate.usage)}</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-600 dark:text-gray-400">Quota</span>
-              <span className="text-gray-800 dark:text-gray-200">{formatBytes(storageEstimate.quota)}</span>
-            </div>
-            {storageEstimate.quota > 0 && (
-              <div className="h-2 bg-gray-200 dark:bg-gray-600 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-purple-500 rounded-full"
-                  style={{ width: `${Math.min((storageEstimate.usage / storageEstimate.quota) * 100, 100)}%` }}
-                />
+          <div style={modalSectionStyle}>
+            <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--purple-l)', textTransform: 'uppercase', letterSpacing: '0.7px', marginBottom: '12px' }}>Browser Storage</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12.5px' }}>
+                <span style={{ color: 'var(--body)' }}>Used</span>
+                <span style={{ color: 'var(--text)' }}>{formatBytes(storageEstimate.usage)}</span>
               </div>
-            )}
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12.5px' }}>
+                <span style={{ color: 'var(--body)' }}>Quota</span>
+                <span style={{ color: 'var(--text)' }}>{formatBytes(storageEstimate.quota)}</span>
+              </div>
+              {storageEstimate.quota > 0 && (() => {
+                const realPct = (storageEstimate.usage / storageEstimate.quota) * 100;
+                const fillPct = storageEstimate.usage > 0 ? Math.max(Math.min(realPct, 100), 1.5) : 0;
+                const pctLabel = realPct < 0.01 ? '<0.01' : realPct.toFixed(2);
+                return (
+                  <>
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', fontSize: '11px', color: 'var(--muted)', marginTop: '6px' }}>
+                      {pctLabel}% of {formatBytes(storageEstimate.quota)} used
+                    </div>
+                    <div style={{ height: '8px', background: 'var(--surface-3)', border: '1px solid var(--border)', borderRadius: '99px', overflow: 'hidden', marginTop: '4px' }}>
+                      <div style={{
+                        height: '100%',
+                        background: 'linear-gradient(90deg, var(--purple), var(--purple-l))',
+                        borderRadius: '99px',
+                        width: `${fillPct}%`,
+                      }} />
+                    </div>
+                  </>
+                );
+              })()}
+            </div>
           </div>
         )}
       </div>

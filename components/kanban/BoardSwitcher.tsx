@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import dynamic from 'next/dynamic';
 import { useKanbanStore } from '@/lib/store';
 import { useAuth } from '@/lib/firebase/AuthContext';
@@ -27,6 +28,8 @@ const BoardSwitcher = () => {
   const addBoard = useKanbanStore((state) => state.addBoard);
   const deleteBoard = useKanbanStore((state) => state.deleteBoard);
   const updateBoard = useKanbanStore((state) => state.updateBoard);
+  const createBoardModalOpen = useKanbanStore((state) => state.createBoardModalOpen);
+  const setCreateBoardModalOpen = useKanbanStore((state) => state.setCreateBoardModalOpen);
 
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [newBoardName, setNewBoardName] = useState('');
@@ -46,9 +49,15 @@ const BoardSwitcher = () => {
 
   const currentBoard = boards.find((b) => b.id === activeBoard);
 
+  useEffect(() => {
+    if (createBoardModalOpen) {
+      setIsCreateModalOpen(true);
+      setCreateBoardModalOpen(false);
+    }
+  }, [createBoardModalOpen, setCreateBoardModalOpen]);
+
   const handleCreateBoard = () => {
     if (newBoardName.trim()) {
-      // Use selected template columns (blank template uses defaults via the store)
       const templateCols = selectedTemplate.id === 'blank' ? undefined : selectedTemplate.columns;
       addBoard(newBoardName, undefined, templateCols);
       setNewBoardName('');
@@ -72,26 +81,17 @@ const BoardSwitcher = () => {
   };
 
   const handleSetDefaultBoard = async (boardId: string) => {
-    // Prevent concurrent executions (guard against double-clicks or rapid re-renders)
-    if (isSavingDefaultBoard) {
-      return;
-    }
+    if (isSavingDefaultBoard) return;
 
-    // Security: prevent setting demo board as default
     if (boardId === 'default-board') {
       console.warn('[BoardSwitcher] Demo board cannot be set as default');
       return;
     }
 
     const newDefaultId = defaultBoardId === boardId ? null : boardId;
-
-    // Set guard flag
     setIsSavingDefaultBoard(true);
-
-    // Update local state immediately
     setDefaultBoard(newDefaultId);
 
-    // Save to Firebase immediately (don't wait for manual save)
     if (user) {
       try {
         await setUserDefaultBoard(user.uid, newDefaultId);
@@ -100,10 +100,7 @@ const BoardSwitcher = () => {
       }
     }
 
-    // Release guard flag after a short delay to prevent rapid successive clicks
-    setTimeout(() => {
-      setIsSavingDefaultBoard(false);
-    }, 500);
+    setTimeout(() => { setIsSavingDefaultBoard(false); }, 500);
   };
 
   const handleImportFile = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -119,44 +116,64 @@ const BoardSwitcher = () => {
       } else {
         addBoard(parsed.name, parsed.description, parsed.columns);
       }
-      // Reset so the same file can be re-imported
       if (importInputRef.current) importInputRef.current.value = '';
     };
     reader.readAsText(file);
   };
 
-  const triggerContent = (
-    <div className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
-      <span className="font-medium text-sm truncate">
-        {currentBoard?.name || 'Select Board'}
-      </span>
-      <span className="text-gray-400">▼</span>
-    </div>
-  );
-
   const filteredBoards = boardSearch.trim()
     ? boards.filter((b) => b.name.toLowerCase().includes(boardSearch.toLowerCase()))
     : boards;
 
+  const triggerContent = (
+    <div
+      className="flex items-center gap-2 px-3 py-2 rounded-lg transition-colors"
+      onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,.05)'; }}
+      onMouseLeave={(e) => { e.currentTarget.style.background = ''; }}
+    >
+      <span className="font-medium text-sm truncate" style={{ color: 'var(--text)' }}>
+        {currentBoard?.name || 'Select Board'}
+      </span>
+      <span className="text-xs" style={{ color: 'var(--muted)' }}>▼</span>
+    </div>
+  );
+
   return (
     <>
-      <Dropdown trigger={triggerContent} width="w-64">
+      <Dropdown trigger={triggerContent} width="w-64" glass>
         <div className="py-2">
-          {/* Board Search */}
+          {/* Board Search — shown only when >4 boards */}
           {boards.length > 4 && (
             <div className="px-3 pb-2 relative">
               <input
                 type="text"
                 value={boardSearch}
                 onChange={(e) => setBoardSearch(e.target.value)}
-                placeholder="Search boards..."
-                className="w-full px-2.5 py-1.5 pr-7 text-xs rounded-md border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-purple-500"
+                placeholder="Search boards…"
+                className="w-full px-2.5 py-1.5 pr-7 text-xs rounded-md transition-colors"
+                style={{
+                  background: 'var(--surface-2)',
+                  border: '1px solid var(--border-2)',
+                  color: 'var(--text)',
+                  outline: 'none',
+                }}
+                onFocus={(e) => {
+                  e.currentTarget.style.borderColor = 'var(--purple-l)';
+                  e.currentTarget.style.boxShadow = '0 0 0 2px rgba(147,51,234,.18)';
+                }}
+                onBlur={(e) => {
+                  e.currentTarget.style.borderColor = 'var(--border-2)';
+                  e.currentTarget.style.boxShadow = 'none';
+                }}
                 onClick={(e) => e.stopPropagation()}
               />
               {boardSearch && (
                 <button
                   onClick={(e) => { e.stopPropagation(); setBoardSearch(''); }}
-                  className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                  className="absolute right-5 top-1/2 -translate-y-1/2 text-xs transition-colors"
+                  style={{ color: 'var(--muted)' }}
+                  onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--body)'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--muted)'; }}
                   tabIndex={-1}
                 >
                   ✕
@@ -164,25 +181,37 @@ const BoardSwitcher = () => {
               )}
             </div>
           )}
+
           {/* Board List */}
           <div className="max-h-64 overflow-y-auto">
             {filteredBoards.length === 0 && boardSearch && (
-              <p className="px-3 py-3 text-xs text-gray-400 dark:text-gray-500 text-center">No boards match "{boardSearch}"</p>
+              <p className="px-3 py-3 text-xs text-center" style={{ color: 'var(--muted)' }}>
+                No boards match &ldquo;{boardSearch}&rdquo;
+              </p>
             )}
             {filteredBoards.map((board) => (
               <div
                 key={board.id}
-                className={cn(
-                  'px-3 py-1 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center justify-between group',
+                className="px-3 py-1.5 transition-colors flex items-center justify-between group"
+                style={
                   activeBoard === board.id
-                    ? 'bg-purple-50 dark:bg-purple-900/20 border-l-2 border-purple-600'
-                    : ''
-                )}
+                    ? { background: 'rgba(147,51,234,.12)', borderLeft: '2px solid var(--purple)' }
+                    : {}
+                }
+                onMouseEnter={(e) => {
+                  if (activeBoard !== board.id) e.currentTarget.style.background = 'rgba(255,255,255,.04)';
+                }}
+                onMouseLeave={(e) => {
+                  if (activeBoard !== board.id) e.currentTarget.style.background = '';
+                }}
               >
-                <div className="flex-1 flex items-center gap-2">
+                <div className="flex-1 flex items-center gap-2 min-w-0">
                   <button
                     onClick={() => switchBoard(board.id)}
-                    className="flex-1 text-left text-xs hover:text-purple-600 dark:hover:text-purple-400"
+                    className="flex-1 text-left text-xs min-w-0 transition-colors"
+                    style={{ color: activeBoard === board.id ? 'var(--purple-l)' : 'var(--body)' }}
+                    onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--purple-l)'; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.color = activeBoard === board.id ? 'var(--purple-l)' : 'var(--body)'; }}
                   >
                     {isRenamingBoardId === board.id ? (
                       <input
@@ -201,11 +230,22 @@ const BoardSwitcher = () => {
                           setIsRenamingBoardId(null);
                           setRenameBoardValue('');
                         }}
-                        className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-500 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                        className="w-full px-2 py-0.5 text-xs rounded"
+                        style={{
+                          background: 'var(--surface-2)',
+                          border: '1px solid var(--border-2)',
+                          color: 'var(--text)',
+                          outline: 'none',
+                        }}
+                        onFocus={(e) => {
+                          e.currentTarget.style.borderColor = 'var(--purple-l)';
+                          e.currentTarget.style.boxShadow = '0 0 0 2px rgba(147,51,234,.18)';
+                        }}
                         onClick={(e) => e.stopPropagation()}
                       />
                     ) : (
                       <span
+                        className="block truncate"
                         onDoubleClick={() => {
                           setIsRenamingBoardId(board.id);
                           setRenameBoardValue(board.name);
@@ -217,11 +257,13 @@ const BoardSwitcher = () => {
                   </button>
                 </div>
 
-                <div className="flex items-center gap-1.5">
+                {/* Action icon cluster */}
+                <div className="flex items-center gap-0.5 shrink-0 ml-1">
                   {!isRenamingBoardId && (
                     <>
+                      {/* Export — two-step confirm */}
                       {confirmExportBoardId === board.id ? (
-                        <span className="flex items-center gap-1 text-xs">
+                        <span className="flex items-center gap-0.5 text-xs">
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
@@ -229,13 +271,19 @@ const BoardSwitcher = () => {
                               downloadBoardAsJSON(board);
                               setConfirmExportBoardId(null);
                             }}
-                            className="text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20 px-1.5 py-0.5 rounded font-medium"
+                            className="px-1.5 py-0.5 rounded font-medium text-xs transition-colors"
+                            style={{ color: 'var(--amber)' }}
+                            onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(251,191,36,.12)'; }}
+                            onMouseLeave={(e) => { e.currentTarget.style.background = ''; }}
                           >
                             Export?
                           </button>
                           <button
                             onClick={(e) => { e.stopPropagation(); e.preventDefault(); setConfirmExportBoardId(null); }}
-                            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 px-1 py-0.5 rounded"
+                            className="px-1 py-0.5 rounded text-xs transition-colors"
+                            style={{ color: 'var(--muted)' }}
+                            onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--body)'; }}
+                            onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--muted)'; }}
                           >
                             ✕
                           </button>
@@ -249,81 +297,86 @@ const BoardSwitcher = () => {
                             setConfirmExportBoardId(board.id);
                             setConfirmDeleteBoardId(null);
                           }}
-                          className="text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-700 p-1 rounded text-sm"
+                          className="p-1 rounded text-sm transition-colors"
+                          style={{ color: 'var(--muted)' }}
+                          onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,.06)'; e.currentTarget.style.color = 'var(--body)'; }}
+                          onMouseLeave={(e) => { e.currentTarget.style.background = ''; e.currentTarget.style.color = 'var(--muted)'; }}
                           title="Export board as JSON"
                         >
                           ↓
                         </button>
                       )}
+
+                      {/* Clone ⎘ — blue */}
                       <button
-                        onMouseDown={(e) => {
-                          e.stopPropagation();
-                          e.preventDefault();
-                        }}
+                        onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); }}
                         onClick={(e) => {
                           e.stopPropagation();
                           e.preventDefault();
                           setBoardToClone(board.id);
                           setIsCloneModalOpen(true);
                         }}
-                        className="text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 p-1 rounded text-sm"
+                        className="p-1 rounded text-sm transition-colors"
+                        style={{ color: '#60a5fa' }}
+                        onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(96,165,250,.12)'; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.background = ''; }}
                         title="Clone board"
                       >
                         ⎘
                       </button>
+
+                      {/* Share ⎇ — green, owner only */}
                       {user && board.ownerId === user.uid && (
                         <button
-                          onMouseDown={(e) => {
-                            e.stopPropagation();
-                            e.preventDefault();
-                          }}
+                          onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); }}
                           onClick={(e) => {
                             e.stopPropagation();
                             e.preventDefault();
                             setBoardToShare(board.id);
                             setIsShareModalOpen(true);
                           }}
-                          className="text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 p-1 rounded text-sm"
+                          className="p-1 rounded text-sm transition-colors"
+                          style={{ color: 'var(--green)' }}
+                          onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(74,222,128,.12)'; }}
+                          onMouseLeave={(e) => { e.currentTarget.style.background = ''; }}
                           title="Share board"
                         >
                           ⎇
                         </button>
                       )}
+
+                      {/* Default ★ — purple when set, dim when not */}
                       <button
-                        onMouseDown={(e) => {
-                          e.stopPropagation();
-                          e.preventDefault();
-                        }}
+                        onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); }}
                         onClick={(e) => {
                           e.stopPropagation();
                           e.preventDefault();
                           handleSetDefaultBoard(board.id);
                         }}
-                        onDoubleClick={(e) => {
-                          e.stopPropagation();
-                          e.preventDefault();
-                        }}
+                        onDoubleClick={(e) => { e.stopPropagation(); e.preventDefault(); }}
                         disabled={isSavingDefaultBoard}
-                        className={cn(
-                          'p-1 text-base transition-all duration-200 ease-in-out',
-                          defaultBoardId === board.id
-                            ? 'text-purple-600 dark:text-purple-400 scale-110 drop-shadow-sm'
-                            : 'text-gray-300 dark:text-gray-600 hover:text-purple-400 dark:hover:text-purple-500 hover:scale-105',
-                          isSavingDefaultBoard && 'opacity-50 cursor-not-allowed'
-                        )}
-                        title={
-                          defaultBoardId === board.id
-                            ? 'Remove as default'
-                            : 'Make default'
-                        }
+                        className={cn('p-1 text-base transition-all duration-200', isSavingDefaultBoard && 'opacity-50 cursor-not-allowed')}
+                        style={{
+                          color: defaultBoardId === board.id ? 'var(--purple-l)' : 'var(--border-2)',
+                          transform: defaultBoardId === board.id ? 'scale(1.1)' : undefined,
+                        }}
+                        onMouseEnter={(e) => {
+                          if (!isSavingDefaultBoard) e.currentTarget.style.color = 'var(--purple-l)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.color = defaultBoardId === board.id ? 'var(--purple-l)' : 'var(--border-2)';
+                        }}
+                        title={defaultBoardId === board.id ? 'Remove as default' : 'Make default'}
                       >
                         {defaultBoardId === board.id ? '★' : '☆'}
                       </button>
                     </>
                   )}
+
+                  {/* Delete ✕ — red, hidden when only board, two-step confirm */}
                   {boards.length > 1 && !isRenamingBoardId && (
                     confirmDeleteBoardId === board.id ? (
-                      <span className="flex items-center gap-1 text-xs">
+                      <span className="flex items-center gap-0.5 text-xs">
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
@@ -331,13 +384,19 @@ const BoardSwitcher = () => {
                             handleDeleteBoard(board.id);
                             setConfirmDeleteBoardId(null);
                           }}
-                          className="text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 px-1.5 py-0.5 rounded font-medium"
+                          className="px-1.5 py-0.5 rounded font-medium text-xs transition-colors"
+                          style={{ color: 'var(--red)' }}
+                          onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(251,113,133,.12)'; }}
+                          onMouseLeave={(e) => { e.currentTarget.style.background = ''; }}
                         >
                           Delete?
                         </button>
                         <button
                           onClick={(e) => { e.stopPropagation(); e.preventDefault(); setConfirmDeleteBoardId(null); }}
-                          className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 px-1 py-0.5 rounded"
+                          className="px-1 py-0.5 rounded text-xs transition-colors"
+                          style={{ color: 'var(--muted)' }}
+                          onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--body)'; }}
+                          onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--muted)'; }}
                         >
                           ✕
                         </button>
@@ -350,7 +409,10 @@ const BoardSwitcher = () => {
                           setConfirmDeleteBoardId(board.id);
                           setConfirmExportBoardId(null);
                         }}
-                        className="text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 p-1 rounded text-sm"
+                        className="p-1 rounded text-sm transition-colors"
+                        style={{ color: 'var(--red)' }}
+                        onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(251,113,133,.12)'; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.background = ''; }}
                         title="Delete board"
                       >
                         ✕
@@ -363,20 +425,26 @@ const BoardSwitcher = () => {
           </div>
 
           {/* Divider */}
-          <div className="h-px bg-gray-200 dark:bg-gray-600 my-2" />
+          <div style={{ height: '1px', background: 'var(--border)', margin: '6px 0' }} />
 
-          {/* Create New Board Button */}
+          {/* New Board */}
           <button
             onClick={() => setIsCreateModalOpen(true)}
-            className="w-full px-3 py-1.5 text-xs text-left hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-purple-600 dark:text-purple-400 font-medium"
+            className="w-full px-3 py-1.5 text-xs text-left font-medium transition-colors"
+            style={{ color: 'var(--purple-l)' }}
+            onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(147,51,234,.08)'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = ''; }}
           >
             + New Board
           </button>
 
-          {/* Import Board Button */}
+          {/* Import from JSON */}
           <button
             onClick={() => importInputRef.current?.click()}
-            className="w-full px-3 py-1.5 text-xs text-left hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-gray-500 dark:text-gray-400 font-medium"
+            className="w-full px-3 py-1.5 text-xs text-left font-medium transition-colors"
+            style={{ color: 'var(--body)' }}
+            onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,.04)'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = ''; }}
           >
             ↑ Import from JSON
           </button>
@@ -387,80 +455,74 @@ const BoardSwitcher = () => {
             className="hidden"
             onChange={handleImportFile}
           />
+
           {importError && (
-            <p className="px-3 py-1 text-xs text-red-500 dark:text-red-400">{importError}</p>
+            <p className="px-3 py-1 text-xs" style={{ color: 'var(--red)' }}>{importError}</p>
           )}
         </div>
       </Dropdown>
 
       {/* Create Board Modal */}
-      <Modal
-        isOpen={isCreateModalOpen}
-        onClose={() => {
-          setIsCreateModalOpen(false);
-          setNewBoardName('');
-          setSelectedTemplate(BOARD_TEMPLATES[0]);
-        }}
-        title="Create New Board"
-        contentClassName="max-w-lg"
-      >
-        <div className="space-y-4">
-          <Input
-            label="Board Name"
-            value={newBoardName}
-            onChange={(e) => setNewBoardName(e.target.value)}
-            placeholder="My New Board"
-            autoFocus
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                handleCreateBoard();
-              }
-            }}
-          />
-
-          {/* Template Selection */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Choose a template
-            </label>
-            <BoardTemplateSelector
-              selected={selectedTemplate.id}
-              onSelect={setSelectedTemplate}
+      {typeof window !== 'undefined' && createPortal(
+        <Modal
+          isOpen={isCreateModalOpen}
+          onClose={() => {
+            setIsCreateModalOpen(false);
+            setNewBoardName('');
+            setSelectedTemplate(BOARD_TEMPLATES[0]);
+          }}
+          title="Create New Board"
+          contentClassName="max-w-lg"
+        >
+          <div className="space-y-4">
+            <Input
+              label="Board Name"
+              value={newBoardName}
+              onChange={(e) => setNewBoardName(e.target.value)}
+              placeholder="My New Board"
+              autoFocus
+              onKeyDown={(e) => { if (e.key === 'Enter') handleCreateBoard(); }}
             />
+            <div>
+              <label className="block text-sm font-medium mb-2" style={{ color: 'var(--body)' }}>
+                Choose a template
+              </label>
+              <BoardTemplateSelector
+                selected={selectedTemplate.id}
+                onSelect={setSelectedTemplate}
+              />
+            </div>
+            <div className="flex gap-2 justify-end">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setIsCreateModalOpen(false);
+                  setNewBoardName('');
+                  setSelectedTemplate(BOARD_TEMPLATES[0]);
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={handleCreateBoard}
+                disabled={!newBoardName.trim()}
+              >
+                Create
+              </Button>
+            </div>
           </div>
-
-          <div className="flex gap-2 justify-end">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                setIsCreateModalOpen(false);
-                setNewBoardName('');
-                setSelectedTemplate(BOARD_TEMPLATES[0]);
-              }}
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="primary"
-              size="sm"
-              onClick={handleCreateBoard}
-              disabled={!newBoardName.trim()}
-            >
-              Create
-            </Button>
-          </div>
-        </div>
-      </Modal>
+        </Modal>,
+        document.body
+      )}
 
       {/* Clone Board Modal */}
       {boardToClone && boards.find((b) => b.id === boardToClone) && (
         <CloneBoardModal
           isOpen={isCloneModalOpen}
-          onClose={() => {
-            setIsCloneModalOpen(false);
-            setBoardToClone(null);
-          }}
+          onClose={() => { setIsCloneModalOpen(false); setBoardToClone(null); }}
           sourceBoard={boards.find((b) => b.id === boardToClone)!}
         />
       )}
@@ -469,14 +531,10 @@ const BoardSwitcher = () => {
       {user && boardToShare && (
         <ShareBoardModal
           isOpen={isShareModalOpen}
-          onClose={() => {
-            setIsShareModalOpen(false);
-            setBoardToShare(null);
-          }}
+          onClose={() => { setIsShareModalOpen(false); setBoardToShare(null); }}
           board={boards.find((b) => b.id === boardToShare) || null}
           currentUserId={user.uid}
           onBoardUpdated={(updatedBoard) => {
-            // Update the board in the store
             const currentBoards = useKanbanStore.getState().boards;
             const updatedBoards = currentBoards.map((b) =>
               b.id === updatedBoard.id ? updatedBoard : b

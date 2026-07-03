@@ -72,7 +72,12 @@ export default function BoardHeader({ boardId, onGenerateTasks }: BoardHeaderPro
         <div className="relative inline-block">
           <button
             onClick={() => setShowPurposeDropdown(!showPurposeDropdown)}
-            className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-full bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full transition-colors"
+            style={{
+              background: 'var(--surface-2)',
+              border: '1px solid var(--border)',
+              color: 'var(--body)',
+            }}
             title="Board purpose - sets default instruction style for AI generation"
           >
             <span>{currentPurpose.icon}</span>
@@ -128,7 +133,12 @@ export default function BoardHeader({ boardId, onGenerateTasks }: BoardHeaderPro
         {onGenerateTasks && (
           <button
             onClick={onGenerateTasks}
-            className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 hover:bg-purple-200 dark:hover:bg-purple-900/50 transition-colors"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full transition-colors"
+            style={{
+              background: 'rgba(147,51,234,.14)',
+              border: '1px solid rgba(147,51,234,.3)',
+              color: 'var(--purple-l)',
+            }}
             title="Generate task cards with AI"
           >
             ✦ Generate Tasks

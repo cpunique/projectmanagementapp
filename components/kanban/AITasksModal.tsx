@@ -5,7 +5,8 @@ import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useKanbanStore } from '@/lib/store';
 import { useAuth } from '@/lib/firebase/AuthContext';
-import { canAccessProFeatures } from '@/lib/features/featureGate';
+import { getDb } from '@/lib/firebase/config';
+import { doc, getDoc } from 'firebase/firestore';
 import { type InstructionType } from '@/types';
 import Modal from '@/components/ui/Modal';
 import Button from '@/components/ui/Button';
@@ -39,10 +40,10 @@ interface AITasksModalProps {
 
 type Step = 1 | 2 | 3;
 
-const PRIORITY_BADGE: Record<'low' | 'medium' | 'high', string> = {
-  high: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300',
-  medium: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300',
-  low: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
+const PRIORITY_BADGE: Record<'low' | 'medium' | 'high', { background: string; color: string }> = {
+  high: { background: 'rgba(251,113,133,.16)', color: 'var(--red)' },
+  medium: { background: 'rgba(251,191,36,.16)', color: 'var(--amber)' },
+  low: { background: 'rgba(74,222,128,.16)', color: 'var(--green)' },
 };
 
 const AITasksModal = ({ isOpen, onClose, boardId }: AITasksModalProps) => {
@@ -69,48 +70,80 @@ const AITasksModal = ({ isOpen, onClose, boardId }: AITasksModalProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [replaceExisting, setReplaceExisting] = useState(false);
+  const [proGateActive, setProGateActive] = useState(false);
+  const [freeGenAvailable, setFreeGenAvailable] = useState(false);
+
+  // Cosmetic only — fetch eligibility purely to decide whether to show the
+  // "1 free generation" badge. The server's decision on the actual generate call
+  // is authoritative; this never gates the button itself.
+  useEffect(() => {
+    if (!isOpen || !user) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const snap = await getDoc(doc(getDb(), 'users', user.uid));
+        const d = snap.data();
+        if (!cancelled) setFreeGenAvailable(d?.isPro !== true && d?.freeGenerationUsed !== true);
+      } catch {
+        // Non-fatal — badge just won't show
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [isOpen, user]);
 
   if (!isOpen) return null;
 
-  const hasProAccess = canAccessProFeatures(user);
+  const handleClose = () => {
+    setStep(1);
+    setOverview('');
+    setTasks([]);
+    setError(null);
+    setReplaceExisting(false);
+    setProGateActive(false);
+    onClose();
+  };
 
-  // Pro lock screen
-  if (!hasProAccess) {
+  // Pro gate — shown only after the server rejects a generation with
+  // "upgrade_required" (i.e. the free generation has already been used).
+  // The "Generate Tasks" button itself is never blocked client-side; non-Pro
+  // users always get to attempt their one free generation.
+  if (proGateActive) {
     return typeof window !== 'undefined'
       ? createPortal(
-          <Modal isOpen={isOpen} onClose={onClose} contentClassName="max-w-sm">
+          <Modal isOpen={isOpen} onClose={handleClose} contentClassName="max-w-sm">
             <div className="w-full">
-              <div className="sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex items-center justify-between">
-                <h2 className="text-xl font-bold text-gray-900 dark:text-white">Pro Feature</h2>
+              <div className="sticky top-0 flex items-center justify-between px-6 py-4" style={{ background: 'rgba(42,37,34,.7)', borderBottom: '1px solid var(--border)' }}>
+                <h2 className="text-xl font-bold" style={{ color: 'var(--text)' }}>Pro Feature</h2>
                 <button
-                  onClick={onClose}
-                  className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 text-2xl leading-none"
+                  onClick={handleClose}
+                  className="text-2xl leading-none transition-colors"
+                  style={{ color: 'var(--muted)' }}
                 >
                   ✕
                 </button>
               </div>
               <div className="px-6 py-8 text-center">
-                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
+                <div className="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center" style={{ background: 'rgba(147,51,234,.16)' }}>
                   <span className="text-3xl">✦</span>
                 </div>
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                  AI Task Generation is a Pro Feature
+                <h3 className="text-lg font-semibold mb-2" style={{ color: 'var(--text)' }}>
+                  You've used your free AI generation
                 </h3>
-                <p className="text-gray-600 dark:text-gray-400 text-sm mb-6">
-                  Describe a goal and let AI generate a full set of task cards for your board. Upgrade to Pro to unlock this feature.
+                <p className="text-sm mb-6" style={{ color: 'var(--body)' }}>
+                  Upgrade to Pro for unlimited AI task generation on every board.
                 </p>
-                <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 text-left">
-                  <p className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">Pro includes:</p>
-                  <ul className="text-xs text-gray-600 dark:text-gray-400 space-y-1">
-                    <li>✓ Bulk task generation from a single goal</li>
+                <div className="rounded-lg p-4 text-left" style={{ background: 'var(--surface-2)', border: '1px solid var(--border)' }}>
+                  <p className="text-xs font-medium mb-2" style={{ color: 'var(--text)' }}>Pro includes:</p>
+                  <ul className="text-xs space-y-1" style={{ color: 'var(--body)' }}>
+                    <li>✓ Unlimited bulk task generation from a single goal</li>
                     <li>✓ Priority and description on every card</li>
                     <li>✓ Multiple planning styles</li>
                     <li>✓ AI-generated instructions per card</li>
                   </ul>
                 </div>
               </div>
-              <div className="sticky bottom-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 px-6 py-4 flex justify-center">
-                <Button onClick={onClose} variant="outline">Close</Button>
+              <div className="sticky bottom-0 flex justify-center px-6 py-4" style={{ background: 'rgba(42,37,34,.7)', borderTop: '1px solid var(--border)' }}>
+                <Button onClick={handleClose} variant="outline">Close</Button>
               </div>
             </div>
           </Modal>,
@@ -151,6 +184,11 @@ const AITasksModal = ({ isOpen, onClose, boardId }: AITasksModalProps) => {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        if (errorData.error === 'upgrade_required') {
+          setProGateActive(true);
+          setStep(1);
+          return;
+        }
         throw new Error(errorData.error || 'Failed to generate tasks');
       }
 
@@ -204,15 +242,6 @@ const AITasksModal = ({ isOpen, onClose, boardId }: AITasksModalProps) => {
     handleClose();
   };
 
-  const handleClose = () => {
-    setStep(1);
-    setOverview('');
-    setTasks([]);
-    setError(null);
-    setReplaceExisting(false);
-    onClose();
-  };
-
   const toggleTask = (index: number) => {
     setTasks((prev) => prev.map((t, i) => (i === index ? { ...t, included: !t.included } : t)));
   };
@@ -231,16 +260,17 @@ const AITasksModal = ({ isOpen, onClose, boardId }: AITasksModalProps) => {
         <Modal isOpen={isOpen} onClose={handleClose}>
           <div className="w-full max-w-2xl">
             {/* Header */}
-            <div className="sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex items-center justify-between">
+            <div className="sticky top-0 flex items-center justify-between px-6 py-4" style={{ background: 'rgba(42,37,34,.7)', borderBottom: '1px solid var(--border)' }}>
               <div className="flex items-center gap-2">
-                <h2 className="text-xl font-bold text-gray-900 dark:text-white">{stepTitle}</h2>
-                <span className="text-xs font-semibold text-purple-600 dark:text-purple-400 bg-purple-100 dark:bg-purple-900/50 px-2 py-0.5 rounded-full">
-                  Pro
+                <h2 className="text-xl font-bold" style={{ color: 'var(--text)' }}>{stepTitle}</h2>
+                <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ color: 'var(--purple-l)', background: 'rgba(147,51,234,.16)' }}>
+                  {freeGenAvailable ? '1 free generation' : 'Pro'}
                 </span>
               </div>
               <button
                 onClick={handleClose}
-                className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 text-2xl leading-none"
+                className="text-2xl leading-none"
+                style={{ color: 'var(--muted)' }}
               >
                 ✕
               </button>
@@ -259,8 +289,8 @@ const AITasksModal = ({ isOpen, onClose, boardId }: AITasksModalProps) => {
                     className="space-y-5"
                   >
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        What do you want to build or accomplish? <span className="text-red-500">*</span>
+                      <label className="block text-sm font-medium mb-2" style={{ color: 'var(--body)' }}>
+                        What do you want to build or accomplish? <span style={{ color: 'var(--red)' }}>*</span>
                       </label>
                       <div key={shakeKey} style={shakeKey > 0 ? { animation: 'shake 0.4s ease-in-out' } : {}}>
                         <textarea
@@ -270,30 +300,32 @@ const AITasksModal = ({ isOpen, onClose, boardId }: AITasksModalProps) => {
                           placeholder="e.g. Build a user authentication system with email/password, Google sign-in, and role-based access"
                           rows={3}
                           maxLength={500}
-                          className={`w-full px-4 py-2.5 border-2 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none resize-none ${
-                            goalError
-                              ? 'border-red-400 dark:border-red-500 focus:border-red-400 focus:ring-4 focus:ring-red-100 dark:focus:ring-red-900/30'
-                              : 'border-gray-300 dark:border-gray-600 focus:border-purple-500 focus:ring-4 focus:ring-purple-100 dark:focus:ring-purple-900/30'
-                          }`}
+                          className="w-full px-4 py-2.5 rounded-lg focus:outline-none resize-none"
+                          style={{
+                            background: 'var(--surface-2)',
+                            color: 'var(--text)',
+                            border: `2px solid ${goalError ? 'var(--red)' : 'var(--border-2)'}`,
+                          }}
                           autoFocus
                         />
-                        <p className="mt-1 text-right text-xs text-gray-400 dark:text-gray-500">{goal.length}/500</p>
+                        <p className="mt-1 text-right text-xs" style={{ color: 'var(--muted)' }}>{goal.length}/500</p>
                       </div>
                       {goalError && (
-                        <p className="mt-1.5 text-xs text-red-500 dark:text-red-400">
+                        <p className="mt-1.5 text-xs" style={{ color: 'var(--red)' }}>
                           Please describe what you want to build or accomplish.
                         </p>
                       )}
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      <label className="block text-sm font-medium mb-2" style={{ color: 'var(--body)' }}>
                         Planning style
                       </label>
                       <select
                         value={instructionType}
                         onChange={(e) => setInstructionType(e.target.value as InstructionType)}
-                        className="w-full px-4 py-2.5 border-2 border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:border-purple-500 focus:ring-4 focus:ring-purple-100 dark:focus:ring-purple-900/30 hover:border-gray-400 dark:hover:border-gray-500 transition-all duration-200 shadow-sm"
+                        className="w-full px-4 py-2.5 rounded-lg focus:outline-none transition-all duration-200"
+                        style={{ background: 'var(--surface-2)', color: 'var(--text)', border: '2px solid var(--border-2)' }}
                       >
                         {INSTRUCTION_OPTIONS.map((opt) => (
                           <option key={opt.value} value={opt.value}>
@@ -304,13 +336,13 @@ const AITasksModal = ({ isOpen, onClose, boardId }: AITasksModalProps) => {
                     </div>
 
                     {firstColumn && (
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
-                        Cards will be added to your <span className="font-medium text-gray-700 dark:text-gray-300">"{firstColumn.title}"</span> column.
+                      <p className="text-xs" style={{ color: 'var(--muted)' }}>
+                        Cards will be added to your <span className="font-medium" style={{ color: 'var(--body)' }}>"{firstColumn.title}"</span> column.
                       </p>
                     )}
 
                     {error && (
-                      <div className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 rounded-lg px-4 py-3">
+                      <div className="text-sm rounded-lg px-4 py-3" style={{ color: 'var(--red)', background: 'rgba(251,113,133,.12)' }}>
                         {error}
                       </div>
                     )}
@@ -326,8 +358,8 @@ const AITasksModal = ({ isOpen, onClose, boardId }: AITasksModalProps) => {
                     exit={{ opacity: 0 }}
                     className="flex flex-col items-center justify-center py-16 gap-4"
                   >
-                    <div className="w-10 h-10 border-4 border-purple-200 dark:border-purple-800 border-t-purple-600 dark:border-t-purple-400 rounded-full animate-spin" />
-                    <p className="text-sm text-gray-600 dark:text-gray-400">Generating task cards...</p>
+                    <div className="w-10 h-10 rounded-full animate-spin" style={{ border: '4px solid var(--surface-3)', borderTopColor: 'var(--purple)' }} />
+                    <p className="text-sm" style={{ color: 'var(--body)' }}>Generating task cards...</p>
                   </motion.div>
                 )}
 
@@ -342,23 +374,25 @@ const AITasksModal = ({ isOpen, onClose, boardId }: AITasksModalProps) => {
                   >
                     {/* Goal used for generation */}
                     {goal && (
-                      <div className="flex items-start gap-2 bg-gray-50 dark:bg-gray-700/40 rounded-lg px-4 py-3">
-                        <span className="text-xs text-gray-400 dark:text-gray-500 shrink-0 mt-0.5">Goal</span>
-                        <p className="text-sm text-gray-700 dark:text-gray-300 leading-snug">{goal}</p>
+                      <div className="flex items-start gap-2 rounded-lg px-4 py-3" style={{ background: 'var(--surface-2)' }}>
+                        <span className="text-xs shrink-0 mt-0.5" style={{ color: 'var(--muted)' }}>Goal</span>
+                        <p className="text-sm leading-snug" style={{ color: 'var(--body)' }}>{goal}</p>
                       </div>
                     )}
 
                     {/* Existing cards warning — shown prominently before the task list */}
                     {firstColumn && firstColumn.cards.filter((c) => !c.archived).length > 0 && (
-                      <div className={`rounded-lg border px-4 py-3 transition-colors ${
-                        replaceExisting
-                          ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-300 dark:border-amber-700'
-                          : 'bg-yellow-50 dark:bg-yellow-900/10 border-yellow-300 dark:border-yellow-700/50'
-                      }`}>
-                        <p className="text-sm font-medium text-yellow-800 dark:text-yellow-300 mb-1">
+                      <div
+                        className="rounded-lg border px-4 py-3 transition-colors"
+                        style={{
+                          background: replaceExisting ? 'rgba(251,191,36,.1)' : 'rgba(251,191,36,.06)',
+                          borderColor: replaceExisting ? 'var(--amber)' : 'rgba(251,191,36,.4)',
+                        }}
+                      >
+                        <p className="text-sm font-medium mb-1" style={{ color: 'var(--amber)' }}>
                           ⚠️ "{firstColumn.title}" already has {firstColumn.cards.filter((c) => !c.archived).length} card{firstColumn.cards.filter((c) => !c.archived).length !== 1 ? 's' : ''}
                         </p>
-                        <p className="text-xs text-yellow-700 dark:text-yellow-400 mb-3">
+                        <p className="text-xs mb-3" style={{ color: 'var(--amber)' }}>
                           New cards will be added alongside them. You can also archive the existing ones first to start fresh.
                         </p>
                         <label className="flex items-center gap-2.5 cursor-pointer">
@@ -366,9 +400,10 @@ const AITasksModal = ({ isOpen, onClose, boardId }: AITasksModalProps) => {
                             type="checkbox"
                             checked={replaceExisting}
                             onChange={(e) => setReplaceExisting(e.target.checked)}
-                            className="w-4 h-4 rounded border-yellow-400 text-amber-600 focus:ring-amber-500 cursor-pointer"
+                            className="w-4 h-4 rounded cursor-pointer"
+                            style={{ accentColor: 'var(--amber)' }}
                           />
-                          <span className="text-sm font-medium text-yellow-800 dark:text-yellow-300">
+                          <span className="text-sm font-medium" style={{ color: 'var(--amber)' }}>
                             Archive existing cards first and start fresh
                           </span>
                         </label>
@@ -376,8 +411,8 @@ const AITasksModal = ({ isOpen, onClose, boardId }: AITasksModalProps) => {
                     )}
 
                     {overview && (
-                      <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg px-4 py-3">
-                        <p className="text-sm text-purple-800 dark:text-purple-300">{overview}</p>
+                      <div className="rounded-lg px-4 py-3" style={{ background: 'rgba(147,51,234,.1)' }}>
+                        <p className="text-sm" style={{ color: 'var(--purple-l)' }}>{overview}</p>
                       </div>
                     )}
 
@@ -385,11 +420,12 @@ const AITasksModal = ({ isOpen, onClose, boardId }: AITasksModalProps) => {
                       {tasks.map((task, index) => (
                         <div
                           key={index}
-                          className={`rounded-lg border transition-colors overflow-hidden ${
-                            task.included
-                              ? 'border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800/50'
-                              : 'border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/20 opacity-50'
-                          }`}
+                          className="rounded-lg border transition-colors overflow-hidden"
+                          style={{
+                            borderColor: task.included ? 'var(--border-2)' : 'var(--border)',
+                            background: task.included ? 'var(--surface-2)' : 'var(--surface-1)',
+                            opacity: task.included ? 1 : 0.5,
+                          }}
                         >
                           {/* Color strip */}
                           {task.color && task.color !== '#ffffff' && (
@@ -401,7 +437,8 @@ const AITasksModal = ({ isOpen, onClose, boardId }: AITasksModalProps) => {
                               type="checkbox"
                               checked={task.included}
                               onChange={() => toggleTask(index)}
-                              className="mt-1 w-4 h-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500 cursor-pointer shrink-0"
+                              className="mt-1 w-4 h-4 rounded cursor-pointer shrink-0"
+                              style={{ accentColor: 'var(--purple)' }}
                             />
                             <div className="flex-1 min-w-0 space-y-1.5">
                               {/* Title */}
@@ -410,21 +447,25 @@ const AITasksModal = ({ isOpen, onClose, boardId }: AITasksModalProps) => {
                                   type="text"
                                   value={task.title}
                                   onChange={(e) => updateTaskTitle(index, e.target.value)}
-                                  className="flex-1 min-w-0 text-sm font-medium text-gray-900 dark:text-white bg-transparent border-none outline-none focus:ring-0 p-0"
+                                  className="flex-1 min-w-0 text-sm font-medium bg-transparent border-none outline-none focus:ring-0 p-0"
+                                  style={{ color: 'var(--text)' }}
                                 />
-                                <span className={`shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${PRIORITY_BADGE[task.priority] || PRIORITY_BADGE.medium}`}>
+                                <span
+                                  className="shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
+                                  style={(PRIORITY_BADGE[task.priority] || PRIORITY_BADGE.medium)}
+                                >
                                   {task.priority}
                                 </span>
                               </div>
 
                               {/* Description */}
                               {task.description && (
-                                <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">{task.description}</p>
+                                <p className="text-xs leading-relaxed" style={{ color: 'var(--muted)' }}>{task.description}</p>
                               )}
 
                               {/* Checklist preview */}
                               {task.checklist && task.checklist.length > 0 && (
-                                <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
+                                <div className="flex items-center gap-1.5 text-xs" style={{ color: 'var(--muted)' }}>
                                   <span>☐</span>
                                   <span>{task.checklist.length} subtask{task.checklist.length !== 1 ? 's' : ''}: {task.checklist.slice(0, 2).join(', ')}{task.checklist.length > 2 ? '…' : ''}</span>
                                 </div>
@@ -433,17 +474,17 @@ const AITasksModal = ({ isOpen, onClose, boardId }: AITasksModalProps) => {
                               {/* Tags + due date */}
                               <div className="flex items-center gap-2 flex-wrap">
                                 {task.tags && task.tags.map((tag) => (
-                                  <span key={tag} className="inline-flex items-center px-1.5 py-0.5 rounded text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300">
+                                  <span key={tag} className="inline-flex items-center px-1.5 py-0.5 rounded text-xs" style={{ background: 'var(--surface-3)', color: 'var(--body)' }}>
                                     {tag}
                                   </span>
                                 ))}
                                 {task.suggestedDayOffset && (
-                                  <span className="text-xs text-gray-400 dark:text-gray-500">
+                                  <span className="text-xs" style={{ color: 'var(--muted)' }}>
                                     📅 ~{task.suggestedDayOffset}d
                                   </span>
                                 )}
                                 {task.notes && (
-                                  <span className="text-xs text-gray-400 dark:text-gray-500">📝 notes</span>
+                                  <span className="text-xs" style={{ color: 'var(--muted)' }}>📝 notes</span>
                                 )}
                               </div>
                             </div>
@@ -452,10 +493,10 @@ const AITasksModal = ({ isOpen, onClose, boardId }: AITasksModalProps) => {
                       ))}
                     </div>
 
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                    <p className="text-xs" style={{ color: 'var(--muted)' }}>
                       {selectedCount} of {tasks.length} tasks selected
                       {firstColumn && (
-                        <> · will be added to <span className="font-medium text-gray-700 dark:text-gray-300">"{firstColumn.title}"</span></>
+                        <> · will be added to <span className="font-medium" style={{ color: 'var(--body)' }}>"{firstColumn.title}"</span></>
                       )}
                     </p>
                   </motion.div>
@@ -464,15 +505,11 @@ const AITasksModal = ({ isOpen, onClose, boardId }: AITasksModalProps) => {
             </div>
 
             {/* Footer */}
-            <div className="sticky bottom-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 px-6 py-4 flex items-center justify-between gap-3">
+            <div className="sticky bottom-0 flex items-center justify-between gap-3 px-6 py-4" style={{ background: 'rgba(42,37,34,.7)', borderTop: '1px solid var(--border)' }}>
               {step === 1 && (
                 <>
                   <Button variant="outline" onClick={handleClose}>Cancel</Button>
-                  <Button
-                    onClick={handleGenerate}
-                    disabled={isLoading}
-                    className="bg-purple-600 hover:bg-purple-700 text-white"
-                  >
+                  <Button onClick={handleGenerate} disabled={isLoading}>
                     ✦ Generate Tasks
                   </Button>
                 </>
@@ -482,11 +519,7 @@ const AITasksModal = ({ isOpen, onClose, boardId }: AITasksModalProps) => {
                   <Button variant="outline" onClick={() => setStep(1)}>
                     ← Start over
                   </Button>
-                  <Button
-                    onClick={handleCreate}
-                    disabled={selectedCount === 0}
-                    className="bg-purple-600 hover:bg-purple-700 text-white"
-                  >
+                  <Button onClick={handleCreate} disabled={selectedCount === 0}>
                     Create {selectedCount} card{selectedCount !== 1 ? 's' : ''}
                   </Button>
                 </>

@@ -75,31 +75,17 @@ function CardActionButton({
   );
 }
 
-// Highlight matching text in search results
-function HighlightText({ text, query }: { text: string; query: string }) {
-  if (!query.trim()) return <>{text}</>;
-  const parts = text.split(new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi'));
-  return (
-    <>
-      {parts.map((part, i) =>
-        part.toLowerCase() === query.toLowerCase() ? (
-          <mark key={i} className="bg-yellow-200 dark:bg-yellow-700/60 text-inherit rounded-sm px-0.5">{part}</mark>
-        ) : (
-          part
-        )
-      )}
-    </>
-  );
-}
 
 const Card = ({ card, boardId, columnId, onDragStart, onDragEnd, isDragging, canEdit }: CardProps) => {
   const { deleteCard, boards } = useKanbanStore();
   const currentBoard = boards.find((b) => b.id === boardId);
-  const searchQuery = useKanbanStore((state) => state.searchQuery);
+  const activeCardId = useKanbanStore((state) => state.activeCardId);
+  const setActiveCardId = useKanbanStore((state) => state.setActiveCardId);
   const { user } = useAuth();
   const { getUnreadCount, markAsSeen } = useUnreadComments();
   const [isHovering, setIsHovering] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const cardRef = useRef<HTMLDivElement>(null);
   const [isAIModalOpen, setIsAIModalOpen] = useState(false);
   const [showAILockModal, setShowAILockModal] = useState(false);
   const [showNotesTooltip, setShowNotesTooltip] = useState(false);
@@ -108,6 +94,16 @@ const Card = ({ card, boardId, columnId, onDragStart, onDragEnd, isDragging, can
   const [blockersTooltipPosition, setBlockersTooltipPosition] = useState({ top: 0, left: 0 });
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
   const notesIconRef = useRef<HTMLDivElement>(null);
+
+  // Deep-link target (notifications/search): open this card and scroll it into view
+  // when it becomes the global activeCardId. Resets on modal close so the same card
+  // can be reopened later (see CardModal onClose below).
+  useEffect(() => {
+    if (activeCardId === card.id) {
+      setIsModalOpen(true);
+      cardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, [activeCardId, card.id]);
 
   // AI features locked for unauthenticated users or read-only access (can still view existing prompts)
   const isAIFeatureLocked = !user || !canEdit;
@@ -154,6 +150,7 @@ const Card = ({ card, boardId, columnId, onDragStart, onDragEnd, isDragging, can
   return (
     <>
       <motion.div
+        ref={cardRef}
         layout
         draggable
         data-card-element="true"
@@ -168,15 +165,21 @@ const Card = ({ card, boardId, columnId, onDragStart, onDragEnd, isDragging, can
             setIsModalOpen(true);
           }
         }}
-        className={`group relative rounded-xl border cursor-pointer transition-all duration-200 ease-out w-full sm:w-60 flex flex-col overflow-hidden ${
-          isDragging ? 'opacity-50 scale-105' : isDescoped ? 'opacity-60 grayscale-[30%]' : 'opacity-100'
-        } border-gray-200/50 dark:border-gray-700/50 bg-white dark:bg-gray-800`}
+        className={`group relative cursor-pointer transition-all duration-200 ease-out w-full sm:w-60 flex flex-col overflow-hidden max-w-[320px] ${
+          isDragging ? 'opacity-50 scale-105' : isDescoped ? 'opacity-50 grayscale-[20%]' : 'opacity-100'
+        }`}
         style={{
+          background: 'var(--surface-2)',
+          border: '1px solid var(--border)',
+          borderTop: `2px solid ${card.color || 'var(--purple)'}`,
+          borderRadius: '16px',
+          padding: '18px',
+          marginBottom: '14px',
           boxShadow: isDragging
-            ? '0 20px 40px rgba(0, 0, 0, 0.25), 0 10px 15px rgba(0, 0, 0, 0.15)'
+            ? '0 20px 40px rgba(0,0,0,.55)'
             : isHovering
-              ? '0 8px 25px rgba(0, 0, 0, 0.15), 0 4px 10px rgba(0, 0, 0, 0.1)'
-              : '0 2px 8px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04)'
+              ? 'var(--shadow-2h)'
+              : 'var(--shadow-2)',
         }}
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
@@ -187,16 +190,8 @@ const Card = ({ card, boardId, columnId, onDragStart, onDragEnd, isDragging, can
         }}
         whileHover={{ y: -4, scale: 1.02 }}
       >
-        {/* Color Cover Strip — shown when card has a color set */}
-        {card.color && (
-          <div
-            className="w-full flex-shrink-0"
-            style={{ height: '8px', backgroundColor: card.color }}
-          />
-        )}
-
         {/* Card Content */}
-        <div className="p-4 flex flex-col gap-2 flex-1">
+        <div className="flex flex-col gap-2 flex-1">
           {/* Descoped Badge - Bottom Right (absolute relative to outer div) */}
           {isDescoped && (
             <div className="absolute bottom-2 right-2 px-2 py-1 bg-gray-500 dark:bg-gray-600 text-white text-xs font-medium rounded-full whitespace-nowrap">
@@ -269,29 +264,29 @@ const Card = ({ card, boardId, columnId, onDragStart, onDragEnd, isDragging, can
           )}
 
           {/* Card Title */}
-          <h4 className="font-semibold text-sm text-gray-900 dark:text-white pr-16 line-clamp-2 leading-tight pointer-events-none">
-            <HighlightText text={card.title} query={searchQuery} />
+          <h4 className="font-semibold pr-16 line-clamp-2 pointer-events-none" style={{ color: 'var(--text)', fontSize: '15px', marginBottom: '7px', lineHeight: 1.3 }}>
+            {card.title}
           </h4>
 
           {/* Description Preview */}
           {card.description && (
-            <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-2 leading-relaxed pointer-events-none">
+            <p className="line-clamp-2 leading-relaxed pointer-events-none" style={{ color: 'var(--body)', fontSize: '12px', marginBottom: '13px' }}>
               {card.description}
             </p>
           )}
 
           {/* Tags & Priority Row */}
           <div className="flex flex-wrap gap-1.5 pointer-events-none">
-            {/* Priority Badge */}
+            {/* Priority Badge — crisp, legible, meaning-carrying color */}
             {card.priority && (
               <span
-                className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                  card.priority === 'high'
-                    ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300'
-                    : card.priority === 'medium'
-                    ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300'
-                    : 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'
-                }`}
+                className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold"
+                style={card.priority === 'high'
+                  ? { background: 'rgba(244,63,94,.18)', color: '#fb7185' }
+                  : card.priority === 'medium'
+                  ? { background: 'rgba(251,191,36,.18)', color: '#fbbf24' }
+                  : { background: 'rgba(34,197,94,.18)', color: '#4ade80' }
+                }
               >
                 {PRIORITY_LABELS[card.priority]}
               </span>
@@ -303,10 +298,11 @@ const Card = ({ card, boardId, columnId, onDragStart, onDragEnd, isDragging, can
               return (
                 <span
                   key={tag}
-                  className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                    !bg ? 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300' : ''
-                  }`}
-                  style={bg ? { backgroundColor: bg, color: getLabelTextColor(bg) } : undefined}
+                  className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold"
+                  style={bg
+                    ? { backgroundColor: bg, color: getLabelTextColor(bg) }
+                    : { background: 'var(--surface-3)', color: 'var(--body)', border: '1px solid var(--border-2)' }
+                  }
                 >
                   {tag}
                 </span>
@@ -327,7 +323,7 @@ const Card = ({ card, boardId, columnId, onDragStart, onDragEnd, isDragging, can
                 <svg className="w-8 h-8 transform -rotate-90" viewBox="0 0 36 36">
                   {/* Background circle */}
                   <circle
-                    className="text-gray-200 dark:text-gray-600"
+                    style={{ color: 'var(--border-2)' }}
                     strokeWidth="3"
                     stroke="currentColor"
                     fill="transparent"
@@ -350,12 +346,12 @@ const Card = ({ card, boardId, columnId, onDragStart, onDragEnd, isDragging, can
                   />
                 </svg>
                 {/* Percentage in center */}
-                <span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-gray-900 dark:text-white">
+                <span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold" style={{ color: 'var(--text)' }}>
                   {checklistProgress === 100 ? '✓' : `${checklistProgress}%`}
                 </span>
               </div>
               <div className="flex-1">
-                <span className="text-xs text-gray-600 dark:text-gray-400 font-medium">
+                <span className="text-xs font-medium" style={{ color: 'var(--body)' }}>
                   {completedItems} of {checklistItems.length} done
                 </span>
               </div>
@@ -364,7 +360,7 @@ const Card = ({ card, boardId, columnId, onDragStart, onDragEnd, isDragging, can
 
           {/* Metadata Footer */}
           {(card.dueDate || hasNotes(card.notes) || totalComments > 0 || (card.assignees && card.assignees.length > 0) || (card.blockedBy && card.blockedBy.length > 0)) && (
-            <div className="flex items-center gap-3 pt-2 mt-auto border-t border-gray-100 dark:border-gray-700">
+            <div className="flex items-center mt-auto" style={{ gap: '12px', paddingTop: '13px', borderTop: '1px solid var(--border)', fontSize: '11px', color: 'var(--muted)' }}>
               {/* Assignee Avatars */}
               {card.assignees && card.assignees.length > 0 && (
                 <AssigneeAvatarRow
@@ -411,11 +407,10 @@ const Card = ({ card, boardId, columnId, onDragStart, onDragEnd, isDragging, can
               })()}
               {/* Due Date */}
               {card.dueDate && (
-                <div className={`flex items-center gap-1 text-xs pointer-events-none ${
-                  isDue
-                    ? 'text-red-600 font-medium'
-                    : 'text-gray-500 dark:text-gray-400'
-                }`}>
+                <div
+                  className="flex items-center gap-1 text-xs pointer-events-none"
+                  style={{ color: isDue ? '#fb7185' : 'var(--muted)', fontWeight: isDue ? 500 : 400 }}
+                >
                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                   </svg>
@@ -484,6 +479,11 @@ const Card = ({ card, boardId, columnId, onDragStart, onDragEnd, isDragging, can
             // Mark comments as seen when closing the modal
             if (card.comments && card.comments.length > 0) {
               markAsSeen(card.id);
+            }
+            // Clear the deep-link target so this card can be reopened via
+            // notifications/search again later
+            if (activeCardId === card.id) {
+              setActiveCardId(null);
             }
           }}
           card={card}

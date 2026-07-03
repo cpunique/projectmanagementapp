@@ -46,6 +46,13 @@ export function useKeyboardShortcuts(): KeyboardShortcutsState {
         return;
       }
 
+      // Ctrl+/ or Cmd+/ — open/focus card search (always available, no modal/board guard)
+      if (e.key === '/' && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault();
+        useKanbanStore.getState().triggerSearchFocus();
+        return;
+      }
+
       // Block other shortcuts if modal is open
       if (hasOpenModal && !showHelp) return;
 
@@ -86,6 +93,7 @@ export const KEYBOARD_SHORTCUTS = [
     category: 'Navigation',
     shortcuts: [
       { keys: ['?'], description: 'Show keyboard shortcuts' },
+      { keys: ['Ctrl', '/'], description: 'Open card search' },
       { keys: ['Esc'], description: 'Close modal / Cancel action' },
     ],
   },

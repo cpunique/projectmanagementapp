@@ -47,7 +47,7 @@ export default function AIUsagePolicy() {
               <li><strong>Content Suggestions:</strong> AI provides contextual recommendations</li>
             </ul>
             <p className="text-gray-700 dark:text-gray-300 mt-4">
-              <strong>Powered by:</strong> Anthropic Claude Sonnet 4.5 (claude-sonnet-4-20250514)
+              <strong>Powered by:</strong> Anthropic Claude Sonnet 4.6 (claude-sonnet-4-6)
             </p>
           </section>
 

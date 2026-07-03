@@ -9,7 +9,6 @@ import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import { useToast } from '@/components/ui/Toast';
 import { DESCOPED_COLUMN_KEYWORDS } from '@/lib/constants';
-import { filterCards, hasActiveFilters } from '@/lib/utils/searchFilter';
 import ColumnOptionsMenu from './ColumnOptionsMenu';
 
 interface ColumnProps {
@@ -31,6 +30,7 @@ interface ColumnProps {
   isFirstColumn?: boolean;
   triggerAddCard?: boolean;
   onTriggerAddCardHandled?: () => void;
+  isMobileLayout?: boolean;
 }
 
 const Column = ({
@@ -52,20 +52,18 @@ const Column = ({
   isFirstColumn = false,
   triggerAddCard,
   onTriggerAddCardHandled,
+  isMobileLayout = false,
 }: ColumnProps) => {
   const { addCard, updateColumn, updateColumnWipLimit, deleteColumn, boards, reorderCards } = useKanbanStore();
-  const searchQuery = useKanbanStore((state) => state.searchQuery);
-  const filters = useKanbanStore((state) => state.filters);
   const { showToast } = useToast();
   const currentBoard = boards.find((b) => b.id === boardId);
   const currentColumn = currentBoard?.columns.find((c) => c.id === column.id);
 
-  // Filter cards based on search query and active filters
+  // Board always shows all non-archived cards; search results live in the search panel
   const visibleCards = useMemo(
-    () => filterCards(currentColumn?.cards || [], searchQuery, filters),
-    [currentColumn?.cards, searchQuery, filters]
+    () => (currentColumn?.cards || []).filter((c) => !c.archived),
+    [currentColumn?.cards]
   );
-  const isFiltering = hasActiveFilters(searchQuery, filters);
   const [isEditing, setIsEditing] = useState(false);
   const [editTitle, setEditTitle] = useState(column.title);
   const [isAddingCard, setIsAddingCard] = useState(false);
@@ -227,16 +225,21 @@ const Column = ({
       }}
       onDragOver={onColumnDragOver}
       className={`
-        w-[85vw] sm:w-72 flex-shrink-0 snap-center sm:snap-start rounded-lg flex flex-col my-2 sm:my-4 transition-all overflow-hidden max-h-full
-        ${isDraggingColumn
-          ? 'opacity-50 cursor-grabbing shadow-2xl scale-105'
-          : 'opacity-100 cursor-grab shadow-sm hover:shadow-md'
+        ${isMobileLayout
+          ? 'w-screen flex-shrink-0 h-full snap-start'
+          : 'w-[85vw] sm:w-[270px] flex-shrink-0 snap-center sm:snap-start my-2 sm:my-4 max-h-full'
         }
-        ${isDropTarget
-          ? 'ring-2 ring-purple-500 ring-offset-2 bg-purple-50 dark:bg-purple-900/20'
-          : 'bg-gray-100 dark:bg-gray-800'
-        }
+        flex flex-col transition-all overflow-hidden
+        ${isDraggingColumn ? 'opacity-50 cursor-grabbing scale-105' : isMobileLayout ? '' : 'opacity-100 cursor-grab'}
+        ${isDropTarget ? 'ring-2 ring-purple-500 ring-offset-2 ring-offset-[var(--bg)]' : ''}
       `}
+      style={{
+        background: isDropTarget ? 'rgba(147,51,234,.12)' : 'var(--surface-1)',
+        border: `1px solid ${isDropTarget ? 'rgba(147,51,234,.4)' : 'var(--border)'}`,
+        borderRadius: '16px',
+        boxShadow: isDraggingColumn ? '0 20px 60px rgba(0,0,0,.6)' : 'var(--shadow-1)',
+        cursor: isDraggingColumn ? 'grabbing' : 'grab',
+      }}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.9 }}
@@ -245,50 +248,61 @@ const Column = ({
         default: { duration: 0.3 }
       }}
       whileHover={{ y: -2 }}
-      style={{
-        cursor: isDraggingColumn ? 'grabbing' : 'grab',
-      }}
     >
       {/* Column Header */}
-      <div className="group border-b border-gray-300 dark:border-gray-700 px-3 pt-4 pb-4 sm:pt-6 sm:pb-6 sm:pl-6 sm:pr-4">
+      <div className="group px-4 py-3" style={{ borderBottom: '1px solid var(--border)' }}>
         <div className="flex items-center justify-between mb-2">
-          <div className="mr-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 cursor-grab active:cursor-grabbing transition-colors flex-shrink-0">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-              <circle cx="4" cy="4" r="1.5"/>
-              <circle cx="4" cy="8" r="1.5"/>
-              <circle cx="4" cy="12" r="1.5"/>
-              <circle cx="8" cy="4" r="1.5"/>
-              <circle cx="8" cy="8" r="1.5"/>
-              <circle cx="8" cy="12" r="1.5"/>
-            </svg>
+          {/* Grip + Title + Count grouped together */}
+          <div className="flex items-center gap-2">
+            <div className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 cursor-grab active:cursor-grabbing transition-colors flex-shrink-0 text-xs">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                <circle cx="4" cy="4" r="1.5"/>
+                <circle cx="4" cy="8" r="1.5"/>
+                <circle cx="4" cy="12" r="1.5"/>
+                <circle cx="8" cy="4" r="1.5"/>
+                <circle cx="8" cy="8" r="1.5"/>
+                <circle cx="8" cy="12" r="1.5"/>
+              </svg>
+            </div>
+
+            {isEditing && canEdit ? (
+              <Input
+                value={editTitle}
+                onChange={(e) => setEditTitle(e.target.value)}
+                onBlur={handleRename}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleRename();
+                  if (e.key === 'Escape') {
+                    setIsEditing(false);
+                    setEditTitle(column.title);
+                  }
+                }}
+                autoFocus
+                onFocus={(e) => e.currentTarget.select()}
+                className="h-8 text-sm"
+              />
+            ) : (
+              <h3
+                onDoubleClick={() => canEdit && setIsEditing(true)}
+                className={`font-semibold text-sm ${
+                  canEdit ? 'cursor-pointer hover:text-purple-400' : 'cursor-default'
+                }`}
+                style={{ color: 'var(--text)' }}
+              >
+                {column.title}
+              </h3>
+            )}
+
+            {/* Count Badge — adjacent to title */}
+            <span
+              className="text-[11px] font-medium px-2 py-1 rounded-full flex-shrink-0"
+              style={{ background: 'var(--surface-3)', color: 'var(--muted)' }}
+            >
+              {cardCount}
+            </span>
           </div>
 
-          {isEditing && canEdit ? (
-            <Input
-              value={editTitle}
-              onChange={(e) => setEditTitle(e.target.value)}
-              onBlur={handleRename}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') handleRename();
-                if (e.key === 'Escape') {
-                  setIsEditing(false);
-                  setEditTitle(column.title);
-                }
-              }}
-              autoFocus
-              onFocus={(e) => e.currentTarget.select()}
-              className="h-8 flex-1"
-            />
-          ) : (
-            <h3
-              onDoubleClick={() => canEdit && setIsEditing(true)}
-              className={`font-bold text-lg text-gray-900 dark:text-white flex-1 transition-colors ${
-                canEdit ? 'cursor-pointer hover:text-purple-600 dark:hover:text-purple-400' : 'cursor-default'
-              }`}
-            >
-              {column.title}
-            </h3>
-          )}
+          {/* Menu — pushed to the right */}
           <ColumnOptionsMenu
             boardId={boardId}
             columnId={column.id}
@@ -300,52 +314,47 @@ const Column = ({
           />
         </div>
 
-        {/* Task Count + WIP Limit */}
-        <div className="flex items-center gap-2">
-          <div className={`text-xs font-medium ${isOverWip ? 'text-red-500 dark:text-red-400' : 'text-gray-600 dark:text-gray-400'}`}>
-            {isFiltering
-              ? `${visibleCards.length} of ${cardCount} task${cardCount !== 1 ? 's' : ''}`
-              : `${cardCount} task${cardCount !== 1 ? 's' : ''}`
-            }
-            {wipLimit !== undefined && wipLimit > 0 && (
-              <span className={`ml-1 font-semibold ${isOverWip ? 'text-red-500 dark:text-red-400' : 'text-gray-500 dark:text-gray-500'}`}>
-                / {wipLimit} {isOverWip && '⚠'}
-              </span>
-            )}
+        {/* WIP Limit (if set) */}
+        {wipLimit !== undefined && wipLimit > 0 && (
+          <div className="text-xs font-medium flex items-center gap-2 mt-2" style={{ color: isOverWip ? '#fb7185' : 'var(--muted)' }}>
+            Limit: {wipLimit}
+            {isOverWip && <span className="text-red-400">⚠</span>}
           </div>
+        )}
 
-          {/* WIP Limit Editor - owner/editor only */}
-          {canEdit && (
-            isEditingWip ? (
-              <input
-                type="number"
-                min="0"
-                max="99"
-                value={wipInput}
-                onChange={(e) => setWipInput(e.target.value)}
-                onBlur={handleSaveWipLimit}
+        {/* WIP Limit Editor - owner/editor only */}
+        {canEdit && isEditingWip && (
+          <div className="mt-2">
+            <input
+              type="number"
+              min="0"
+              max="99"
+              value={wipInput}
+              onChange={(e) => setWipInput(e.target.value)}
+              onBlur={handleSaveWipLimit}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') handleSaveWipLimit();
                   if (e.key === 'Escape') setIsEditingWip(false);
                 }}
                 autoFocus
                 placeholder="Limit"
-                className="w-14 px-1.5 py-0.5 text-xs border border-purple-400 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-purple-500"
-              />
-            ) : (
-              <button
-                onClick={() => {
-                  setWipInput(wipLimit !== undefined ? String(wipLimit) : '');
-                  setIsEditingWip(true);
-                }}
-                className="text-[10px] text-gray-400 dark:text-gray-500 hover:text-purple-600 dark:hover:text-purple-400 transition-colors opacity-0 group-hover:opacity-100"
-                title={wipLimit ? `WIP limit: ${wipLimit} (click to edit)` : 'Set WIP limit'}
-              >
-                {wipLimit ? '' : 'Set limit'}
-              </button>
-            )
-          )}
-        </div>
+              className="w-14 px-1.5 py-0.5 text-xs border border-purple-400 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-purple-500"
+            />
+            <div className="flex gap-1 mt-1">
+              <button onClick={handleSaveWipLimit} className="text-xs px-2 py-1 rounded bg-purple-600 text-white">Save</button>
+              <button onClick={() => setIsEditingWip(false)} className="text-xs px-2 py-1 rounded border border-gray-400">Cancel</button>
+            </div>
+          </div>
+        )}
+        {canEdit && !isEditingWip && (
+          <button
+            onClick={() => { setWipInput(wipLimit !== undefined ? String(wipLimit) : ''); setIsEditingWip(true); }}
+            className="text-[10px] text-gray-400 hover:text-purple-400 transition-colors opacity-0 group-hover:opacity-100 mt-1"
+            title={wipLimit ? `WIP limit: ${wipLimit} (click to edit)` : 'Set WIP limit'}
+          >
+            {wipLimit ? 'Edit' : 'Set limit'}
+          </button>
+        )}
       </div>
 
       {/* Cards List — scrollable, no bottom padding needed since + Add Task is pinned below */}
@@ -354,15 +363,6 @@ const Column = ({
           <div className="text-center py-6 px-4">
             <p className="text-gray-500 dark:text-gray-400 text-xs">
               No cards yet
-            </p>
-          </div>
-        )}
-
-        {/* Show message when filtering hides all cards in a non-empty column */}
-        {isFiltering && visibleCards.length === 0 && (currentColumn?.cards.length || 0) > 0 && (
-          <div className="text-center py-4 px-4">
-            <p className="text-gray-400 dark:text-gray-500 text-xs italic">
-              No matching cards
             </p>
           </div>
         )}
@@ -376,19 +376,15 @@ const Column = ({
               onDrop={(e) => handleCardDrop(e, card.id)}
               onDragLeave={handleCardDragLeave}
               className={`w-full flex justify-center transition-all duration-150 ${
-                dropTargetCardId === card.id
-                  ? 'border-t-2 border-purple-500 pt-2'
-                  : ''
+                dropTargetCardId === card.id ? 'border-t-2 border-purple-500 pt-2' : ''
               }`}
-              style={{
-                minHeight: dropTargetCardId === card.id ? '120px' : 'auto'
-              }}
+              style={{ minHeight: dropTargetCardId === card.id ? '120px' : 'auto' }}
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.8 }}
               transition={{
                 layout: { type: 'spring', stiffness: 350, damping: 35 },
-                default: { duration: 0.2 }
+                default: { duration: 0.2 },
               }}
             >
               <Card
@@ -451,10 +447,30 @@ const Column = ({
 
       {/* Add Task Button — pinned to column bottom, always visible regardless of card count */}
       {canEdit && !isAddingCard && !isDescopedColumn && isFirstColumn && (
-        <div className="px-4 py-2 border-t border-gray-200 dark:border-gray-700 flex-shrink-0">
+        <div className="flex-shrink-0" style={{ borderTop: '1px solid var(--border)', marginTop: '2px' }}>
           <button
             onClick={() => setIsAddingCard(true)}
-            className="w-full text-center text-sm text-purple-600 hover:text-purple-700 dark:text-purple-400 dark:hover:text-purple-300 py-2 px-2 rounded border border-purple-300 dark:border-purple-600 bg-white dark:bg-gray-700 hover:bg-purple-50 dark:hover:bg-gray-600 transition-colors"
+            className="w-full text-center font-medium transition-all"
+            style={{
+              color: 'var(--purple-l)',
+              border: '1px dashed var(--border-2)',
+              background: 'transparent',
+              fontSize: '13px',
+              fontWeight: 500,
+              padding: '14px',
+              borderRadius: '13px',
+              marginTop: '2px',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.borderColor = 'var(--purple)';
+              e.currentTarget.style.background = 'rgba(147,51,234,.08)';
+              e.currentTarget.style.boxShadow = '0 0 16px rgba(147,51,234,.15)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.borderColor = 'var(--border-2)';
+              e.currentTarget.style.background = 'transparent';
+              e.currentTarget.style.boxShadow = 'none';
+            }}
           >
             + Add Task
           </button>

@@ -62,7 +62,7 @@
 **Task Description Generation:**
 - What it does: Generates detailed task descriptions from brief prompts
 - How to use: [Describe user workflow]
-- Powered by: Anthropic Claude Sonnet 4.5 (claude-sonnet-4-20250514)
+- Powered by: Anthropic Claude Sonnet 4.6 (claude-sonnet-4-6)
 
 **Board Optimization Suggestions:**
 - What it does: Analyzes board and suggests improvements
@@ -111,7 +111,7 @@
 - **NOT sent:** Your email, password, usage analytics, or data from boards you don't use AI on
 
 ### AI Models Used
-- **Anthropic Claude Sonnet 4.5:** claude-sonnet-4-20250514
+- **Anthropic Claude Sonnet 4.6:** claude-sonnet-4-6
   - Purpose: Text generation and analysis for implementation instructions
   - Provider: Anthropic
   - Model capabilities: Advanced language understanding, code comprehension, detailed instruction generation

@@ -6,11 +6,10 @@ import { useKanbanStore } from '@/lib/store';
 import { useAuth } from '@/lib/firebase/AuthContext';
 import { flushPendingSync } from '@/lib/firebase/storeSync';
 import Modal from '@/components/ui/Modal';
-import Input from '@/components/ui/Input';
 import RichTextEditor from '@/components/ui/RichTextEditor';
 import CommentThread from './CommentThread';
 import { Card, ChecklistItem, MentionedUser } from '@/types';
-import { formatDate, getDefaultCardColor, isLightColor } from '@/lib/utils';
+import { formatDate, getDefaultCardColor } from '@/lib/utils';
 import { CARD_COLORS, CARD_COLOR_NAMES, LABEL_COLORS } from '@/lib/constants';
 import { useToast } from '@/components/ui/Toast';
 import CardActivityTimeline from './CardActivityTimeline';
@@ -344,15 +343,15 @@ const CardModal = ({ isOpen, onClose, card, boardId, canEdit = false }: CardModa
   const footer = (
     <div className="flex items-center justify-between gap-3 w-full">
       {/* Save status indicator */}
-      <div className="text-xs min-w-[80px]">
+      <div style={{ fontSize: '12px', minWidth: '80px', color: 'var(--body)' }}>
         {saveStatus === 'saving' && (
-          <span className="text-gray-400 dark:text-gray-500">Saving...</span>
+          <span>Saving...</span>
         )}
         {saveStatus === 'saved' && (
-          <span className="text-green-600 dark:text-green-400">✓ Saved</span>
+          <span style={{ color: '#4ade80' }}>✓ Saved</span>
         )}
         {saveStatus === 'unsaved' && (
-          <span className="text-amber-600 dark:text-amber-400">Unsaved changes</span>
+          <span style={{ color: '#fbbf24' }}>Unsaved changes</span>
         )}
       </div>
 
@@ -364,7 +363,24 @@ const CardModal = ({ isOpen, onClose, card, boardId, canEdit = false }: CardModa
               showToast('Card archived', 'info');
               onClose();
             }}
-            className="min-w-[80px] px-4 py-2 text-orange-600 hover:bg-orange-50 dark:text-orange-400 dark:hover:bg-orange-900/20 border border-orange-300 dark:border-orange-700 rounded-lg transition-colors font-medium text-xs"
+            style={{
+              minWidth: '80px',
+              padding: '10px 16px',
+              background: 'transparent',
+              color: '#fb7185',
+              border: '1px solid #fb7185',
+              borderRadius: '10px',
+              fontSize: '13px',
+              fontWeight: '500',
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'rgba(251,113,133,.1)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'transparent';
+            }}
             title="Archive this card (can be restored from the Archive panel)"
           >
             Archive
@@ -372,7 +388,24 @@ const CardModal = ({ isOpen, onClose, card, boardId, canEdit = false }: CardModa
         )}
         <button
           onClick={flushAndClose}
-          className="min-w-[80px] px-6 py-2 border border-gray-300 text-gray-900 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-100 dark:hover:bg-gray-900 rounded-lg transition-colors duration-200 font-medium shadow-sm hover:shadow-md text-xs"
+          style={{
+            minWidth: '80px',
+            padding: '10px 16px',
+            background: 'rgba(255,255,255,.05)',
+            color: 'var(--text)',
+            border: '1px solid var(--border-2)',
+            borderRadius: '10px',
+            fontSize: '13px',
+            fontWeight: '500',
+            cursor: 'pointer',
+            transition: 'all 0.2s',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = 'rgba(255,255,255,.08)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = 'rgba(255,255,255,.05)';
+          }}
         >
           Close
         </button>
@@ -385,33 +418,80 @@ const CardModal = ({ isOpen, onClose, card, boardId, canEdit = false }: CardModa
       {/* Scrollable Content */}
       <div className="space-y-4">
 
-        {/* Title */}
-        <div>
-          <Input
-            label="Title"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="Card title"
-            className="text-base font-semibold"
-          />
-        </div>
+        {/* CORE SECTION */}
+        <div className="modal-section">
+          <label className="section-label">Core</label>
 
-        {/* Description */}
-        <div>
-          <Input
-            label="Description"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            placeholder="Brief description"
-            className="text-sm"
-          />
-        </div>
+          {/* Title */}
+          <div style={{ marginBottom: '12px' }}>
+            <label style={{ display: 'block', fontSize: '13px', fontWeight: 500, color: 'var(--text)', marginBottom: '8px' }}>
+              Title
+            </label>
+            <input
+              type="text"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Card title"
+              style={{
+                width: '100%',
+                padding: '10px 12px',
+                border: '1px solid var(--border-2)',
+                borderRadius: '10px',
+                background: 'rgba(22,20,18,.6)',
+                color: 'var(--text)',
+                fontSize: '14px',
+                fontWeight: '500',
+                fontFamily: 'inherit',
+                outline: 'none',
+              }}
+              onFocus={(e) => {
+                e.currentTarget.style.borderColor = 'var(--purple-l)';
+                e.currentTarget.style.boxShadow = '0 0 0 3px rgba(147,51,234,.18)';
+              }}
+              onBlur={(e) => {
+                e.currentTarget.style.borderColor = 'var(--border-2)';
+                e.currentTarget.style.boxShadow = 'none';
+              }}
+            />
+          </div>
 
-        {/* Priority and Due Date - Two Column Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Description */}
+          <div style={{ marginBottom: '16px' }}>
+            <label style={{ display: 'block', fontSize: '13px', fontWeight: 500, color: 'var(--text)', marginBottom: '8px' }}>
+              Description
+            </label>
+            <input
+              type="text"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Brief description"
+              style={{
+                width: '100%',
+                padding: '10px 12px',
+                border: '1px solid var(--border-2)',
+                borderRadius: '10px',
+                background: 'rgba(22,20,18,.6)',
+                color: 'var(--text)',
+                fontSize: '14px',
+                fontFamily: 'inherit',
+                outline: 'none',
+              }}
+              onFocus={(e) => {
+                e.currentTarget.style.borderColor = 'var(--purple-l)';
+                e.currentTarget.style.boxShadow = '0 0 0 3px rgba(147,51,234,.18)';
+              }}
+              onBlur={(e) => {
+                e.currentTarget.style.borderColor = 'var(--border-2)';
+                e.currentTarget.style.boxShadow = 'none';
+              }}
+            />
+          </div>
+
+          {/* Priority and Due Date */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Priority */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label style={{ display: 'block', fontSize: '13px', fontWeight: 500, color: 'var(--text)', marginBottom: '8px' }}>
               Priority
             </label>
             <select
@@ -421,7 +501,25 @@ const CardModal = ({ isOpen, onClose, card, boardId, canEdit = false }: CardModa
                   (e.target.value as 'low' | 'medium' | 'high') || undefined
                 )
               }
-              className="w-full px-4 py-2.5 border-2 border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:border-purple-500 focus:ring-4 focus:ring-purple-100 dark:focus:ring-purple-900/30 hover:border-gray-400 dark:hover:border-gray-500 transition-all duration-200 shadow-sm focus:shadow-md"
+              style={{
+                width: '100%',
+                padding: '10px 12px',
+                border: '1px solid var(--border-2)',
+                borderRadius: '10px',
+                background: 'rgba(22,20,18,.6)',
+                color: 'var(--text)',
+                fontSize: '13px',
+                fontFamily: 'inherit',
+                outline: 'none',
+              }}
+              onFocus={(e) => {
+                e.currentTarget.style.borderColor = 'var(--purple-l)';
+                e.currentTarget.style.boxShadow = '0 0 0 3px rgba(147,51,234,.18)';
+              }}
+              onBlur={(e) => {
+                e.currentTarget.style.borderColor = 'var(--border-2)';
+                e.currentTarget.style.boxShadow = 'none';
+              }}
             >
               <option value="">None</option>
               <option value="low">Low</option>
@@ -432,44 +530,67 @@ const CardModal = ({ isOpen, onClose, card, boardId, canEdit = false }: CardModa
 
           {/* Due Date */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label style={{ display: 'block', fontSize: '13px', fontWeight: 500, color: 'var(--text)', marginBottom: '8px' }}>
               Due Date
             </label>
             <input
               type="date"
               value={dueDate}
               onChange={(e) => setDueDate(e.target.value)}
-              className="w-full px-4 py-2.5 border-2 border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:border-purple-500 focus:ring-4 focus:ring-purple-100 dark:focus:ring-purple-900/30 hover:border-gray-400 dark:hover:border-gray-500 transition-all duration-200 shadow-sm focus:shadow-md"
+              style={{
+                width: '100%',
+                padding: '10px 12px',
+                border: '1px solid var(--border-2)',
+                borderRadius: '10px',
+                background: 'rgba(22,20,18,.6)',
+                color: 'var(--text)',
+                fontSize: '13px',
+                fontFamily: 'inherit',
+                outline: 'none',
+              }}
+              onFocus={(e) => {
+                e.currentTarget.style.borderColor = 'var(--purple-l)';
+                e.currentTarget.style.boxShadow = '0 0 0 3px rgba(147,51,234,.18)';
+              }}
+              onBlur={(e) => {
+                e.currentTarget.style.borderColor = 'var(--border-2)';
+                e.currentTarget.style.boxShadow = 'none';
+              }}
             />
+          </div>
           </div>
         </div>
 
         {/* Assignees Section — always render; AssigneeSection controls its own visibility */}
-        <AssigneeSection
-          currentAssignees={card.assignees || []}
-          ownerId={currentBoard?.ownerId || ''}
-          ownerEmail={currentBoard?.ownerEmail || ''}
-          collaborators={currentBoard?.sharedWith || []}
-          canEdit={canEdit}
-          onAssign={(userId) => assignCard(boardId, card.id, userId)}
-          onUnassign={(userId) => unassignCard(boardId, card.id, userId)}
-        />
+        <div className="modal-section">
+          <label className="section-label">People</label>
+          <AssigneeSection
+            currentAssignees={card.assignees || []}
+            ownerId={currentBoard?.ownerId || ''}
+            ownerEmail={currentBoard?.ownerEmail || ''}
+            collaborators={currentBoard?.sharedWith || []}
+            canEdit={canEdit}
+            onAssign={(userId) => assignCard(boardId, card.id, userId)}
+            onUnassign={(userId) => unassignCard(boardId, card.id, userId)}
+          />
+        </div>
 
         {/* Dependencies Section */}
-        <DependencySection
-          boardId={boardId}
-          card={card}
-          allCards={allBoardCards}
-          canEdit={canEdit}
-          onAdd={(blockerCardId) => addDependency(boardId, card.id, blockerCardId)}
-          onRemove={(blockerCardId) => removeDependency(boardId, card.id, blockerCardId)}
-        />
+        <div className="modal-section">
+          <label className="section-label">Dependencies</label>
+          <DependencySection
+            boardId={boardId}
+            card={card}
+            allCards={allBoardCards}
+            canEdit={canEdit}
+            onAdd={(blockerCardId) => addDependency(boardId, card.id, blockerCardId)}
+            onRemove={(blockerCardId) => removeDependency(boardId, card.id, blockerCardId)}
+          />
+        </div>
 
         {/* Tags Section */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            Tags
-          </label>
+        <div className="modal-section">
+          <label className="section-label">Tags</label>
           <div className="flex gap-2 mb-3">
             <input
               value={tagInput}
@@ -481,11 +602,47 @@ const CardModal = ({ isOpen, onClose, card, boardId, canEdit = false }: CardModa
                   handleAddTag();
                 }
               }}
-              className="flex-1 px-4 py-2 border-2 border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:border-purple-500 focus:ring-4 focus:ring-purple-100 dark:focus:ring-purple-900/30 transition-all duration-200"
+              style={{
+                flex: 1,
+                padding: '10px 12px',
+                border: '1px solid var(--border-2)',
+                borderRadius: '10px',
+                background: 'rgba(22,20,18,.6)',
+                color: 'var(--text)',
+                fontSize: '13px',
+                fontFamily: 'inherit',
+                outline: 'none',
+              }}
+              onFocus={(e) => {
+                e.currentTarget.style.borderColor = 'var(--purple-l)';
+                e.currentTarget.style.boxShadow = '0 0 0 3px rgba(147,51,234,.18)';
+              }}
+              onBlur={(e) => {
+                e.currentTarget.style.borderColor = 'var(--border-2)';
+                e.currentTarget.style.boxShadow = 'none';
+              }}
             />
             <button
               onClick={handleAddTag}
-              className="min-w-[80px] px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors duration-200 font-medium shadow-sm hover:shadow-md text-xs"
+              style={{
+                minWidth: '80px',
+                padding: '10px 16px',
+                background: 'var(--purple)',
+                color: '#fff',
+                border: 'none',
+                borderRadius: '10px',
+                fontSize: '13px',
+                fontWeight: '500',
+                cursor: 'pointer',
+                boxShadow: '0 0 24px var(--glow)',
+                transition: 'all 0.2s',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.opacity = '0.9';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.opacity = '1';
+              }}
             >
               Add
             </button>
@@ -494,35 +651,69 @@ const CardModal = ({ isOpen, onClose, card, boardId, canEdit = false }: CardModa
             <div className="flex flex-wrap gap-2">
               {tags.map((tag) => {
                 const bg = tagColors[tag];
-                const textCol = bg ? (isLightColor(bg) ? '#374151' : '#ffffff') : undefined;
                 const isPickingThis = selectedTag === tag;
+                const dotColor = bg || '#a855f7';
                 return (
                   <span
                     key={tag}
-                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium border shadow-sm ${
-                      bg
-                        ? 'border-transparent'
-                        : 'bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-200 border-purple-200 dark:border-purple-700'
-                    } ${isPickingThis ? 'ring-2 ring-purple-500' : ''}`}
-                    style={bg ? { backgroundColor: bg, color: textCol } : undefined}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      padding: '4px 10px',
+                      borderRadius: '99px',
+                      fontSize: '11px',
+                      fontWeight: '500',
+                      background: 'var(--surface-3)',
+                      border: '1px solid var(--border)',
+                      color: 'var(--text)',
+                    }}
+                    className={isPickingThis ? 'ring-2' : ''}
                   >
                     {/* Color dot — click to open/close picker */}
                     <button
                       type="button"
                       onClick={() => setSelectedTag(isPickingThis ? null : tag)}
-                      className="w-3 h-3 rounded-full border border-white/60 flex-shrink-0 transition-transform hover:scale-110"
-                      style={{ backgroundColor: bg || '#a855f7' }}
+                      style={{
+                        width: '6px',
+                        height: '6px',
+                        borderRadius: '50%',
+                        border: 'none',
+                        background: dotColor,
+                        flexShrink: 0,
+                        cursor: 'pointer',
+                        transition: 'transform 0.2s',
+                        padding: 0,
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.transform = 'scale(1.3)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.transform = 'scale(1)';
+                      }}
                       title="Pick label color"
                     />
                     {tag}
                     <button
                       onClick={() => handleRemoveTag(tag)}
-                      className="hover:opacity-70 rounded-full p-0.5 transition-opacity flex-shrink-0"
+                      style={{
+                        background: 'transparent',
+                        border: 'none',
+                        color: 'var(--muted)',
+                        cursor: 'pointer',
+                        padding: '0 4px',
+                        fontSize: '14px',
+                        transition: 'color 0.2s',
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.color = '#fb7185';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.color = 'var(--muted)';
+                      }}
                       aria-label={`Remove ${tag}`}
                     >
-                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                      </svg>
+                      ✕
                     </button>
                   </span>
                 );
@@ -563,10 +754,8 @@ const CardModal = ({ isOpen, onClose, card, boardId, canEdit = false }: CardModa
         </div>
 
         {/* Card Color Picker */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-            Card Color
-          </label>
+        <div className="modal-section">
+          <label className="section-label">Card Color</label>
           <div className="flex flex-wrap gap-3">
             {CARD_COLORS.map((cardColor, index) => {
               // For the first option (Default), use dynamic color for display and empty string for value
@@ -594,10 +783,8 @@ const CardModal = ({ isOpen, onClose, card, boardId, canEdit = false }: CardModa
         </div>
 
         {/* Checklist Section */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            Checklist
-          </label>
+        <div className="modal-section">
+          <label className="section-label">Checklist</label>
           <div className="flex gap-2 mb-3">
             <input
               value={checklistInput}
@@ -609,11 +796,47 @@ const CardModal = ({ isOpen, onClose, card, boardId, canEdit = false }: CardModa
                   handleAddChecklistItem();
                 }
               }}
-              className="flex-1 px-4 py-2 border-2 border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:border-purple-500 focus:ring-4 focus:ring-purple-100 dark:focus:ring-purple-900/30 transition-all duration-200"
+              style={{
+                flex: 1,
+                padding: '10px 12px',
+                border: '1px solid var(--border-2)',
+                borderRadius: '10px',
+                background: 'rgba(22,20,18,.6)',
+                color: 'var(--text)',
+                fontSize: '13px',
+                fontFamily: 'inherit',
+                outline: 'none',
+              }}
+              onFocus={(e) => {
+                e.currentTarget.style.borderColor = 'var(--purple-l)';
+                e.currentTarget.style.boxShadow = '0 0 0 3px rgba(147,51,234,.18)';
+              }}
+              onBlur={(e) => {
+                e.currentTarget.style.borderColor = 'var(--border-2)';
+                e.currentTarget.style.boxShadow = 'none';
+              }}
             />
             <button
               onClick={handleAddChecklistItem}
-              className="min-w-[80px] px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors duration-200 font-medium shadow-sm hover:shadow-md text-xs"
+              style={{
+                minWidth: '80px',
+                padding: '10px 16px',
+                background: 'var(--purple)',
+                color: '#fff',
+                border: 'none',
+                borderRadius: '10px',
+                fontSize: '13px',
+                fontWeight: '500',
+                cursor: 'pointer',
+                boxShadow: '0 0 24px var(--glow)',
+                transition: 'all 0.2s',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.opacity = '0.9';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.opacity = '1';
+              }}
             >
               Add
             </button>
@@ -656,10 +879,8 @@ const CardModal = ({ isOpen, onClose, card, boardId, canEdit = false }: CardModa
         </div>
 
         {/* Notes Section */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            Notes
-          </label>
+        <div className="modal-section">
+          <label className="section-label">Notes</label>
           <RichTextEditor
             value={notes}
             onChange={setNotes}
@@ -686,7 +907,12 @@ const CardModal = ({ isOpen, onClose, card, boardId, canEdit = false }: CardModa
         )}
 
         {/* Card Activity Timeline */}
-        {card && <CardActivityTimeline boardId={boardId} cardId={card.id} />}
+        {card && (
+          <div className="modal-section">
+            <label className="section-label">Activity</label>
+            <CardActivityTimeline boardId={boardId} cardId={card.id} />
+          </div>
+        )}
 
         {/* Metadata */}
         <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
@@ -711,28 +937,31 @@ const CardModal = ({ isOpen, onClose, card, boardId, canEdit = false }: CardModa
 
       {/* Comments Section */}
       {card && (
-        <CommentThread
-          comments={card.comments || []}
-          currentUserId={user?.uid || ''}
-          currentUserEmail={user?.email || ''}
-          boardId={boardId}
-          cardId={card.id}
-          ownerId={currentBoard?.ownerId || ''}
-          ownerEmail={currentBoard?.ownerEmail || ''}
-          collaborators={currentBoard?.sharedWith || []}
-          onAddComment={(content, mentions?: MentionedUser[]) => {
-            if (user) {
-              addComment(boardId, card.id, user.uid, user.email || '', content, mentions);
-            }
-          }}
-          onEditComment={(commentId, content, mentions?: MentionedUser[]) => {
-            editComment(boardId, card.id, commentId, content, mentions);
-          }}
-          onDeleteComment={(commentId) => {
-            deleteComment(boardId, card.id, commentId);
-          }}
-          canComment={!!user}
-        />
+        <div className="modal-section">
+          <label className="section-label">Comments</label>
+          <CommentThread
+            comments={card.comments || []}
+            currentUserId={user?.uid || ''}
+            currentUserEmail={user?.email || ''}
+            boardId={boardId}
+            cardId={card.id}
+            ownerId={currentBoard?.ownerId || ''}
+            ownerEmail={currentBoard?.ownerEmail || ''}
+            collaborators={currentBoard?.sharedWith || []}
+            onAddComment={(content, mentions?: MentionedUser[]) => {
+              if (user) {
+                addComment(boardId, card.id, user.uid, user.email || '', content, mentions);
+              }
+            }}
+            onEditComment={(commentId, content, mentions?: MentionedUser[]) => {
+              editComment(boardId, card.id, commentId, content, mentions);
+            }}
+            onDeleteComment={(commentId) => {
+              deleteComment(boardId, card.id, commentId);
+            }}
+            canComment={!!user}
+          />
+        </div>
       )}
 
     </Modal>
