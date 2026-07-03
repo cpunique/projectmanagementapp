@@ -22,8 +22,10 @@ export default function Comment({
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState(comment.content);
 
+  const isAgent = comment.authorType === 'agent';
   const isAuthor = comment.authorId === currentUserId;
-  const canEditOrDelete = canModify && isAuthor;
+  // Agent comments are a factual record — not editable by users.
+  const canEditOrDelete = canModify && isAuthor && !isAgent;
 
   const handleSaveEdit = () => {
     if (editContent.trim() && editContent !== comment.content) {
@@ -46,13 +48,11 @@ export default function Comment({
     }
   };
 
-  // Get initials for avatar
   const getInitials = (email: string) => {
     const name = email.split('@')[0];
     return name.slice(0, 2).toUpperCase();
   };
 
-  // Generate consistent color from email
   const getAvatarColor = (email: string) => {
     const colors = [
       'bg-blue-500',
@@ -73,22 +73,19 @@ export default function Comment({
 
   const timeAgo = formatTimeAgo(comment.createdAt);
 
-  // Render content with highlighted mentions
+  // Render content with highlighted @mentions
   const renderedContent = useMemo(() => {
     const content = comment.content;
-    // Match @username patterns (username is the part before @ in email)
     const mentionRegex = /@(\w+[\w.-]*)/g;
     const parts: (string | React.ReactElement)[] = [];
     let lastIndex = 0;
     let match;
 
     while ((match = mentionRegex.exec(content)) !== null) {
-      // Add text before the mention
       if (match.index > lastIndex) {
         parts.push(content.substring(lastIndex, match.index));
       }
 
-      // Add the highlighted mention
       const mentionText = match[0];
       const mentionKey = `mention-${match.index}`;
       parts.push(
@@ -103,7 +100,6 @@ export default function Comment({
       lastIndex = match.index + match[0].length;
     }
 
-    // Add remaining text
     if (lastIndex < content.length) {
       parts.push(content.substring(lastIndex));
     }
@@ -111,82 +107,137 @@ export default function Comment({
     return parts.length > 0 ? parts : content;
   }, [comment.content]);
 
-  return (
-    <div className="flex gap-3 group">
-      {/* Avatar */}
-      <div
-        className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-medium flex-shrink-0 ${getAvatarColor(comment.authorEmail)}`}
-      >
-        {getInitials(comment.authorEmail)}
-      </div>
+  // ── Avatar ────────────────────────────────────────────────────────────────
+  const avatar = isAgent ? (
+    <div
+      className="w-8 h-8 rounded-full flex items-center justify-center text-sm flex-shrink-0"
+      style={{ background: 'linear-gradient(135deg, var(--purple), var(--purple-l))' }}
+    >
+      🤖
+    </div>
+  ) : (
+    <div
+      className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-medium flex-shrink-0 ${getAvatarColor(comment.authorEmail)}`}
+    >
+      {getInitials(comment.authorEmail)}
+    </div>
+  );
 
-      {/* Content */}
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 mb-1">
-          <span className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
-            {comment.authorEmail.split('@')[0]}
+  // ── Display name ──────────────────────────────────────────────────────────
+  const displayName = isAgent
+    ? (comment.agentName ?? 'Claude')
+    : comment.authorEmail.split('@')[0];
+
+  // ── Content area (shared by both paths) ──────────────────────────────────
+  const body = (
+    <div className="flex-1 min-w-0">
+      <div className="flex items-center gap-2 mb-1 flex-wrap">
+        <span className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
+          {displayName}
+        </span>
+        {isAgent && (
+          <span
+            style={{
+              background: 'rgba(147,51,234,0.14)',
+              color: 'var(--purple-l)',
+              fontSize: '10px',
+              fontWeight: 600,
+              letterSpacing: '0.06em',
+              padding: '1px 6px',
+              borderRadius: '4px',
+              flexShrink: 0,
+            }}
+          >
+            AI
           </span>
-          <span className="text-xs text-gray-500 dark:text-gray-400">
-            {timeAgo}
+        )}
+        <span className="text-xs text-gray-500 dark:text-gray-400">
+          {timeAgo}
+        </span>
+        {comment.isEdited && (
+          <span className="text-xs text-gray-400 dark:text-gray-500 italic">
+            (edited)
           </span>
-          {comment.isEdited && (
-            <span className="text-xs text-gray-400 dark:text-gray-500 italic">
-              (edited)
-            </span>
-          )}
-        </div>
-
-        {isEditing ? (
-          <div className="space-y-2">
-            <textarea
-              value={editContent}
-              onChange={(e) => setEditContent(e.target.value)}
-              onKeyDown={handleKeyDown}
-              className="w-full px-3 py-2 text-sm border rounded-lg resize-none focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-600"
-              rows={2}
-              autoFocus
-            />
-            <div className="flex gap-2">
-              <button
-                onClick={handleSaveEdit}
-                className="px-3 py-1 text-xs font-medium text-white bg-purple-600 rounded hover:bg-purple-700 transition-colors"
-              >
-                Save
-              </button>
-              <button
-                onClick={handleCancelEdit}
-                className="px-3 py-1 text-xs font-medium text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        ) : (
-          <>
-            <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap break-words">
-              {renderedContent}
-            </p>
-
-            {/* Action buttons - only show for comment author */}
-            {canEditOrDelete && (
-              <div className="flex gap-2 mt-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                <button
-                  onClick={() => setIsEditing(true)}
-                  className="text-xs text-gray-500 hover:text-purple-600 dark:text-gray-400 dark:hover:text-purple-400 transition-colors"
-                >
-                  Edit
-                </button>
-                <button
-                  onClick={() => onDelete(comment.id)}
-                  className="text-xs text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400 transition-colors"
-                >
-                  Delete
-                </button>
-              </div>
-            )}
-          </>
         )}
       </div>
+
+      {isEditing ? (
+        <div className="space-y-2">
+          <textarea
+            value={editContent}
+            onChange={(e) => setEditContent(e.target.value)}
+            onKeyDown={handleKeyDown}
+            className="w-full px-3 py-2 text-sm border rounded-lg resize-none focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-600"
+            rows={2}
+            autoFocus
+          />
+          <div className="flex gap-2">
+            <button
+              onClick={handleSaveEdit}
+              className="px-3 py-1 text-xs font-medium text-white bg-purple-600 rounded hover:bg-purple-700 transition-colors"
+            >
+              Save
+            </button>
+            <button
+              onClick={handleCancelEdit}
+              className="px-3 py-1 text-xs font-medium text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      ) : (
+        <>
+          <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap break-words">
+            {renderedContent}
+          </p>
+
+          {canEditOrDelete && (
+            <div className="flex gap-2 mt-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              <button
+                onClick={() => setIsEditing(true)}
+                className="text-xs text-gray-500 hover:text-purple-600 dark:text-gray-400 dark:hover:text-purple-400 transition-colors"
+              >
+                Edit
+              </button>
+              <button
+                onClick={() => onDelete(comment.id)}
+                className="text-xs text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400 transition-colors"
+              >
+                Delete
+              </button>
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+
+  // ── Agent comment: purple tint + left accent border (Variant B) ───────────
+  if (isAgent) {
+    return (
+      <div
+        style={{
+          background: 'rgba(147,51,234,0.08)',
+          border: '1px solid rgba(147,51,234,0.18)',
+          borderLeft: '3px solid var(--purple)',
+          borderRadius: '8px',
+          padding: '10px 12px',
+        }}
+      >
+        <div className="flex gap-3">
+          {avatar}
+          {body}
+        </div>
+      </div>
+    );
+  }
+
+  // ── Human comment ─────────────────────────────────────────────────────────
+  return (
+    <div className="flex gap-3 group">
+      {avatar}
+      {body}
     </div>
   );
 }

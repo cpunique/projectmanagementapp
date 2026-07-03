@@ -46,9 +46,11 @@ const EVENT_COLORS: Record<ActivityEventType, string> = {
 };
 
 function getActivityDescription(entry: ActivityEntry, currentUserId?: string): string {
-  const actor = entry.actorId === currentUserId
-    ? 'You'
-    : entry.actorEmail?.split('@')[0] || 'Someone';
+  const actor = entry.actorType === 'agent'
+    ? `🤖 ${entry.agentName ?? 'Claude'}`
+    : entry.actorId === currentUserId
+      ? 'You'
+      : entry.actorEmail?.split('@')[0] || 'Someone';
 
   switch (entry.eventType) {
     case 'card_added':
