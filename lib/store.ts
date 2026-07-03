@@ -4,7 +4,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { nanoid } from 'nanoid';
 import { getAuth } from 'firebase/auth';
-import type { Board, Card, Column, ChecklistItem, KanbanStore, Notification, InstructionType } from '@/types';
+import type { Board, Card, Column, ChecklistItem, KanbanStore, Notification, InstructionType, CardComment } from '@/types';
 import {
   MAX_COLUMNS,
   DEFAULT_BOARD_ID,
@@ -116,13 +116,19 @@ export const useKanbanStore = create<KanbanStore>()(
       activeBoard: DEFAULT_BOARD_ID,
       defaultBoardId: null,
       demoMode: false,
-      darkMode: false,
+      darkMode: true, // dark-only app — see toggleDarkMode/setDarkMode, light is not reachable
       searchQuery: '',
       filters: {},
       dueDatePanelOpen: true,
       activityPanelOpen: false,
       analyticsPanelOpen: false,
       archivePanelOpen: false,
+      mobileAlertsOpen: false,
+      mobileSearchOpen: false,
+      searchScope: 'this-board' as const,
+      searchFocusTick: 0,
+      activeCardId: null,
+      createBoardModalOpen: false,
       activeView: 'board' as const,
       dueDatePanelWidth: 320,
       zoomLevel: 80,
@@ -139,30 +145,35 @@ export const useKanbanStore = create<KanbanStore>()(
       notifications: [],
 
       // Board actions
-      addBoard: (name: string, description?: string, templateColumns?: { title: string; order: number }[]) => {
-        const columnsSource = templateColumns || DEFAULT_COLUMNS;
+      addBoard: (name: string, description?: string, templateColumns?: { title: string; order: number; cards?: Card[] }[]) => {
+        const columnsSource = (templateColumns || DEFAULT_COLUMNS) as { title: string; order: number; cards?: Card[] }[];
+        const boardId = nanoid();
         const newBoard: Board = {
-          id: nanoid(),
+          id: boardId,
           name,
           description: description || '',
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
-          columns: columnsSource.map((col) => ({
-            id: nanoid(),
-            title: col.title,
-            order: col.order,
-            boardId: '',
-            cards: [],
-          })),
+          columns: columnsSource.map((col) => {
+            const columnId = nanoid();
+            return {
+              id: columnId,
+              title: col.title,
+              order: col.order,
+              boardId,
+              // Preserve cards carried over from a board import/duplicate (re-pointed at the new board/column ids);
+              // plain board templates never pass `cards`, so this is [] for those.
+              cards: (col.cards || []).map((card) => ({
+                ...card,
+                boardId,
+                columnId,
+              })),
+            };
+          }),
           ownerId: getAuth().currentUser?.uid || '',
           sharedWith: [],
           sharedWithUserIds: [],
         };
-
-        // Update board IDs
-        newBoard.columns.forEach((col) => {
-          col.boardId = newBoard.id;
-        });
 
         set((state) => ({
           boards: [...state.boards, newBoard],
@@ -237,7 +248,7 @@ export const useKanbanStore = create<KanbanStore>()(
       },
 
       switchBoard: (boardId: string) => {
-        set({ activeBoard: boardId });
+        set({ activeBoard: boardId, searchQuery: '', filters: {} });
       },
 
       setDefaultBoard: (boardId: string | null) => {
@@ -933,16 +944,20 @@ export const useKanbanStore = create<KanbanStore>()(
         authorId: string,
         authorEmail: string,
         content: string,
-        mentions?: { userId: string; email: string }[]
+        mentions?: { userId: string; email: string }[],
+        authorType?: 'human' | 'agent',
+        agentName?: string
       ) => {
         const commentId = nanoid();
-        const newComment = {
+        const newComment: CardComment = {
           id: commentId,
           authorId,
           authorEmail,
           content,
           createdAt: new Date().toISOString(),
           mentions,
+          ...(authorType ? { authorType } : {}),
+          ...(agentName ? { agentName } : {}),
         };
 
         // Get board and card info before set() for Firebase notifications
@@ -1111,6 +1126,13 @@ export const useKanbanStore = create<KanbanStore>()(
       toggleArchivePanel: () => set((state) => ({ archivePanelOpen: !state.archivePanelOpen })),
       setArchivePanelOpen: (isOpen: boolean) => set({ archivePanelOpen: isOpen }),
 
+      setMobileAlertsOpen: (isOpen: boolean) => set({ mobileAlertsOpen: isOpen }),
+      setMobileSearchOpen: (isOpen: boolean) => set({ mobileSearchOpen: isOpen }),
+
+      setActiveCardId: (cardId: string | null) => set({ activeCardId: cardId }),
+
+      setCreateBoardModalOpen: (isOpen: boolean) => set({ createBoardModalOpen: isOpen }),
+
       setActiveView: (view: 'board' | 'calendar') => set({ activeView: view }),
 
       // Due dates panel actions
@@ -1131,14 +1153,16 @@ export const useKanbanStore = create<KanbanStore>()(
       },
 
       // UI state actions
-      toggleDarkMode: () => set((state) => {
-        const newVal = !state.darkMode;
-        try { localStorage.setItem('kanban-ui-darkMode', JSON.stringify(newVal)); } catch {}
-        return { darkMode: newVal };
-      }),
-      setDarkMode: (darkMode) => {
-        try { localStorage.setItem('kanban-ui-darkMode', JSON.stringify(darkMode)); } catch {}
-        set({ darkMode });
+      // Dark-only app: light mode is deferred post-launch and the token set was
+      // never completed, so these are hardened to always land on true regardless
+      // of caller (stale Firestore/localStorage preference, future UI, etc.).
+      toggleDarkMode: () => {
+        try { localStorage.setItem('kanban-ui-darkMode', 'true'); } catch {}
+        set({ darkMode: true });
+      },
+      setDarkMode: () => {
+        try { localStorage.setItem('kanban-ui-darkMode', 'true'); } catch {}
+        set({ darkMode: true });
       },
       toggleDemoMode: () =>
         set((state) => {
@@ -1222,6 +1246,8 @@ export const useKanbanStore = create<KanbanStore>()(
       setSearchQuery: (query: string) => set({ searchQuery: query }),
       setFilters: (filters) => set({ filters }),
       clearFilters: () => set({ filters: {} }),
+      setSearchScope: (scope: 'this-board' | 'all-boards') => set({ searchScope: scope }),
+      triggerSearchFocus: () => set((s) => ({ searchFocusTick: s.searchFocusTick + 1 })),
 
       // History actions (basic implementation without temporal middleware for now)
       undo: () => {
@@ -1293,7 +1319,7 @@ export const useKanbanStore = create<KanbanStore>()(
       // Only persistent client-side UI state (darkMode, filters, etc.) should be in localStorage
       partialize: (state) => {
         // Exclude Firebase-managed state and transient state from localStorage
-        const { boards, activeBoard, defaultBoardId, demoMode, conflictState, activityPanelOpen, analyticsPanelOpen, archivePanelOpen, ...rest } = state;
+        const { boards, activeBoard, defaultBoardId, demoMode, conflictState, activityPanelOpen, analyticsPanelOpen, archivePanelOpen, createBoardModalOpen, mobileAlertsOpen, mobileSearchOpen, activeCardId, searchFocusTick, ...rest } = state;
         return rest;
       },
       merge: (persistedState, currentState) => {
@@ -1313,6 +1339,10 @@ export const useKanbanStore = create<KanbanStore>()(
           activityPanelOpen: currentState.activityPanelOpen,
           analyticsPanelOpen: currentState.analyticsPanelOpen,
           archivePanelOpen: currentState.archivePanelOpen,
+          createBoardModalOpen: currentState.createBoardModalOpen,
+          mobileAlertsOpen: currentState.mobileAlertsOpen,
+          mobileSearchOpen: currentState.mobileSearchOpen,
+          activeCardId: currentState.activeCardId,
         };
       },
       // Skip automatic rehydration during SSR to prevent hydration mismatches.

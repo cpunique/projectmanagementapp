@@ -327,6 +327,11 @@ export function cleanupFirebaseSync() {
   store.setDefaultBoard(null);
   store.setDueDatePanelOpen(false);
 
+  // Reset syncState so the next account's hooks (useOnboarding, useOverdueChecker,
+  // useDefaultBoardSaver) can't be satisfied by this account's stale 'synced' value
+  // before initializeFirebaseSync has run for the new user.
+  store.setSyncState('idle');
+
   console.log('[Sync] Cleanup complete - all subscriptions cancelled, boards cleared');
 }
 

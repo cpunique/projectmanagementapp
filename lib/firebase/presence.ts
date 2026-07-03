@@ -131,7 +131,13 @@ export function subscribeToPresence(
         callback(onlineUserIds);
       },
       (error) => {
-        console.warn('[Presence] Subscription error:', error);
+        // permission-denied is expected when the parent board doesn't exist in Firestore
+        // yet (new board before first auto-save, or demo board). Not a real error.
+        const isPermissionDenied = (error as any)?.code === 'permission-denied' ||
+          error?.message?.toLowerCase().includes('permission');
+        if (!isPermissionDenied) {
+          console.warn('[Presence] Subscription error:', error);
+        }
         callback([]);
       }
     );

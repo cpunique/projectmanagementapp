@@ -30,28 +30,15 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning className={geist.variable}>
       <head>
-        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
+        <meta name="theme-color" content="#161412" />
+        <link rel="manifest" href="/manifest.json" />
+        {/* Dark-only app: pin the theme unconditionally on load. No stale
+            localStorage/Firestore preference, and no OS prefers-color-scheme,
+            should ever be able to put the app into light mode. */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `
-              try {
-                var dedicated = localStorage.getItem('kanban-ui-darkMode');
-                if (dedicated !== null) {
-                  if (JSON.parse(dedicated)) document.documentElement.classList.add('dark');
-                } else {
-                  var stored = localStorage.getItem('kanban-store');
-                  if (stored) {
-                    var state = JSON.parse(stored);
-                    var darkMode = state && state.state && state.state.darkMode;
-                    if (darkMode !== false) document.documentElement.classList.add('dark');
-                  } else {
-                    document.documentElement.classList.add('dark');
-                  }
-                }
-              } catch (e) {
-                document.documentElement.classList.add('dark');
-              }
-            `,
+            __html: `document.documentElement.classList.add('dark');`,
           }}
         />
       </head>
