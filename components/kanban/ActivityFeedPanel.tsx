@@ -8,6 +8,7 @@ import { subscribeToActivities } from '@/lib/firebase/activities';
 import { formatTimeAgo } from '@/lib/utils/formatTimeAgo';
 import { markActivitiesSeen } from '@/lib/hooks/useUnreadActivityCount';
 import { type ActivityEntry, type ActivityEventType } from '@/types';
+import { getActorLabel } from '@/lib/utils/getActorLabel';
 
 const EVENT_ICONS: Record<ActivityEventType, string> = {
   card_added: '+',
@@ -46,12 +47,7 @@ const EVENT_COLORS: Record<ActivityEventType, string> = {
 };
 
 function getActivityDescription(entry: ActivityEntry, currentUserId?: string): string {
-  const isAgent = entry.actorType === 'agent' || !!entry.agentName;
-  const actor = isAgent
-    ? `🤖 ${entry.agentName ?? 'Claude'}`
-    : entry.actorId === currentUserId
-      ? 'You'
-      : entry.actorEmail?.split('@')[0] || 'Someone';
+  const actor = getActorLabel(entry, currentUserId);
 
   switch (entry.eventType) {
     case 'card_added':
