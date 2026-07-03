@@ -46,7 +46,8 @@ const EVENT_COLORS: Record<ActivityEventType, string> = {
 };
 
 function getActivityDescription(entry: ActivityEntry, currentUserId?: string): string {
-  const actor = entry.actorType === 'agent'
+  const isAgent = entry.actorType === 'agent' || !!entry.agentName;
+  const actor = isAgent
     ? `🤖 ${entry.agentName ?? 'Claude'}`
     : entry.actorId === currentUserId
       ? 'You'
