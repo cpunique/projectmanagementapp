@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kan-do — Richer Landing Reference</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#161412;
+    --surface:#231f1c;
+    --border:#322d2a;
+    --border-2:#4a4240;
+    --purple:#9333ea;
+    --purple-light:#c084fc;
+    --pink:#f472b6;
+    --text:#f5f0ee;
+    --body:#a89890;
+    --muted:#6b5e58;
+    --radius:14px;
+    --radius-lg:20px;
+    /* Geist isn't web-served; Inter is the closest free stand-in for this reference.
+       Production should load Geist via next/font. */
+    --font:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    font-family:var(--font);
+    background:var(--bg);
+    color:var(--text);
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+  }
+
+  /* ---------- AMBIENT GRADIENT MESH (the core 2026 layer) ---------- */
+  .mesh{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+  .blob{position:absolute;border-radius:50%;filter:blur(120px);opacity:.5}
+  .blob.b1{width:620px;height:620px;background:#5b21b6;top:-180px;left:-120px}
+  .blob.b2{width:520px;height:520px;background:#7c1d6f;top:120px;right:-160px;opacity:.4}
+  .blob.b3{width:480px;height:480px;background:#3b1d80;bottom:-160px;left:30%;opacity:.35}
+  /* fine grain texture to kill the flat painted look */
+  .grain{position:fixed;inset:0;z-index:1;pointer-events:none;opacity:.04;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");}
+
+  .wrap{position:relative;z-index:2}
+
+  /* ---------- NAV ---------- */
+  nav{display:flex;align-items:center;justify-content:space-between;
+    padding:18px 40px;border-bottom:1px solid var(--border);
+    backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+    background:rgba(22,20,18,.6);position:sticky;top:0;z-index:50}
+  .logo{display:flex;align-items:center;gap:10px;font-size:17px;font-weight:600}
+  .logo .badge{width:30px;height:30px;border-radius:9px;
+    background:linear-gradient(135deg,#9333ea,#7c1d6f);
+    display:flex;align-items:center;justify-content:center;color:#fff;font-weight:600;
+    box-shadow:0 0 20px rgba(147,51,234,.5)}
+  .nav-links{display:flex;gap:26px;font-size:14px;color:var(--body)}
+  .nav-links span{cursor:pointer;transition:color .2s}
+  .nav-links span:hover{color:var(--text)}
+  .nav-actions{display:flex;gap:10px;align-items:center}
+  .btn-ghost{font-size:14px;padding:8px 16px;border-radius:10px;border:1px solid var(--border-2);
+    background:transparent;color:var(--text);cursor:pointer;transition:all .2s}
+  .btn-ghost:hover{background:rgba(255,255,255,.04)}
+  .btn-purple{font-size:14px;padding:8px 18px;border-radius:10px;border:none;
+    background:var(--purple);color:#fff;cursor:pointer;font-weight:500;
+    box-shadow:0 0 24px rgba(147,51,234,.45);transition:all .2s}
+  .btn-purple:hover{box-shadow:0 0 34px rgba(147,51,234,.7);transform:translateY(-1px)}
+
+  /* ---------- HERO ---------- */
+  .hero{display:grid;grid-template-columns:1.05fr 1fr;gap:56px;
+    padding:90px 40px 80px;max-width:1240px;margin:0 auto;align-items:center}
+  .eyebrow{display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:500;
+    color:var(--purple-light);padding:6px 14px;border-radius:999px;margin-bottom:24px;
+    background:rgba(147,51,234,.12);border:1px solid rgba(147,51,234,.32);
+    backdrop-filter:blur(8px)}
+  h1{font-size:54px;line-height:1.05;font-weight:600;letter-spacing:-1.5px;margin-bottom:22px}
+  h1 .grad{background:linear-gradient(100deg,#c084fc,#f472b6);
+    -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+  .sub{font-size:18px;line-height:1.6;color:var(--body);max-width:440px;margin-bottom:14px}
+  .support{font-size:14px;line-height:1.55;color:var(--muted);max-width:430px;margin-bottom:30px}
+  .hero-ctas{display:flex;gap:12px;margin-bottom:30px;flex-wrap:wrap}
+  .btn-lg{font-size:15px;padding:13px 26px;border-radius:12px;border:none;
+    background:var(--purple);color:#fff;cursor:pointer;font-weight:500;
+    box-shadow:0 0 30px rgba(147,51,234,.5);transition:all .2s}
+  .btn-lg:hover{box-shadow:0 0 44px rgba(147,51,234,.75);transform:translateY(-2px)}
+  .btn-lg-ghost{font-size:15px;padding:13px 24px;border-radius:12px;border:1px solid var(--border-2);
+    background:rgba(255,255,255,.02);color:var(--text);cursor:pointer;display:flex;
+    align-items:center;gap:8px;transition:all .2s}
+  .btn-lg-ghost:hover{background:rgba(255,255,255,.06);border-color:var(--purple-light)}
+  .waitlist{display:flex;gap:10px;max-width:430px}
+  .waitlist input{flex:1;padding:12px 16px;border-radius:11px;border:1px solid var(--border-2);
+    background:rgba(35,31,28,.6);color:var(--text);font-size:14px;font-family:var(--font);
+    backdrop-filter:blur(8px)}
+  .waitlist input::placeholder{color:var(--muted)}
+  .waitlist input:focus{outline:none;border-color:var(--purple-light);
+    box-shadow:0 0 0 3px rgba(147,51,234,.18)}
+  .waitlist button{padding:12px 20px;border-radius:11px;border:1px solid rgba(147,51,234,.4);
+    background:rgba(147,51,234,.16);color:var(--purple-light);font-weight:500;font-size:14px;
+    cursor:pointer;white-space:nowrap;transition:all .2s}
+  .waitlist button:hover{background:rgba(147,51,234,.28)}
+  .count{font-size:12px;color:var(--muted);margin-top:10px}
+  .count b{color:var(--purple-light);font-weight:600}
+
+  /* ---------- GLASS BOARD PREVIEW ---------- */
+  .board-glow{position:relative}
+  .board-glow::before{content:"";position:absolute;inset:-30px;
+    background:radial-gradient(circle at 60% 40%,rgba(147,51,234,.4),transparent 70%);
+    filter:blur(40px);z-index:-1}
+  .board{background:rgba(35,31,28,.55);border:1px solid rgba(255,255,255,.08);
+    border-radius:var(--radius-lg);padding:20px;
+    backdrop-filter:blur(20px) saturate(1.2);-webkit-backdrop-filter:blur(20px) saturate(1.2);
+    box-shadow:0 20px 60px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.06)}
+  .board-head{font-size:13px;color:var(--body);margin-bottom:16px;display:flex;
+    align-items:center;gap:8px;font-weight:500}
+  .dot{width:7px;height:7px;border-radius:50%;background:var(--purple);
+    box-shadow:0 0 10px var(--purple)}
+  .cols{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+  .col-h{font-size:10px;font-weight:600;color:var(--muted);margin-bottom:8px;
+    text-transform:uppercase;letter-spacing:.7px}
+  .card{background:rgba(22,20,18,.7);border:1px solid rgba(255,255,255,.06);
+    border-radius:11px;padding:11px 12px;margin-bottom:8px;
+    box-shadow:0 2px 8px rgba(0,0,0,.3);transition:transform .2s}
+  .card:hover{transform:translateY(-2px)}
+  .ct{font-size:12px;font-weight:500;margin-bottom:6px}
+  .tag{display:inline-block;font-size:9px;font-weight:600;padding:2px 7px;border-radius:999px}
+  .tag.high{background:rgba(244,63,94,.16);color:#fb7185}
+  .tag.med{background:rgba(147,51,234,.16);color:var(--purple-light)}
+  .tag.done{background:rgba(34,197,94,.16);color:#4ade80}
+  .chip{margin-top:14px;background:rgba(147,51,234,.12);border:1px solid rgba(147,51,234,.32);
+    border-radius:11px;padding:10px 13px;font-size:12px;color:var(--purple-light);
+    display:flex;align-items:center;gap:8px;backdrop-filter:blur(8px)}
+
+  /* ---------- SOCIAL BAR ---------- */
+  .social{display:flex;align-items:center;justify-content:center;gap:34px;flex-wrap:wrap;
+    padding:22px 40px;border-top:1px solid var(--border);border-bottom:1px solid var(--border);
+    background:rgba(35,31,28,.4);backdrop-filter:blur(10px)}
+  .social span{font-size:13px;color:var(--body);display:flex;align-items:center;gap:7px}
+  .social .gd{width:5px;height:5px;border-radius:50%;background:var(--purple-light)}
+
+  /* ---------- SECTIONS ---------- */
+  section.block{max-width:1240px;margin:0 auto;padding:88px 40px}
+  .label{font-size:12px;font-weight:600;color:var(--purple-light);letter-spacing:1px;
+    text-transform:uppercase;margin-bottom:16px;text-align:center}
+  .problem h2{font-size:34px;font-weight:600;line-height:1.25;letter-spacing:-.8px;
+    max-width:720px;margin:0 auto 18px;text-align:center}
+  .problem p{font-size:16px;line-height:1.7;color:var(--body);max-width:620px;
+    margin:0 auto;text-align:center}
+  .problem .em{color:var(--purple-light);font-style:italic}
+
+  .feat-head{text-align:center;margin-bottom:14px}
+  .feat-head h2{font-size:34px;font-weight:600;letter-spacing:-.8px;text-align:center;margin-bottom:48px}
+  .features{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+  .fcard{background:rgba(35,31,28,.55);border:1px solid rgba(255,255,255,.08);
+    border-radius:var(--radius-lg);padding:26px;
+    backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+    box-shadow:0 10px 40px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.05);
+    transition:transform .25s,box-shadow .25s}
+  .fcard:hover{transform:translateY(-4px);
+    box-shadow:0 18px 50px rgba(0,0,0,.5),0 0 40px rgba(147,51,234,.18),inset 0 1px 0 rgba(255,255,255,.08)}
+  .ficon{width:46px;height:46px;border-radius:13px;display:flex;align-items:center;
+    justify-content:center;margin-bottom:16px;font-size:22px}
+  .ficon.p{background:rgba(147,51,234,.18);color:var(--purple-light);
+    box-shadow:0 0 24px rgba(147,51,234,.3)}
+  .ficon.k{background:rgba(244,114,182,.14);color:var(--pink);
+    box-shadow:0 0 24px rgba(244,114,182,.25)}
+  .ficon.t{background:rgba(45,212,191,.14);color:#2dd4bf;
+    box-shadow:0 0 24px rgba(45,212,191,.22)}
+  .pro{display:inline-block;font-size:9px;font-weight:600;background:var(--purple);
+    color:#fff;padding:3px 9px;border-radius:999px;margin-bottom:10px;
+    box-shadow:0 0 16px rgba(147,51,234,.5)}
+  .fcard h3{font-size:18px;font-weight:600;margin-bottom:10px}
+  .fcard p{font-size:14px;line-height:1.65;color:var(--body)}
+
+  /* ---------- PRICING ---------- */
+  .pricing{text-align:center}
+  .pricing h2{font-size:34px;font-weight:600;letter-spacing:-.8px;margin-bottom:8px}
+  .pricing .psub{font-size:16px;color:var(--body);margin-bottom:48px}
+  .plans{display:grid;grid-template-columns:1fr 1fr;gap:20px;max-width:760px;margin:0 auto}
+  .plan{background:rgba(35,31,28,.55);border:1px solid rgba(255,255,255,.08);
+    border-radius:var(--radius-lg);padding:32px;text-align:left;backdrop-filter:blur(16px);
+    box-shadow:0 10px 40px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.05)}
+  .plan.pro{border:1px solid rgba(147,51,234,.5);position:relative;
+    box-shadow:0 10px 50px rgba(147,51,234,.25),inset 0 1px 0 rgba(255,255,255,.08)}
+  .popular{position:absolute;top:20px;right:24px;font-size:10px;font-weight:600;
+    background:rgba(147,51,234,.2);color:var(--purple-light);padding:4px 11px;
+    border-radius:999px;border:1px solid rgba(147,51,234,.4)}
+  .pname{font-size:14px;color:var(--body);margin-bottom:8px}
+  .price{font-size:42px;font-weight:600;letter-spacing:-1px;margin-bottom:4px}
+  .price span{font-size:15px;color:var(--body);font-weight:400}
+  .pannual{font-size:13px;color:var(--purple-light);margin-bottom:24px}
+  .pfree-sub{font-size:13px;color:var(--muted);margin-bottom:24px}
+  .pf{list-style:none;margin-bottom:26px}
+  .pf li{font-size:14px;color:var(--body);padding:6px 0;display:flex;align-items:center;gap:9px}
+  .ck{color:#4ade80}.cx{color:var(--border-2)}
+  .pbtn{width:100%;padding:13px;border-radius:12px;font-size:15px;font-weight:500;cursor:pointer;
+    border:1px solid var(--border-2);background:transparent;color:var(--text);transition:all .2s}
+  .pbtn:hover{background:rgba(255,255,255,.05)}
+  .pbtn.pro{background:var(--purple);color:#fff;border:none;
+    box-shadow:0 0 30px rgba(147,51,234,.5)}
+  .pbtn.pro:hover{box-shadow:0 0 44px rgba(147,51,234,.75);transform:translateY(-2px)}
+
+  /* ---------- FINAL CTA ---------- */
+  .final{text-align:center;padding:100px 40px;position:relative}
+  .final::before{content:"";position:absolute;inset:0;z-index:-1;
+    background:radial-gradient(ellipse at center,rgba(147,51,234,.22),transparent 65%)}
+  .final h2{font-size:40px;font-weight:600;letter-spacing:-1px;margin-bottom:14px}
+  .final p{font-size:17px;color:var(--body);margin-bottom:30px}
+  .final .micro{font-size:13px;color:var(--muted);margin-top:14px}
+
+  /* ---------- FOOTER ---------- */
+  footer{border-top:1px solid var(--border);background:rgba(35,31,28,.5);
+    backdrop-filter:blur(10px);padding:44px 40px;
+    display:grid;grid-template-columns:2fr 1fr 1fr;gap:30px;max-width:1240px;margin:0 auto}
+  .fcol h4{font-size:13px;font-weight:600;margin-bottom:12px;color:var(--text)}
+  .fcol p{font-size:13px;color:var(--body);padding:3px 0}
+  .ftag{font-size:13px;color:var(--body);margin-top:8px;max-width:240px;line-height:1.6}
+  .fcopy{grid-column:1/-1;border-top:1px solid var(--border);padding-top:20px;margin-top:8px;
+    font-size:12px;color:var(--muted)}
+
+  @media(max-width:900px){
+    .hero{grid-template-columns:1fr;gap:40px;padding:60px 24px}
+    h1{font-size:40px}
+    .features,.plans{grid-template-columns:1fr}
+    footer{grid-template-columns:1fr}
+    section.block{padding:60px 24px}
+  }
+</style>
+</head>
+<body>
+  <div class="mesh">
+    <div class="blob b1"></div>
+    <div class="blob b2"></div>
+    <div class="blob b3"></div>
+  </div>
+  <div class="grain"></div>
+
+  <div class="wrap">
+
+    <nav>
+      <div class="logo"><div class="badge">K</div>Kan-do</div>
+      <div class="nav-links"><span>Features</span><span>Pricing</span></div>
+      <div class="nav-actions">
+        <button class="btn-ghost">Sign in</button>
+        <button class="btn-purple">Get started free</button>
+      </div>
+    </nav>
+
+    <section class="hero">
+      <div>
+        <div class="eyebrow">✦ AI-native project management</div>
+        <h1>Your Kanban board<br><span class="grad">has a brain now</span></h1>
+        <p class="sub">Kan-do turns your task cards into AI-ready prompts — so you spend less time explaining your work and more time shipping it.</p>
+        <p class="support">Built for developers, solopreneurs, and small teams done paying enterprise prices for tools they barely use.</p>
+        <div class="hero-ctas">
+          <button class="btn-lg">Start free — no credit card</button>
+          <button class="btn-lg-ghost">▶ See it in action</button>
+        </div>
+        <div class="waitlist">
+          <input type="email" placeholder="your@email.com">
+          <button>Join waitlist</button>
+        </div>
+        <div class="count">Joined by <b>312</b> developers and solopreneurs</div>
+      </div>
+      <div class="board-glow">
+        <div class="board">
+          <div class="board-head"><span class="dot"></span> My Project · Live board</div>
+          <div class="cols">
+            <div>
+              <div class="col-h">Todo</div>
+              <div class="card"><div class="ct">Auth system</div><span class="tag high">High</span></div>
+              <div class="card"><div class="ct">Prompt gen</div><span class="tag high">High</span></div>
+            </div>
+            <div>
+              <div class="col-h">In progress</div>
+              <div class="card"><div class="ct">Dashboard UI</div><span class="tag med">Medium</span></div>
+            </div>
+            <div>
+              <div class="col-h">Done</div>
+              <div class="card"><div class="ct">API setup</div><span class="tag done">Done</span></div>
+            </div>
+          </div>
+          <div class="chip">✦ Prompt generated from "Auth system" card — ready to use</div>
+        </div>
+      </div>
+    </section>
+
+    <div class="social">
+      <span><span class="gd"></span> Built on Firebase</span>
+      <span><span class="gd"></span> Deployed on Vercel</span>
+      <span><span class="gd"></span> Powered by Claude AI</span>
+      <span><span class="gd"></span> Built on Firebase — SOC-2 certified infrastructure</span>
+      <span><span class="gd"></span> Free to start</span>
+    </div>
+
+    <section class="block problem">
+      <div class="label">The problem</div>
+      <h2>You're managing tasks in one tool and prompting AI in another. That context gap is killing your momentum.</h2>
+      <p>Every time you switch to an AI tool, you're re-explaining your project, your stack, your constraints. Kan-do closes that gap — your card <span class="em">is</span> the prompt. One click turns task context into a directive your AI can act on immediately.</p>
+    </section>
+
+    <section class="block">
+      <div class="feat-head">
+        <div class="label">Features</div>
+        <h2>Everything you need. Nothing you don't.</h2>
+      </div>
+      <div class="features">
+        <div class="fcard">
+          <div class="ficon p">✦</div>
+          <div class="pro">Pro</div>
+          <h3>From card to prompt in one click</h3>
+          <p>Every card field — title, description, checklist, notes, priority — becomes a structured directive. Five instruction styles for different task types.</p>
+        </div>
+        <div class="fcard">
+          <div class="ficon k">◈</div>
+          <div class="pro">Pro</div>
+          <h3>Give your AI agent a seat at the board</h3>
+          <p>Claude Code connects directly to your boards via MCP. Your agent reads card context automatically — no copy-pasting, no re-explaining.</p>
+        </div>
+        <div class="fcard">
+          <div class="ficon t">▦</div>
+          <h3>All the Kanban you need. None of the bloat.</h3>
+          <p>Drag-and-drop boards, real-time collaboration, WIP limits, due dates, attachments, and activity feeds. No enterprise pricing, no feature tax.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="block pricing">
+      <div class="label">Pricing</div>
+      <h2>Simple. No surprises.</h2>
+      <p class="psub">Start free. Upgrade when you're ready.</p>
+      <div class="plans">
+        <div class="plan">
+          <div class="pname">Free</div>
+          <div class="price">$0</div>
+          <div class="pfree-sub">Forever free on 3 boards</div>
+          <ul class="pf">
+            <li><span class="ck">✓</span> 3 boards</li>
+            <li><span class="ck">✓</span> Unlimited cards</li>
+            <li><span class="ck">✓</span> Real-time collaboration</li>
+            <li><span class="ck">✓</span> Offline support</li>
+            <li><span class="cx">✕</span> AI prompt generation</li>
+            <li><span class="cx">✕</span> Claude Agent MCP access</li>
+          </ul>
+          <button class="pbtn">Get started free</button>
+        </div>
+        <div class="plan pro">
+          <div class="popular">Most popular</div>
+          <div class="pname">Pro</div>
+          <div class="price">$10<span> /mo</span></div>
+          <div class="pannual">or $96/year — save 20%</div>
+          <ul class="pf">
+            <li><span class="ck">✓</span> Unlimited boards</li>
+            <li><span class="ck">✓</span> Unlimited cards</li>
+            <li><span class="ck">✓</span> AI prompt generation</li>
+            <li><span class="ck">✓</span> AI task card generation</li>
+            <li><span class="ck">✓</span> Claude Agent MCP access</li>
+            <li><span class="ck">✓</span> Push + email notifications</li>
+          </ul>
+          <button class="pbtn pro">Start Pro</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="final">
+      <h2>Your next project deserves a smarter board.</h2>
+      <p>Join developers and solopreneurs done switching between tools to get things done.</p>
+      <button class="btn-lg">Start free — no credit card required</button>
+      <div class="micro">Free forever on 3 boards. Upgrade anytime.</div>
+    </section>
+
+    <footer>
+      <div class="fcol">
+        <div class="logo"><div class="badge">K</div>Kan-do</div>
+        <p class="ftag">AI-native project management for developers and solopreneurs.</p>
+      </div>
+      <div class="fcol">
+        <h4>Legal</h4>
+        <p>Terms of Service</p>
+        <p>Privacy Policy</p>
+        <p>Cookie Policy</p>
+        <p>AI Usage Policy</p>
+      </div>
+      <div class="fcol">
+        <h4>Contact</h4>
+        <p>support@kan-do.app</p>
+        <p>X / Twitter</p>
+        <p>IndieHackers</p>
+        <p>ProductHunt</p>
+      </div>
+      <div class="fcopy">© 2026 Kan-do. All rights reserved.</div>
+    </footer>
+
+  </div>
+</body>
+</html>

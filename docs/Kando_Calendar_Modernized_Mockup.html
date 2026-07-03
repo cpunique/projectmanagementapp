@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kan-do — Modernized Calendar</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#161412; --s1:#1d1a17; --s2:#231f1c; --s3:#2a2522;
+    --border:#322d2a; --border2:#4a4240;
+    --text:#f5f0ee; --body:#a89890; --muted:#6b5e58;
+    --purple:#9333ea; --purple-light:#c084fc; --pink:#f472b6;
+    --glow:rgba(147,51,234,.45);
+    --font:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:var(--font);background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased;position:relative;overflow-x:hidden}
+  .mesh{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+  .blob{position:absolute;border-radius:50%;filter:blur(160px);opacity:.16}
+  .blob.b1{width:600px;height:600px;background:#5b21b6;top:-250px;left:-150px}
+  .blob.b2{width:460px;height:460px;background:#3b1d80;bottom:-150px;right:-100px;opacity:.12}
+  .app{position:relative;z-index:2}
+
+  /* top bar (same as board) */
+  .topbar{background:rgba(29,26,23,.72);backdrop-filter:blur(16px);border-bottom:1px solid var(--border);
+    padding:12px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;
+    box-shadow:0 4px 20px rgba(0,0,0,.3)}
+  .tb-left{display:flex;align-items:center;gap:14px}
+  .tb-logo{display:flex;align-items:center;gap:9px;font-weight:600;font-size:16px;white-space:nowrap}
+  .tb-badge{width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,#9333ea,#7c1d6f);
+    display:flex;align-items:center;justify-content:center;color:#fff;font-weight:600;font-size:14px;box-shadow:0 0 18px var(--glow)}
+  .tb-project{font-size:14px;color:var(--body);padding-left:16px;margin-left:4px;border-left:1px solid var(--border2);display:flex;align-items:center;gap:7px}
+  .seg{display:flex;background:var(--s2);border-radius:11px;padding:3px;border:1px solid var(--border)}
+  .seg button{border:none;background:transparent;color:var(--body);font-family:var(--font);font-size:13px;
+    font-weight:500;padding:7px 18px;border-radius:8px;cursor:pointer}
+  .seg button.active{background:var(--purple);color:#fff;box-shadow:0 0 16px var(--glow)}
+  .tb-right{display:flex;align-items:center;gap:10px}
+  .ico{width:38px;height:38px;border-radius:10px;border:1px solid transparent;background:transparent;color:var(--body);
+    display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:17px}
+  .ico:hover{background:var(--s2);color:var(--text);border-color:var(--border)}
+  .avatar{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#9333ea,#c084fc);
+    display:flex;align-items:center;justify-content:center;color:#fff;font-weight:600;font-size:14px;box-shadow:0 0 14px var(--glow)}
+
+  /* calendar header */
+  .cal-wrap{padding:24px}
+  .cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+  .cal-nav{display:flex;align-items:center;gap:14px}
+  .cal-month{font-size:24px;font-weight:600;letter-spacing:-.5px}
+  .navbtn{width:36px;height:36px;border-radius:10px;background:var(--s2);border:1px solid var(--border);
+    color:var(--body);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:15px}
+  .navbtn:hover{background:var(--s3);color:var(--text)}
+  .today-btn{font-size:13px;font-weight:500;padding:8px 16px;border-radius:10px;background:var(--s2);
+    border:1px solid var(--border2);color:var(--text);cursor:pointer;margin-left:6px}
+  .today-btn:hover{border-color:var(--purple-light)}
+  .cal-stats{font-size:13px;color:var(--body)}
+  .cal-stats b{color:var(--purple-light);font-weight:600}
+
+  /* calendar grid — elevated panel */
+  .cal-panel{background:var(--s1);border:1px solid var(--border);border-radius:18px;overflow:hidden;
+    box-shadow:0 10px 40px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.05)}
+  .weekdays{display:grid;grid-template-columns:repeat(7,1fr);border-bottom:1px solid var(--border);background:rgba(35,31,28,.5)}
+  .weekdays div{padding:12px;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;text-align:left}
+  .grid{display:grid;grid-template-columns:repeat(7,1fr);grid-auto-rows:108px}
+  .cell{border-right:1px solid var(--border);border-bottom:1px solid var(--border);padding:8px 10px;position:relative;transition:background .15s;cursor:pointer}
+  .cell:nth-child(7n){border-right:none}
+  .cell:hover{background:rgba(255,255,255,.02)}
+  .cell.out{background:rgba(0,0,0,.2)}
+  .cell.out .daynum{color:var(--muted);opacity:.4}
+  .daynum{font-size:13px;font-weight:500;color:var(--body)}
+  .cell.today .daynum{background:var(--purple);color:#fff;width:26px;height:26px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;box-shadow:0 0 14px var(--glow)}
+  .cell.today{background:rgba(147,51,234,.06)}
+  /* event chips */
+  .ev{margin-top:6px;font-size:10px;font-weight:500;padding:3px 7px;border-radius:6px;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:5px}
+  .ev::before{content:"";width:5px;height:5px;border-radius:50%;flex-shrink:0}
+  .ev.high{background:rgba(244,63,94,.16);color:#fb7185}
+  .ev.high::before{background:#fb7185}
+  .ev.med{background:rgba(251,191,36,.16);color:#fbbf24}
+  .ev.med::before{background:#fbbf24}
+  .ev.done{background:rgba(74,222,128,.14);color:#4ade80}
+  .ev.done::before{background:#4ade80}
+  .ev.purple{background:rgba(147,51,234,.16);color:var(--purple-light)}
+  .ev.purple::before{background:var(--purple-light)}
+  .ev-more{font-size:9px;color:var(--muted);margin-top:3px;padding-left:2px}
+
+  .caption{max-width:900px;margin:24px auto 40px;padding:0 24px}
+  .caption h3{font-size:14px;font-weight:600;color:var(--purple-light);margin-bottom:10px}
+  .caption ul{list-style:none;display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+  .caption li{background:var(--s2);border:1px solid var(--border);border-radius:12px;padding:14px;font-size:12px;
+    color:var(--body);line-height:1.5;box-shadow:0 4px 14px rgba(0,0,0,.3),inset 0 1px 0 rgba(255,255,255,.05)}
+  .caption li b{color:var(--text)}
+</style>
+</head>
+<body>
+<div class="mesh"><div class="blob b1"></div><div class="blob b2"></div></div>
+<div class="app">
+
+  <div class="topbar">
+    <div class="tb-left">
+      <div class="tb-logo"><div class="tb-badge">K</div>Kan-do</div>
+      <div class="tb-project">Kanban-app Features ▾</div>
+    </div>
+    <div class="tb-right">
+      <div class="seg"><button>Board</button><button class="active">Calendar</button></div>
+      <div class="ico">⌕</div>
+      <div class="ico">◷</div>
+      <div class="ico">⋯</div>
+      <div class="avatar">R</div>
+    </div>
+  </div>
+
+  <div class="cal-wrap">
+    <div class="cal-head">
+      <div class="cal-nav">
+        <button class="navbtn">‹</button>
+        <span class="cal-month">June 2026</span>
+        <button class="navbtn">›</button>
+        <button class="today-btn">Today</button>
+      </div>
+      <div class="cal-stats"><b>10</b> scheduled · 0 unscheduled</div>
+    </div>
+
+    <div class="cal-panel">
+      <div class="weekdays">
+        <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
+      </div>
+      <div class="grid">
+        <!-- week 1 -->
+        <div class="cell out"><span class="daynum">31</span></div>
+        <div class="cell"><span class="daynum">1</span></div>
+        <div class="cell"><span class="daynum">2</span></div>
+        <div class="cell"><span class="daynum">3</span></div>
+        <div class="cell"><span class="daynum">4</span></div>
+        <div class="cell"><span class="daynum">5</span></div>
+        <div class="cell today"><span class="daynum">6</span></div>
+        <!-- week 2 -->
+        <div class="cell"><span class="daynum">7</span></div>
+        <div class="cell"><span class="daynum">8</span><div class="ev high">Terms of Service</div></div>
+        <div class="cell"><span class="daynum">9</span></div>
+        <div class="cell"><span class="daynum">10</span></div>
+        <div class="cell"><span class="daynum">11</span></div>
+        <div class="cell"><span class="daynum">12</span></div>
+        <div class="cell"><span class="daynum">13</span><div class="ev med">UI/UX Enhance…</div></div>
+        <!-- week 3 -->
+        <div class="cell"><span class="daynum">14</span></div>
+        <div class="cell"><span class="daynum">15</span></div>
+        <div class="cell"><span class="daynum">16</span></div>
+        <div class="cell"><span class="daynum">17</span></div>
+        <div class="cell"><span class="daynum">18</span></div>
+        <div class="cell"><span class="daynum">19</span></div>
+        <div class="cell"><span class="daynum">20</span></div>
+        <!-- week 4 -->
+        <div class="cell"><span class="daynum">21</span></div>
+        <div class="cell"><span class="daynum">22</span><div class="ev high">Marketing Notes</div></div>
+        <div class="cell"><span class="daynum">23</span><div class="ev high">Landing Page</div></div>
+        <div class="cell"><span class="daynum">24</span><div class="ev high">App UI Modern…</div></div>
+        <div class="cell"><span class="daynum">25</span><div class="ev purple">Test card</div></div>
+        <div class="cell"><span class="daynum">26</span><div class="ev done">Deprecate Tab</div></div>
+        <div class="cell"><span class="daynum">27</span></div>
+        <!-- week 5 -->
+        <div class="cell"><span class="daynum">28</span></div>
+        <div class="cell"><span class="daynum">29</span></div>
+        <div class="cell"><span class="daynum">30</span><div class="ev high">Security</div><div class="ev-more">+1 more</div></div>
+        <div class="cell out"><span class="daynum">1</span></div>
+        <div class="cell out"><span class="daynum">2</span></div>
+        <div class="cell out"><span class="daynum">3</span></div>
+        <div class="cell out"><span class="daynum">4</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="caption">
+    <h3>What changed vs. the current flat calendar</h3>
+    <ul>
+      <li><b>Elevated panel:</b> the whole calendar sits on a surface-1 panel with border + shadow + inset highlight, lifting it off the background — no more flat edge-to-edge grid.</li>
+      <li><b>Today gets the accent:</b> the current day number is a filled purple circle with glow, instead of a thin outline box.</li>
+      <li><b>Event chips by priority:</b> due-date items show as colored chips (red/amber/green/purple) with a leading dot — same color language as the board tags, carrying meaning.</li>
+      <li><b>Softer grid:</b> cell borders use the --border token (not harsh lines); out-of-month days are dimmed; hover highlights the cell.</li>
+      <li><b>Header polish:</b> month nav arrows are token buttons, "Today" is a bordered pill, the scheduled/unscheduled count uses accent color.</li>
+      <li><b>Mobile:</b> on a phone this becomes an agenda/list view (upcoming items as a scrollable list of elevated cards) rather than a cramped 7-column grid — a full grid doesn't fit a phone well.</li>
+    </ul>
+  </div>
+
+</div>
+</body>
+</html>

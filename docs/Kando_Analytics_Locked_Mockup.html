@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kan-do — Analytics Panel (Locked Target)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#161412; --surface-1:#1d1a17; --surface-2:#231f1c; --surface-3:#2a2522;
+    --border:#322d2a; --border-2:#4a4240;
+    --text:#f5f0ee; --body:#a89890; --muted:#6b5e58;
+    --purple:#9333ea; --purple-l:#c084fc; --pink:#f472b6;
+    --glow:rgba(147,51,234,.45);
+    --green:#4ade80; --amber:#fbbf24; --red:#fb7185; --blue:#60a5fa; --orange:#fb923c;
+    --font:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:var(--font);background:#0f0d0c;color:var(--text);-webkit-font-smoothing:antialiased;padding:32px}
+  .mesh{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+  .blob{position:absolute;border-radius:50%;filter:blur(140px);opacity:.3}
+  .blob.b1{width:600px;height:600px;background:#5b21b6;top:-200px;left:-150px}
+  .blob.b2{width:500px;height:500px;background:#3b1d80;bottom:-150px;right:-120px;opacity:.25}
+  .wrap{position:relative;z-index:2;max-width:1000px;margin:0 auto;display:flex;gap:40px;align-items:flex-start;flex-wrap:wrap}
+
+  .section-label{font-size:13px;font-weight:600;color:var(--purple-l);letter-spacing:1px;text-transform:uppercase;margin-bottom:14px;width:100%}
+  .note{font-size:13px;color:var(--body);margin-bottom:18px;line-height:1.6;width:100%}
+  .note b{color:var(--text)}
+
+  /* ===== glass panel ===== */
+  .panel{width:360px;background:rgba(42,37,34,.72);backdrop-filter:blur(22px) saturate(1.2);-webkit-backdrop-filter:blur(22px) saturate(1.2);
+    border:1px solid rgba(255,255,255,.09);border-radius:18px;box-shadow:0 24px 60px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.07);overflow:hidden}
+  .p-head{display:flex;align-items:flex-start;justify-content:space-between;padding:18px 18px 14px;border-bottom:1px solid var(--border)}
+  .p-title{font-size:18px;font-weight:600}
+  .p-sub{font-size:12px;color:var(--body);margin-top:2px}
+  .p-close{width:30px;height:30px;border-radius:8px;border:1px solid var(--border);background:var(--surface-2);color:var(--body);display:flex;align-items:center;justify-content:center;cursor:pointer}
+  .p-body{padding:16px;max-height:680px;overflow-y:auto}
+
+  /* metric cards */
+  .metrics{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:22px}
+  .metric{background:var(--surface-2);border:1px solid var(--border);border-radius:12px;padding:13px 14px;box-shadow:inset 0 1px 0 rgba(255,255,255,.04)}
+  .metric .v{font-size:24px;font-weight:700;line-height:1;letter-spacing:-.5px}
+  .metric .l{font-size:11px;color:var(--body);margin-top:6px}
+  .metric .l small{display:block;color:var(--muted);font-size:10px}
+  .metric.accent .v{color:var(--purple-l)}
+
+  .sect{margin-bottom:22px}
+  .sect-h{font-size:11px;font-weight:600;color:var(--purple-l);text-transform:uppercase;letter-spacing:.6px;margin-bottom:11px}
+
+  /* horizontal bars */
+  .bar-row{display:flex;align-items:center;gap:10px;margin-bottom:8px;font-size:12px}
+  .bar-label{width:74px;color:var(--body);text-align:right;flex-shrink:0}
+  .bar-track{flex:1;height:9px;background:var(--surface-3);border-radius:99px;overflow:hidden}
+  .bar-fill{height:100%;border-radius:99px}
+  .bar-val{width:16px;color:var(--muted);font-size:11px}
+
+  /* tags */
+  .tags{display:flex;flex-wrap:wrap;gap:7px}
+  .tag{font-size:11px;padding:5px 10px;border-radius:99px;background:var(--surface-2);border:1px solid var(--border-2);color:var(--body)}
+  .tag b{color:var(--purple-l);margin-left:4px}
+
+  /* checklist progress */
+  .prog-wrap{display:flex;align-items:center;gap:12px}
+  .prog-track{flex:1;height:10px;background:var(--surface-3);border-radius:99px;overflow:hidden}
+  .prog-fill{height:100%;background:var(--purple);border-radius:99px;box-shadow:0 0 12px var(--glow)}
+  .prog-val{font-size:13px;font-weight:600;color:var(--purple-l)}
+
+  /* activity heatmap (vertical bars) */
+  .heat{display:flex;align-items:flex-end;gap:3px;height:64px;margin-bottom:6px}
+  .heat-col{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;position:relative}
+  .heat-bar{width:100%;border-radius:3px;background:var(--purple);min-height:3px}
+  .axis{display:flex;justify-content:space-between;font-size:10px;color:var(--muted)}
+
+  /* velocity (vertical bars) */
+  .velo{display:flex;align-items:flex-end;gap:5px;height:80px;margin-bottom:6px}
+  .velo-col{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%}
+  .velo-bar{width:100%;border-radius:3px 3px 0 0;background:var(--green);min-height:3px}
+  .velo-label{font-size:9px;color:var(--muted);margin-top:4px}
+
+  /* empty state */
+  .empty{background:var(--surface-2);border:1px dashed var(--border-2);border-radius:11px;padding:22px 14px;text-align:center}
+  .empty svg{width:22px;height:22px;color:var(--muted);margin-bottom:8px}
+  .empty p{font-size:12px;color:var(--body)}
+  .empty .sub{font-size:11px;color:var(--muted);margin-top:3px}
+
+  .callout{width:280px;font-size:12.5px;color:var(--body);line-height:1.6}
+  .callout h4{font-size:12px;color:var(--purple-l);text-transform:uppercase;letter-spacing:.5px;margin:16px 0 8px}
+  .callout h4:first-child{margin-top:0}
+  .callout code{font-family:ui-monospace,monospace;font-size:11px;color:var(--purple-l);background:rgba(147,51,234,.1);padding:1px 5px;border-radius:4px}
+  .swatch{display:inline-block;width:10px;height:10px;border-radius:3px;vertical-align:middle;margin-right:5px}
+</style>
+</head>
+<body>
+<div class="mesh"><div class="blob b1"></div><div class="blob b2"></div></div>
+<div class="wrap">
+
+  <div class="section-label">Analytics Panel — restyled (glass + canonical tokens + visible-on-dark charts)</div>
+  <div class="note">Pure restyle: the charts aren't broken — they're <b>invisible</b> (built for light mode, drawing at 15% opacity on a dark background). Convert all <code>dark:</code> pairs to canonical tokens, apply the glass panel pattern, raise chart opacities to be visible on dark, and add <b>empty states</b> for the Activity/Velocity charts (which currently show ghost stubs when a board has no activity). Semantic colors preserved.</div>
+
+  <!-- POPULATED PANEL -->
+  <div class="panel">
+    <div class="p-head">
+      <div><div class="p-title">Analytics</div><div class="p-sub">Kanban-app Features</div></div>
+      <button class="p-close"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div class="p-body">
+
+      <div class="metrics">
+        <div class="metric"><div class="v">10</div><div class="l">Total cards</div></div>
+        <div class="metric accent"><div class="v">10%</div><div class="l">Completion</div></div>
+        <div class="metric"><div class="v" style="color:var(--red)">10</div><div class="l">Overdue</div></div>
+        <div class="metric"><div class="v">0</div><div class="l">Due soon<small>next 7 days</small></div></div>
+      </div>
+
+      <div class="sect">
+        <div class="sect-h">Cards by Column</div>
+        <div class="bar-row"><span class="bar-label">TODO</span><div class="bar-track"><div class="bar-fill" style="width:100%;background:var(--purple)"></div></div><span class="bar-val">4</span></div>
+        <div class="bar-row"><span class="bar-label">In Progress</span><div class="bar-track"><div class="bar-fill" style="width:50%;background:var(--purple)"></div></div><span class="bar-val">2</span></div>
+        <div class="bar-row"><span class="bar-label">Completed</span><div class="bar-track"><div class="bar-fill" style="width:75%;background:var(--purple)"></div></div><span class="bar-val">3</span></div>
+        <div class="bar-row"><span class="bar-label">Descoped</span><div class="bar-track"><div class="bar-fill" style="width:25%;background:var(--purple)"></div></div><span class="bar-val">1</span></div>
+      </div>
+
+      <div class="sect">
+        <div class="sect-h">Priority Distribution</div>
+        <div class="bar-row"><span class="bar-label">high</span><div class="bar-track"><div class="bar-fill" style="width:100%;background:var(--red)"></div></div><span class="bar-val">8</span></div>
+        <div class="bar-row"><span class="bar-label">medium</span><div class="bar-track"><div class="bar-fill" style="width:13%;background:var(--amber)"></div></div><span class="bar-val">1</span></div>
+        <div class="bar-row"><span class="bar-label">none</span><div class="bar-track"><div class="bar-fill" style="width:13%;background:var(--muted)"></div></div><span class="bar-val">1</span></div>
+      </div>
+
+      <div class="sect">
+        <div class="sect-h">Top Tags</div>
+        <div class="tags">
+          <span class="tag">Marketing, Copy, Brand, Reference<b>1</b></span>
+          <span class="tag">Landing Page<b>1</b></span>
+          <span class="tag">Team<b>1</b></span>
+          <span class="tag">Content<b>1</b></span>
+        </div>
+      </div>
+
+      <div class="sect">
+        <div class="sect-h">Avg. Checklist Progress</div>
+        <div class="prog-wrap"><div class="prog-track"><div class="prog-fill" style="width:68%"></div></div><span class="prog-val">68%</span></div>
+      </div>
+
+      <div class="sect">
+        <div class="sect-h">Activity (last 14 days)</div>
+        <div class="heat">
+          <div class="heat-col"><div class="heat-bar" style="height:30%"></div></div>
+          <div class="heat-col"><div class="heat-bar" style="height:55%"></div></div>
+          <div class="heat-col"><div class="heat-bar" style="height:20%"></div></div>
+          <div class="heat-col"><div class="heat-bar" style="height:80%"></div></div>
+          <div class="heat-col"><div class="heat-bar" style="height:45%"></div></div>
+          <div class="heat-col"><div class="heat-bar" style="height:65%"></div></div>
+          <div class="heat-col"><div class="heat-bar" style="height:25%"></div></div>
+          <div class="heat-col"><div class="heat-bar" style="height:90%"></div></div>
+          <div class="heat-col"><div class="heat-bar" style="height:40%"></div></div>
+          <div class="heat-col"><div class="heat-bar" style="height:50%"></div></div>
+          <div class="heat-col"><div class="heat-bar" style="height:35%"></div></div>
+          <div class="heat-col"><div class="heat-bar" style="height:70%"></div></div>
+          <div class="heat-col"><div class="heat-bar" style="height:60%"></div></div>
+          <div class="heat-col"><div class="heat-bar" style="height:48%"></div></div>
+        </div>
+        <div class="axis"><span>Jun 15</span><span>Jun 22</span></div>
+      </div>
+
+      <div class="sect" style="margin-bottom:0">
+        <div class="sect-h">Weekly Velocity</div>
+        <div class="velo">
+          <div class="velo-col"><div class="velo-bar" style="height:40%"></div><span class="velo-label">May 3</span></div>
+          <div class="velo-col"><div class="velo-bar" style="height:65%"></div><span class="velo-label">May 10</span></div>
+          <div class="velo-col"><div class="velo-bar" style="height:30%"></div><span class="velo-label">May 17</span></div>
+          <div class="velo-col"><div class="velo-bar" style="height:80%"></div><span class="velo-label">May 24</span></div>
+          <div class="velo-col"><div class="velo-bar" style="height:55%"></div><span class="velo-label">May 31</span></div>
+          <div class="velo-col"><div class="velo-bar" style="height:70%"></div><span class="velo-label">Jun 7</span></div>
+          <div class="velo-col"><div class="velo-bar" style="height:45%"></div><span class="velo-label">Jun 14</span></div>
+          <div class="velo-col"><div class="velo-bar" style="height:60%"></div><span class="velo-label">Jun 21</span></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- CALLOUTS + EMPTY STATE -->
+  <div class="callout">
+    <h4>What changes</h4>
+    <p><b>Glass panel</b> replaces <code>bg-white dark:bg-gray-800</code>. Metric cards → <code>--surface-2</code> + inset highlight. All <code>dark:</code> pairs → canonical tokens. Section headings → 11px uppercase <code>--purple-l</code>, matching every other modernized surface.</p>
+
+    <h4>Charts: visible on dark</h4>
+    <p>The fix that makes them "work": raise opacities. Bars render at full token color, not 15%. <span class="swatch" style="background:var(--purple)"></span>purple (Cards-by-Column, Activity — decorative), <span class="swatch" style="background:var(--green)"></span>green (Velocity — semantic: completed).</p>
+
+    <h4>Semantic colors preserved</h4>
+    <p><span class="swatch" style="background:var(--red)"></span>high <span class="swatch" style="background:var(--amber)"></span>medium <span class="swatch" style="background:var(--muted)"></span>none — Priority keeps meaning. Card-age gradient <span class="swatch" style="background:var(--orange)"></span>→<span class="swatch" style="background:var(--amber)"></span>→<span class="swatch" style="background:var(--green)"></span> preserved.</p>
+
+    <h4>New: empty states ↓</h4>
+    <p>When a board has no activity, the heatmap/velocity charts currently show invisible 2px ghost stubs with floating date labels (the "broken" look). Replace with a clean message:</p>
+    <div class="empty" style="margin-top:10px">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M18 9l-5 5-3-3-4 4"/></svg>
+      <p>No activity yet</p>
+      <p class="sub">Completed cards will appear here</p>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

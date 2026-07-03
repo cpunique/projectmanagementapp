@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kan-do — Agent Token Flow (Locked Target)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#161412; --surface-1:#1d1a17; --surface-2:#231f1c; --surface-3:#2a2522;
+    --border:#322d2a; --border-2:#4a4240;
+    --text:#f5f0ee; --body:#a89890; --muted:#6b5e58;
+    --purple:#9333ea; --purple-l:#c084fc; --pink:#f472b6;
+    --glow:rgba(147,51,234,.45);
+    --green:#4ade80; --amber:#fbbf24; --red:#fb7185; --blue:#60a5fa;
+    --font:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:var(--font);background:#0f0d0c;color:var(--text);-webkit-font-smoothing:antialiased;padding:32px}
+  .mesh{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+  .blob{position:absolute;border-radius:50%;filter:blur(140px);opacity:.3}
+  .blob.b1{width:600px;height:600px;background:#5b21b6;top:-200px;left:-150px}
+  .blob.b2{width:500px;height:500px;background:#3b1d80;bottom:-150px;right:-120px;opacity:.25}
+  .wrap{position:relative;z-index:2;max-width:1080px;margin:0 auto}
+
+  .section-label{font-size:13px;font-weight:600;color:var(--purple-l);letter-spacing:1px;text-transform:uppercase;margin:44px 0 14px;padding-bottom:8px;border-bottom:1px solid var(--border)}
+  .section-label:first-child{margin-top:0}
+  .note{font-size:13px;color:var(--body);margin-bottom:18px;line-height:1.6;max-width:860px}
+  .note b{color:var(--text)}
+  .row{display:flex;gap:32px;align-items:flex-start;flex-wrap:wrap}
+
+  /* card / section container */
+  .card{background:var(--surface-1);border:1px solid var(--border);border-radius:16px;padding:22px;box-shadow:0 4px 14px rgba(0,0,0,.3),inset 0 1px 0 rgba(255,255,255,.05);width:380px}
+  .card-h{font-size:11px;font-weight:600;color:var(--purple-l);text-transform:uppercase;letter-spacing:.6px;margin-bottom:5px}
+  .card-sub{font-size:12.5px;color:var(--body);line-height:1.55;margin-bottom:18px}
+
+  label{display:block;font-size:12px;font-weight:500;color:var(--text);margin-bottom:7px}
+  .req{color:var(--purple-l);margin-left:3px}
+
+  .picker{position:relative;margin-bottom:6px}
+  .picker-btn{width:100%;display:flex;align-items:center;justify-content:space-between;background:var(--surface-2);border:1px solid var(--border-2);border-radius:10px;padding:11px 13px;cursor:pointer;color:var(--text);font-size:13px}
+  .picker-btn .ph{color:var(--muted)}
+  .picker-btn.sel{border-color:var(--purple-l);box-shadow:0 0 0 3px rgba(147,51,234,.15)}
+  .picker-btn svg{width:15px;height:15px;color:var(--muted)}
+  .picker-list{position:absolute;top:calc(100% + 6px);left:0;right:0;background:rgba(42,37,34,.85);backdrop-filter:blur(18px);border:1px solid rgba(255,255,255,.09);border-radius:11px;box-shadow:0 18px 40px rgba(0,0,0,.5);overflow:hidden;z-index:5}
+  .picker-item{padding:10px 13px;font-size:13px;cursor:pointer;display:flex;align-items:center;gap:9px}
+  .picker-item:hover{background:var(--surface-2)}
+  .picker-item.active{background:rgba(147,51,234,.14);color:var(--purple-l)}
+  .picker-item .ico{width:7px;height:7px;border-radius:2px;background:var(--purple);flex-shrink:0}
+
+  .field{margin-bottom:18px}
+  .text-input{width:100%;background:var(--surface-2);border:1px solid var(--border-2);border-radius:10px;padding:11px 13px;color:var(--text);font-size:13px;font-family:var(--font)}
+  .text-input:focus{outline:none;border-color:var(--purple-l);box-shadow:0 0 0 3px rgba(147,51,234,.15)}
+  .hint{font-size:11px;color:var(--muted);margin-top:6px;line-height:1.5}
+
+  /* reassurance box */
+  .reassure{display:flex;gap:11px;background:rgba(74,222,128,.07);border:1px solid rgba(74,222,128,.22);border-radius:11px;padding:13px 14px;margin-bottom:18px}
+  .reassure svg{width:17px;height:17px;color:var(--green);flex-shrink:0;margin-top:1px}
+  .reassure p{font-size:12px;color:var(--body);line-height:1.55}
+  .reassure b{color:var(--text)}
+
+  .btn{width:100%;padding:12px;border-radius:11px;border:none;font-family:var(--font);font-size:13.5px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px}
+  .btn-primary{background:var(--purple);color:#fff;box-shadow:0 4px 16px var(--glow)}
+  .btn-primary:disabled{background:var(--surface-3);color:var(--muted);box-shadow:none;cursor:not-allowed}
+  .btn-ghost{background:var(--surface-2);color:var(--text);border:1px solid var(--border-2)}
+
+  /* post-gen / token reveal */
+  .token-box{background:var(--surface-2);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:16px}
+  .token-row{display:flex;align-items:center;gap:8px;background:var(--bg);border:1px solid var(--border-2);border-radius:9px;padding:10px 12px}
+  .token-row code{flex:1;font-family:ui-monospace,monospace;font-size:11.5px;color:var(--purple-l);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .copy-btn{background:var(--purple);color:#fff;border:none;border-radius:7px;padding:6px 11px;font-size:11px;font-weight:600;cursor:pointer;flex-shrink:0}
+  .once{font-size:11px;color:var(--amber);margin-top:9px;display:flex;align-items:center;gap:6px}
+  .once svg{width:13px;height:13px}
+  .cli{background:var(--bg);border:1px solid var(--border-2);border-radius:9px;padding:11px;font-family:ui-monospace,monospace;font-size:11px;color:var(--body);line-height:1.6;margin-top:10px;word-break:break-all}
+  .cli .cmd{color:var(--green)}
+
+  .access-line{display:flex;gap:10px;align-items:flex-start;margin-top:14px;padding-top:14px;border-top:1px solid var(--border)}
+  .access-line .ai{width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,var(--purple),#5b21b6);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+  .access-line p{font-size:12.5px;color:var(--body);line-height:1.55}
+  .access-line b{color:var(--text)}
+
+  /* hard gate variants */
+  .gate{width:380px}
+  .gate .ico-wrap{width:44px;height:44px;border-radius:12px;background:var(--surface-2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;margin-bottom:14px}
+  .gate .ico-wrap svg{width:22px;height:22px;color:var(--purple-l)}
+  .gate h3{font-size:15px;font-weight:600;margin-bottom:8px}
+  .gate p{font-size:12.5px;color:var(--body);line-height:1.6;margin-bottom:14px}
+  .gate .link{color:var(--purple-l);font-weight:500;text-decoration:none}
+  .gate .perks{list-style:none;margin:14px 0}
+  .gate .perks li{font-size:12px;color:var(--body);padding:5px 0 5px 22px;position:relative;line-height:1.4}
+  .gate .perks li::before{content:"\2713";position:absolute;left:0;color:var(--green);font-size:12px}
+  .variant-tag{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:10px}
+
+  .build{background:var(--surface-1);border:1px solid var(--border);border-radius:14px;padding:20px 22px;margin-top:6px;box-shadow:0 4px 14px rgba(0,0,0,.3)}
+  .build h3{font-size:13px;font-weight:600;color:var(--purple-l);text-transform:uppercase;letter-spacing:1px;margin-bottom:14px}
+  .build .gh{font-size:12px;font-weight:600;color:var(--text);margin:14px 0 8px}
+  .build ul{list-style:none}
+  .build li{font-size:12.5px;color:var(--body);line-height:1.55;padding:4px 0 4px 20px;position:relative}
+  .build li::before{content:"\2022";position:absolute;left:4px;color:var(--purple-l)}
+  .build code{font-family:ui-monospace,monospace;font-size:11px;color:var(--purple-l);background:rgba(147,51,234,.1);padding:1px 5px;border-radius:4px}
+</style>
+</head>
+<body>
+<div class="mesh"><div class="blob b1"></div><div class="blob b2"></div></div>
+<div class="wrap">
+
+  <div class="section-label">Agent token flow — board picker (reassurance-framed)</div>
+  <div class="note">The critical setup moment. The "one board only" rule is framed as <b>safety, not limitation</b> — the picker, confirmation, and access explanation all lean on "only this board / nothing else" so a cautious non-technical user feels <b>protected</b>, not restricted.</div>
+
+  <div class="row">
+    <!-- STEP 1: PICK BOARD -->
+    <div class="card">
+      <div class="card-h">Connect Claude to a board</div>
+      <div class="card-sub">Generate a secure connection so Claude can help on one of your boards. You stay in control — Claude only ever sees the board you choose.</div>
+
+      <div class="field">
+        <label>Which board should Claude help with?<span class="req">*</span></label>
+        <div class="picker">
+          <div class="picker-btn sel">Marketing Campaign <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></div>
+          <div class="picker-list">
+            <div class="picker-item active"><span class="ico"></span>Marketing Campaign</div>
+            <div class="picker-item"><span class="ico"></span>Kanban-app Features</div>
+            <div class="picker-item"><span class="ico"></span>T1D Tracking and Health App</div>
+            <div class="picker-item"><span class="ico"></span>Steam FPS Game</div>
+          </div>
+        </div>
+        <div class="hint">One connection = one board. Each board gets its own secure connection.</div>
+      </div>
+
+      <div class="field">
+        <label>Connection name</label>
+        <input class="text-input" value="Marketing Campaign — Claude Code" readonly>
+        <div class="hint">Pre-filled from the board name — edit it if you like.</div>
+      </div>
+
+      <div class="reassure">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
+        <p>Claude will be able to read and update cards on <b>Marketing Campaign</b> — and <b>nothing else</b> in your account. Your other boards stay private.</p>
+      </div>
+
+      <button class="btn btn-primary">Generate connection</button>
+    </div>
+
+    <!-- STEP 2: POST-GEN CONFIRMATION -->
+    <div class="card">
+      <div class="card-h">Connection ready</div>
+      <div class="card-sub">Copy this now — for your security, we'll only show it once.</div>
+
+      <div class="token-box">
+        <div class="token-row">
+          <code>kando_mk_8f3a••••••••••••••••••••2c7e</code>
+          <button class="copy-btn">Copy</button>
+        </div>
+        <div class="once"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 9v4M12 17h.01"/><circle cx="12" cy="12" r="9"/></svg>Shown once — copy it before closing</div>
+        <div class="cli"><span class="cmd">claude mcp add</span> kando https://...railway.app/sse \<br>--transport sse -H "Authorization: Bearer <span style="color:var(--purple-l)">&lt;your-token&gt;</span>"</div>
+      </div>
+
+      <div class="access-line">
+        <div class="ai">🤖</div>
+        <p><b>Claude can now help on Marketing Campaign.</b> It can read and update cards on this board only — create, move, comment, and edit. It can't touch your other boards.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-label">Hard gate — no Claude subscription (two tones to compare)</div>
+  <div class="note">Shown when a user has no Claude Code subscription / API key. The brief says "clear but not discouraging." Two tones below — pick one.</div>
+
+  <div class="row">
+    <!-- TONE A: WARM -->
+    <div class="card gate">
+      <div class="variant-tag">Tone A — Warm + educational</div>
+      <div class="ico-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1 0 4 19.2"/><path d="M16 8a4 4 0 1 0 0 8c2 0 2-2 2-4"/></svg></div>
+      <h3>Bring Claude onto your board</h3>
+      <p>Claude can work alongside you — creating cards, moving them as work progresses, and leaving you notes so you always know what's been done. To connect it, you'll need a Claude Code subscription or an Anthropic API key.</p>
+      <ul class="perks">
+        <li>Claude updates your board as work happens</li>
+        <li>Leaves friendly notes on every card it touches</li>
+        <li>Only ever sees the one board you connect</li>
+      </ul>
+      <a href="#" class="link">See how to get set up →</a>
+    </div>
+
+    <!-- TONE B: MINIMAL -->
+    <div class="card gate">
+      <div class="variant-tag">Tone B — Minimal + factual</div>
+      <div class="ico-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1 0 4 19.2"/><path d="M16 8a4 4 0 1 0 0 8c2 0 2-2 2-4"/></svg></div>
+      <h3>Claude Code required</h3>
+      <p>Connecting an AI assistant requires a Claude Code subscription or an Anthropic API key.</p>
+      <a href="#" class="link">Learn more →</a>
+    </div>
+  </div>
+
+  <div class="section-label">Dev notes</div>
+  <div class="build">
+    <div class="gh">Board picker (the critical surface)</div>
+    <ul>
+      <li><b>Required</b> board dropdown — lists the user's boards; token's <code>boardId</code> set from selection (server-stored, the security boundary)</li>
+      <li>Connection name <b>auto-fills</b> from board name + " — Claude Code"; editable but pre-filled</li>
+      <li>Reassurance framing throughout: <b>"only this board / nothing else"</b> — the green shield box restates it before generating</li>
+      <li>"One connection = one board" stated as a <b>safety feature</b>, not a limit</li>
+    </ul>
+    <div class="gh">Post-generation</div>
+    <ul>
+      <li>Token shown <b>once</b> (raw token never stored — same as Phase A), copy button, pre-built <code>claude mcp add</code> command</li>
+      <li>Plain-language access summary with the 🤖 mark: what Claude can do, scoped to this board</li>
+    </ul>
+    <div class="gh">Hard gate</div>
+    <ul>
+      <li>Shown when no Claude subscription/API key — <b>hard gate, no trial/fallback in v1</b></li>
+      <li>Two tones provided — pick A (warm) or B (minimal)</li>
+    </ul>
+    <div class="gh">Tokens / guardrails</div>
+    <ul>
+      <li>Canonical tokens, glass on the picker dropdown. Board-scope enforced <b>server-side</b> (a token must not be able to act on any board other than its <code>boardId</code>)</li>
+    </ul>
+  </div>
+
+</div>
+</body>
+</html>

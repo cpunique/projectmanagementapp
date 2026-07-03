@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kan-do — Toolbar + Overflow (Locked Target)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#161412; --s1:#1d1a17; --s2:#231f1c; --s3:#2a2522;
+    --border:#322d2a; --border2:#4a4240;
+    --text:#f5f0ee; --body:#a89890; --muted:#6b5e58;
+    --purple:#9333ea; --purple-light:#c084fc; --pink:#f472b6;
+    --glow:rgba(147,51,234,.45);
+    --font:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:var(--font);background:#0f0d0c;color:var(--text);-webkit-font-smoothing:antialiased;padding:32px}
+  .mesh{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+  .blob{position:absolute;border-radius:50%;filter:blur(140px);opacity:.3}
+  .blob.b1{width:600px;height:600px;background:#5b21b6;top:-200px;left:-150px}
+  .blob.b2{width:500px;height:500px;background:#3b1d80;bottom:-150px;right:-120px;opacity:.25}
+  .wrap{position:relative;z-index:2;max-width:1100px;margin:0 auto}
+
+  .section-label{font-size:13px;font-weight:600;color:var(--purple-light);letter-spacing:1px;
+    text-transform:uppercase;margin:44px 0 14px;padding-bottom:8px;border-bottom:1px solid var(--border)}
+  .section-label:first-child{margin-top:0}
+  .note{font-size:13px;color:var(--body);margin-bottom:18px;line-height:1.6;max-width:780px}
+  .note b{color:var(--text)}
+  svg{display:block}
+
+  /* ---------- TOP BAR (matches live: logo left · project centered · actions right) ---------- */
+  .toolbar{position:relative;background:rgba(29,26,23,.7);backdrop-filter:blur(16px) saturate(1.1);
+    -webkit-backdrop-filter:blur(16px) saturate(1.1);border:1px solid var(--border);border-radius:16px;
+    padding:12px 18px;display:flex;align-items:center;gap:12px;
+    box-shadow:0 8px 30px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.05)}
+  .tb-left{flex:1;display:flex;align-items:center;gap:10px;min-width:0}
+  .tb-center{flex:0 0 auto}
+  .tb-right{flex:1;display:flex;align-items:center;justify-content:flex-end;gap:8px}
+  .tb-logo{display:flex;align-items:center;gap:9px;font-weight:600;font-size:15px}
+  .tb-badge{width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,#9333ea,#7c1d6f);
+    display:flex;align-items:center;justify-content:center;color:#fff;font-weight:600;font-size:13px;
+    box-shadow:0 0 16px var(--glow)}
+  .tb-project{font-size:14px;color:var(--body);display:flex;align-items:center;gap:6px;padding:6px 12px;
+    border-radius:9px;cursor:pointer;transition:background .12s,color .12s}
+  .tb-project:hover{background:var(--s2);color:var(--text)}
+  .tb-project .car{font-size:10px;color:var(--muted)}
+
+  /* segmented Board/Calendar toggle */
+  .seg{display:flex;background:var(--s2);border-radius:10px;padding:3px;border:1px solid var(--border)}
+  .seg button{border:none;background:transparent;color:var(--body);font-family:var(--font);
+    font-size:13px;font-weight:500;padding:6px 16px;border-radius:7px;cursor:pointer;transition:all .12s}
+  .seg button.active{background:var(--purple);color:#fff;box-shadow:0 0 16px var(--glow)}
+
+  .ico{width:36px;height:36px;border-radius:10px;border:1px solid transparent;background:transparent;
+    color:var(--body);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .12s;position:relative}
+  .ico:hover{background:var(--s2);color:var(--text);border-color:var(--border)}
+  .ico.on{background:var(--s2);color:var(--text);border-color:var(--border)}   /* ••• while menu open */
+  .ico svg{width:18px;height:18px}
+  .badge-dot{position:absolute;top:4px;right:4px;min-width:15px;height:15px;border-radius:99px;
+    background:var(--pink);color:#fff;font-size:9px;font-weight:600;display:flex;align-items:center;
+    justify-content:center;padding:0 4px;border:2px solid rgba(29,26,23,.9)}
+  .tb-divider{width:1px;height:24px;background:var(--border2);margin:0 4px}
+  .avatar{display:flex;align-items:center;gap:5px;cursor:pointer}
+  .avatar .ava{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#9333ea,#c084fc);
+    display:flex;align-items:center;justify-content:center;color:#fff;font-weight:600;font-size:13px;box-shadow:0 0 12px var(--glow)}
+  .avatar .car{font-size:10px;color:var(--muted)}
+
+  /* ---------- OVERFLOW DROPDOWN (glass popover) ---------- */
+  .menu{position:absolute;top:calc(100% + 10px);right:52px;width:252px;z-index:60;
+    background:rgba(42,37,34,.72);backdrop-filter:blur(22px) saturate(1.2);-webkit-backdrop-filter:blur(22px) saturate(1.2);
+    border:1px solid rgba(255,255,255,.09);border-radius:14px;padding:6px;
+    box-shadow:0 24px 60px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.07)}
+  .mi{display:flex;align-items:center;gap:12px;padding:9px 11px;border-radius:10px;font-size:13px;font-weight:500;
+    color:var(--body);cursor:pointer;transition:background .12s,color .12s}
+  .mi .mi-ico{width:17px;height:17px;flex-shrink:0;color:var(--muted);transition:color .12s}
+  .mi .mi-ico svg{width:17px;height:17px}
+  .mi .grow{flex:1}
+  .mi:hover{background:var(--s2);color:var(--text)}
+  .mi:hover .mi-ico{color:var(--body)}
+  .mi .count{font-size:10px;font-weight:600;color:var(--body);background:var(--s3);padding:2px 8px;border-radius:99px;border:1px solid var(--border)}
+  .menu-div{height:1px;background:var(--border);margin:6px 9px}
+  /* toggle pill (Light Mode, Demo Mode) */
+  .tg{width:34px;height:19px;border-radius:99px;background:var(--s3);border:1px solid var(--border2);
+    position:relative;flex-shrink:0;transition:background .15s,border-color .15s,box-shadow .15s}
+  .tg::after{content:"";position:absolute;top:1px;left:1px;width:15px;height:15px;border-radius:50%;
+    background:var(--body);transition:transform .15s,background .15s}
+  .tg.on{background:var(--purple);border-color:transparent;box-shadow:0 0 12px var(--glow)}
+  .tg.on::after{transform:translateX(15px);background:#fff}
+
+  /* ---------- CORNER ZOOM CONTROL ---------- */
+  .zoom{display:inline-flex;align-items:center;gap:2px;padding:4px;border-radius:12px;
+    background:rgba(29,26,23,.82);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+    border:1px solid var(--border);box-shadow:0 8px 24px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.05)}
+  .zoom button{width:28px;height:28px;border:none;background:transparent;color:var(--body);border-radius:8px;
+    font-size:17px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .12s}
+  .zoom button:hover{background:var(--s2);color:var(--text)}
+  .zoom .lvl{font-size:12px;font-weight:500;color:var(--body);padding:0 4px;min-width:46px;text-align:center;
+    font-variant-numeric:tabular-nums}
+
+  /* board-canvas placeholder, only to show WHERE the zoom control sits */
+  .canvas{position:relative;height:280px;border:1px dashed var(--border2);border-radius:16px;background:var(--s1);
+    box-shadow:0 1px 3px rgba(0,0,0,.3);overflow:hidden;display:flex;gap:14px;padding:16px}
+  .ghost{flex:1;background:repeating-linear-gradient(var(--s2),var(--s2) 46px,transparent 46px,transparent 60px);
+    border:1px solid var(--border);border-radius:12px;opacity:.5}
+  .canvas-tag{position:absolute;top:14px;left:50%;transform:translateX(-50%);font-size:11px;color:var(--muted);
+    letter-spacing:.5px}
+  .canvas .zoom{position:absolute;right:16px;bottom:16px}
+
+  /* dev build-notes block */
+  .build{background:var(--s1);border:1px solid var(--border);border-radius:14px;padding:20px 22px;margin-top:6px;
+    box-shadow:0 4px 14px rgba(0,0,0,.3),inset 0 1px 0 rgba(255,255,255,.05)}
+  .build h3{font-size:13px;font-weight:600;color:var(--purple-light);text-transform:uppercase;letter-spacing:1px;margin-bottom:14px}
+  .build .grp{margin-bottom:16px}
+  .build .grp:last-child{margin-bottom:0}
+  .build .gh{font-size:12px;font-weight:600;color:var(--text);margin-bottom:8px}
+  .build ul{list-style:none}
+  .build li{font-size:12.5px;color:var(--body);line-height:1.55;padding:4px 0 4px 22px;position:relative}
+  .build li::before{position:absolute;left:0;top:4px;font-size:12px}
+  .build li.rm::before{content:"✕";color:#fb7185}
+  .build li.kp::before{content:"✓";color:#4ade80}
+  .build li.mv::before{content:"→";color:var(--purple-light)}
+  .build li.fx::before{content:"◆";color:#fbbf24}
+  .build code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11.5px;color:var(--purple-light);
+    background:rgba(147,51,234,.1);padding:1px 6px;border-radius:5px}
+</style>
+</head>
+<body>
+<div class="mesh"><div class="blob b1"></div><div class="blob b2"></div></div>
+<div class="wrap">
+
+  <div class="section-label">Toolbar #4 — locked target (overflow opened)</div>
+  <div class="note">The top bar already matches the target. The fix is the <b>overflow menu</b>: the shipped version is a 15-item junk drawer — that's relocated clutter, not consolidation. This locks it to <b>8 items in 3 groups</b>, with consistent monochrome icons (the shipped version uses mixed colored/emoji glyphs — replace them), a glass popover, and two real toggles. Zoom moves out to a corner control; recovery/diagnostics move to Settings.</div>
+
+  <div class="toolbar">
+    <div class="tb-left">
+      <div class="tb-logo"><div class="tb-badge">K</div>Kan-do</div>
+    </div>
+    <div class="tb-center">
+      <div class="tb-project">Kanban-app Features <span class="car">▾</span></div>
+    </div>
+    <div class="tb-right">
+      <div class="seg"><button class="active">Board</button><button>Calendar</button></div>
+      <div class="tb-divider"></div>
+      <button class="ico" title="Search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+      </button>
+      <button class="ico" title="Notifications">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
+        <span class="badge-dot">9+</span>
+      </button>
+      <button class="ico on" title="More">
+        <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="12" cy="19" r="1.6"/></svg>
+      </button>
+      <div class="tb-divider"></div>
+      <div class="avatar"><div class="ava">R</div><span class="car">▾</span></div>
+    </div>
+
+    <!-- OVERFLOW MENU (open state) -->
+    <div class="menu">
+      <!-- group 1 · views & panels -->
+      <div class="mi">
+        <span class="mi-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="4" rx="1"/><path d="M5 8v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8"/><path d="M10 12h4"/></svg></span>
+        <span class="grow">Archive</span>
+      </div>
+      <div class="mi">
+        <span class="mi-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V4"/><path d="M4 20h16"/><rect x="7" y="12" width="3" height="5"/><rect x="12" y="8" width="3" height="9"/><rect x="17" y="5" width="3" height="12"/></svg></span>
+        <span class="grow">Analytics</span>
+      </div>
+      <div class="mi">
+        <span class="mi-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg></span>
+        <span class="grow">Activity</span>
+      </div>
+      <div class="mi">
+        <span class="mi-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 9h18M8 3v4M16 3v4"/></svg></span>
+        <span class="grow">Due Dates</span>
+        <span class="count">10</span>
+      </div>
+
+      <div class="menu-div"></div>
+
+      <!-- group 2 · help -->
+      <div class="mi">
+        <span class="mi-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.4 9.3a2.6 2.6 0 0 1 4.8 1.3c0 1.7-2.2 2-2.2 3.4"/><circle cx="12" cy="17" r=".6" fill="currentColor" stroke="none"/></svg></span>
+        <span class="grow">Help</span>
+      </div>
+      <div class="mi">
+        <span class="mi-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 10h0M10 10h0M14 10h0M18 10h0M8 14h8"/></svg></span>
+        <span class="grow">Keyboard Shortcuts</span>
+      </div>
+
+      <div class="menu-div"></div>
+
+      <!-- group 3 · modes (toggles) -->
+      <div class="mi">
+        <span class="mi-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.4 1.4M17.6 17.6L19 19M19 5l-1.4 1.4M6.4 17.6L5 19"/></svg></span>
+        <span class="grow">Light Mode</span>
+        <span class="tg"></span>
+      </div>
+      <div class="mi">
+        <span class="mi-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M8 5.5v13l11-6.5z"/></svg></span>
+        <span class="grow">Demo Mode</span>
+        <span class="tg"></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-label">Zoom — discreet corner control (off the toolbar)</div>
+  <div class="note">Zoom comes out of the menu entirely and lives as a small glass control anchored <b>bottom-right of the board canvas</b>. Keeps the main bar to 4–5 primary actions with breathing room. (Standalone control on the left; placement context on the right — the dashed box just represents the board area, not a redesign of it.)</div>
+  <div style="display:flex;gap:32px;align-items:flex-end;flex-wrap:wrap;margin-bottom:8px">
+    <div class="zoom">
+      <button title="Zoom out">−</button>
+      <span class="lvl">100%</span>
+      <button title="Zoom in">+</button>
+    </div>
+    <div style="flex:1;min-width:340px">
+      <div class="canvas">
+        <span class="canvas-tag">board canvas (existing — unchanged)</span>
+        <div class="ghost"></div><div class="ghost"></div><div class="ghost"></div>
+        <div class="zoom">
+          <button title="Zoom out">−</button>
+          <span class="lvl">100%</span>
+          <button title="Zoom in">+</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-label">Dev build notes — diff from the shipped overflow</div>
+  <div class="note">Sonnet already shipped a working overflow, so this is a <b>refactor against the current build</b>, not a new feature. No logic changes — only what lives where, plus the glass/icon styling.</div>
+  <div class="build">
+    <div class="grp">
+      <div class="gh">Remove from the overflow</div>
+      <ul>
+        <li class="rm"><b>Zoom: 100%</b> — becomes the corner control on the board canvas (above)</li>
+        <li class="rm"><b>Board Recovery</b> — relocate to Settings → Advanced / Diagnostics</li>
+        <li class="rm"><b>Advanced Recovery</b> — relocate to Settings → Advanced / Diagnostics</li>
+        <li class="rm"><b>System Health</b> — relocate to Settings → Advanced / Diagnostics</li>
+      </ul>
+    </div>
+    <div class="grp">
+      <div class="gh">Keep — 8 items, 3 divider-separated groups</div>
+      <ul>
+        <li class="kp"><b>Views &amp; panels:</b> Archive · Analytics · Activity · Due Dates (count badge stays)</li>
+        <li class="kp"><b>Help:</b> Help · Keyboard Shortcuts</li>
+        <li class="kp"><b>Modes:</b> Light Mode (toggle) · Demo Mode (toggle)</li>
+      </ul>
+    </div>
+    <div class="grp">
+      <div class="gh">Styling fixes</div>
+      <ul>
+        <li class="fx">Replace the mixed colored/emoji item icons with <b>consistent monochrome line icons</b>: <code>currentColor</code> at <code>--muted</code>, brightening to <code>--body</code>/<code>--text</code> on row hover (icons inherit, as in this mockup)</li>
+        <li class="fx">Light Mode &amp; Demo Mode render as <b>toggle pills</b> (right-aligned), not plain rows — both <b>off</b> in dark mode</li>
+        <li class="fx">Glass popover: <code>rgba(42,37,34,.72)</code> + <code>blur(22px) saturate(1.2)</code>, border <code>rgba(255,255,255,.09)</code>, radius 14px, Level-3 shadow</li>
+        <li class="fx">The <b>•••</b> trigger gets the <code>.on</code> state (surface-2 bg + border) while the menu is open</li>
+      </ul>
+    </div>
+    <div class="grp">
+      <div class="gh">Animation reminder (the recurring trap)</div>
+      <ul>
+        <li class="mv"><code>backdrop-filter</code> dies under <code>transform</code>. If you animate the menu open with Framer Motion, put the <b>transform on an outer wrapper</b> and the <b>glass on a static inner div</b> — never on the same element</li>
+        <li class="mv">Respect <code>prefers-reduced-motion</code>; animate only <code>transform</code>/<code>opacity</code>; solid-surface fallback where backdrop-filter is unsupported</li>
+      </ul>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

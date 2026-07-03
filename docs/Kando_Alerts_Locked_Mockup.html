@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kan-do — Alerts / Notifications (Locked Target)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* CANONICAL TOKENS — match globals.css exactly */
+  :root{
+    --bg:#161412; --surface-1:#1d1a17; --surface-2:#231f1c; --surface-3:#2a2522;
+    --border:#322d2a; --border-2:#4a4240;
+    --text:#f5f0ee; --body:#a89890; --muted:#6b5e58;
+    --purple:#9333ea; --purple-l:#c084fc; --pink:#f472b6;
+    --glow:rgba(147,51,234,.45);
+    --green:#4ade80; --amber:#fbbf24; --red:#fb7185; --blue:#60a5fa;
+    --font:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:var(--font);background:#0f0d0c;color:var(--text);-webkit-font-smoothing:antialiased;padding:32px}
+  .mesh{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+  .blob{position:absolute;border-radius:50%;filter:blur(140px);opacity:.3}
+  .blob.b1{width:600px;height:600px;background:#5b21b6;top:-200px;left:-150px}
+  .blob.b2{width:500px;height:500px;background:#3b1d80;bottom:-150px;right:-120px;opacity:.25}
+  .wrap{position:relative;z-index:2;max-width:1040px;margin:0 auto}
+
+  .section-label{font-size:13px;font-weight:600;color:var(--purple-l);letter-spacing:1px;
+    text-transform:uppercase;margin:44px 0 14px;padding-bottom:8px;border-bottom:1px solid var(--border)}
+  .section-label:first-child{margin-top:0}
+  .note{font-size:13px;color:var(--body);margin-bottom:18px;line-height:1.6;max-width:820px}
+  .note b{color:var(--text)}
+  svg{display:block}
+
+  .row-2{display:flex;gap:40px;align-items:flex-start;flex-wrap:wrap}
+
+  /* ===== shared notification card (reuses Due Dates pattern: surface-2, shadow, colored left-border) ===== */
+  .ntf{display:flex;gap:12px;padding:13px 14px;background:var(--surface-2);border:1px solid var(--border);
+    border-left:3px solid var(--border-2);border-radius:11px;box-shadow:0 4px 14px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.05);
+    cursor:pointer;transition:border-color .12s,background .12s}
+  .ntf:hover{background:var(--surface-3)}
+  .ntf.unread{border-left-color:var(--purple)}
+  .ntf.mention{border-left-color:var(--purple)}
+  .ntf.due{border-left-color:var(--amber)}
+  .ntf.overdue{border-left-color:var(--red)}
+  .ntf-ico{width:30px;height:30px;border-radius:9px;background:var(--surface-3);border:1px solid var(--border);
+    display:flex;align-items:center;justify-content:center;color:var(--body);flex-shrink:0}
+  .ntf-body{flex:1;min-width:0}
+  .ntf-title{font-size:12.5px;color:var(--text);line-height:1.45}
+  .ntf-title b{font-weight:600;color:var(--text)}
+  .ntf-meta{font-size:10.5px;color:var(--muted);margin-top:4px;display:flex;align-items:center;gap:8px}
+  .ntf-dot{width:7px;height:7px;border-radius:50%;background:var(--purple);box-shadow:0 0 8px var(--glow);flex-shrink:0;margin-top:6px}
+  .ntf-dot.hidden{visibility:hidden}
+
+  /* ===== DESKTOP: bell + glass dropdown ===== */
+  .header-strip{display:flex;align-items:center;justify-content:flex-end;gap:8px;
+    background:rgba(29,26,23,.7);backdrop-filter:blur(16px) saturate(1.1);-webkit-backdrop-filter:blur(16px) saturate(1.1);
+    border:1px solid var(--border);border-radius:14px;padding:12px 16px;position:relative;width:420px;max-width:100%}
+  .h-ico{width:36px;height:36px;border-radius:10px;border:1px solid transparent;background:transparent;color:var(--body);
+    display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative}
+  .h-ico:hover{background:var(--surface-2);color:var(--text);border-color:var(--border)}
+  .h-ico.on{background:var(--surface-2);color:var(--text);border-color:var(--border)}
+  .h-ico svg{width:18px;height:18px}
+  .badge-dot{position:absolute;top:3px;right:3px;min-width:16px;height:16px;border-radius:99px;background:var(--pink);
+    color:#fff;font-size:9px;font-weight:600;display:flex;align-items:center;justify-content:center;padding:0 4px;border:2px solid rgba(29,26,23,.9)}
+
+  .dropdown{position:absolute;top:calc(100% + 10px);right:8px;width:340px;z-index:50;
+    background:rgba(42,37,34,.72);backdrop-filter:blur(22px) saturate(1.2);-webkit-backdrop-filter:blur(22px) saturate(1.2);
+    border:1px solid rgba(255,255,255,.09);border-radius:16px;
+    box-shadow:0 24px 60px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.07);overflow:hidden;
+    display:flex;flex-direction:column;max-height:440px}
+  .dd-head{flex-shrink:0;display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--border)}
+  .dd-title{font-size:14px;font-weight:600}
+  .dd-actions{display:flex;gap:6px}
+  .dd-act{font-size:11px;font-weight:500;color:var(--purple-l);background:transparent;border:none;cursor:pointer;padding:4px 8px;border-radius:7px}
+  .dd-act:hover{background:rgba(147,51,234,.12)}
+  .dd-act.danger{color:var(--muted)}
+  .dd-act.danger:hover{color:var(--red);background:rgba(244,63,94,.1)}
+  .dd-body{flex:1;overflow-y:auto;padding:10px;display:flex;flex-direction:column;gap:8px;min-height:0}
+
+  /* ===== MOBILE: full-screen takeover ===== */
+  .phone{width:300px;height:600px;border-radius:30px;border:1px solid var(--border-2);background:var(--bg);
+    overflow:hidden;position:relative;box-shadow:0 24px 60px rgba(0,0,0,.5)}
+  .m-screen{position:absolute;inset:0;display:flex;flex-direction:column;background:var(--bg)}
+  .m-statusbar{height:30px;flex-shrink:0}
+  .m-head{flex-shrink:0;display:flex;align-items:center;gap:12px;padding:6px 16px 14px}
+  .m-back{width:34px;height:34px;border-radius:9px;border:1px solid var(--border);background:var(--surface-1);
+    display:flex;align-items:center;justify-content:center;color:var(--text);flex-shrink:0}
+  .m-title{flex:1;font-size:17px;font-weight:600}
+  .m-headact{font-size:11px;font-weight:500;color:var(--purple-l);background:transparent;border:none;padding:6px 4px}
+  .m-subbar{flex-shrink:0;display:flex;justify-content:space-between;align-items:center;padding:0 16px 12px}
+  .m-count{font-size:11.5px;color:var(--muted)}
+  .m-clear{font-size:11px;color:var(--muted);background:transparent;border:none}
+  .m-body{flex:1;overflow-y:auto;padding:0 14px 14px;display:flex;flex-direction:column;gap:9px;min-height:0}
+  .m-body .ntf{padding:14px}   /* roomier touch targets */
+  .phone-label{text-align:center;font-size:11px;color:var(--muted);margin-top:10px}
+
+  /* build notes */
+  .build{background:var(--surface-1);border:1px solid var(--border);border-radius:14px;padding:20px 22px;margin-top:6px;
+    box-shadow:0 4px 14px rgba(0,0,0,.3),inset 0 1px 0 rgba(255,255,255,.05)}
+  .build h3{font-size:13px;font-weight:600;color:var(--purple-l);text-transform:uppercase;letter-spacing:1px;margin-bottom:14px}
+  .build .grp{margin-bottom:16px}.build .grp:last-child{margin-bottom:0}
+  .build .gh{font-size:12px;font-weight:600;color:var(--text);margin-bottom:8px}
+  .build ul{list-style:none}
+  .build li{font-size:12.5px;color:var(--body);line-height:1.55;padding:4px 0 4px 22px;position:relative}
+  .build li::before{position:absolute;left:0;top:4px;font-size:12px}
+  .build li.kp::before{content:"\2713";color:var(--green)}
+  .build li.fx::before{content:"\25c6";color:var(--amber)}
+  .build li.wire::before{content:"\26a1";color:var(--purple-l)}
+  .build code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11.5px;color:var(--purple-l);background:rgba(147,51,234,.1);padding:1px 6px;border-radius:5px}
+</style>
+</head>
+<body>
+<div class="mesh"><div class="blob b1"></div><div class="blob b2"></div></div>
+<div class="wrap">
+
+  <div class="section-label">Alerts — desktop glass dropdown + mobile full-screen takeover</div>
+  <div class="note">Wiring-complete already (real Firestore subscription, mark-read/clear, navigate-on-click) — this is <b>styling + a new mobile view</b>. Desktop: re-skin the bell dropdown to glass so it stops being a legacy island in the modern header. Mobile: a new full-screen takeover (back arrow, tab bar hidden) wired to the dead bottom-tab "Alerts" button. Cards reuse the <b>Due Dates pattern</b> (surface-2, shadow, colored left-border by type). Canonical tokens throughout.</div>
+
+  <div class="row-2">
+    <!-- DESKTOP -->
+    <div>
+      <div class="note" style="margin-bottom:10px"><b>Desktop</b> — glass dropdown from the header bell</div>
+      <div class="header-strip">
+        <button class="h-ico" title="Search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg></button>
+        <button class="h-ico on" title="Notifications">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
+          <span class="badge-dot">3</span>
+        </button>
+
+        <div class="dropdown">
+          <div class="dd-head">
+            <div class="dd-title">Notifications</div>
+            <div class="dd-actions">
+              <button class="dd-act">Mark all read</button>
+              <button class="dd-act danger">Clear all</button>
+            </div>
+          </div>
+          <div class="dd-body">
+            <div class="ntf unread mention">
+              <div class="ntf-ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1 0 4 19.2"/><path d="M16 8a4 4 0 1 0 0 8c2 0 2-2 2-4"/></svg></div>
+              <div class="ntf-body">
+                <div class="ntf-title"><b>Maria</b> mentioned you on <b>"API setup"</b></div>
+                <div class="ntf-meta">Software Dev · 2h ago</div>
+              </div>
+              <div class="ntf-dot"></div>
+            </div>
+            <div class="ntf unread overdue">
+              <div class="ntf-ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 9h18M8 3v4M16 3v4"/></svg></div>
+              <div class="ntf-body">
+                <div class="ntf-title"><b>"Build checklist core"</b> is overdue</div>
+                <div class="ntf-meta">Shopping assistant · Due Jun 23</div>
+              </div>
+              <div class="ntf-dot"></div>
+            </div>
+            <div class="ntf unread due">
+              <div class="ntf-ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>
+              <div class="ntf-body">
+                <div class="ntf-title"><b>"Barcode scanner"</b> due tomorrow</div>
+                <div class="ntf-meta">Shopping assistant · Due Jun 25</div>
+              </div>
+              <div class="ntf-dot"></div>
+            </div>
+            <div class="ntf">
+              <div class="ntf-ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></div>
+              <div class="ntf-body">
+                <div class="ntf-title"><b>"Auth system"</b> marked complete</div>
+                <div class="ntf-meta">Software Dev · 1d ago</div>
+              </div>
+              <div class="ntf-dot hidden"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MOBILE -->
+    <div>
+      <div class="note" style="margin-bottom:10px"><b>Mobile</b> — full-screen takeover (tab bar hidden)</div>
+      <div class="phone">
+        <div class="m-screen">
+          <div class="m-statusbar"></div>
+          <div class="m-head">
+            <button class="m-back"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
+            <div class="m-title">Notifications</div>
+            <button class="m-headact">Mark all read</button>
+          </div>
+          <div class="m-subbar">
+            <span class="m-count">3 unread</span>
+            <button class="m-clear">Clear all</button>
+          </div>
+          <div class="m-body">
+            <div class="ntf unread mention">
+              <div class="ntf-ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1 0 4 19.2"/><path d="M16 8a4 4 0 1 0 0 8c2 0 2-2 2-4"/></svg></div>
+              <div class="ntf-body"><div class="ntf-title"><b>Maria</b> mentioned you on <b>"API setup"</b></div><div class="ntf-meta">Software Dev · 2h ago</div></div>
+              <div class="ntf-dot"></div>
+            </div>
+            <div class="ntf unread overdue">
+              <div class="ntf-ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 9h18M8 3v4M16 3v4"/></svg></div>
+              <div class="ntf-body"><div class="ntf-title"><b>"Build checklist core"</b> is overdue</div><div class="ntf-meta">Shopping assistant · Due Jun 23</div></div>
+              <div class="ntf-dot"></div>
+            </div>
+            <div class="ntf unread due">
+              <div class="ntf-ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>
+              <div class="ntf-body"><div class="ntf-title"><b>"Barcode scanner"</b> due tomorrow</div><div class="ntf-meta">Shopping assistant · Due Jun 25</div></div>
+              <div class="ntf-dot"></div>
+            </div>
+            <div class="ntf">
+              <div class="ntf-ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></div>
+              <div class="ntf-body"><div class="ntf-title"><b>"Auth system"</b> marked complete</div><div class="ntf-meta">Software Dev · 1d ago</div></div>
+              <div class="ntf-dot hidden"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="phone-label">opens from the bottom-tab "Alerts" button · back arrow returns</div>
+    </div>
+  </div>
+
+  <div class="section-label">Dev build notes — styling + new mobile view + tab wiring</div>
+  <div class="note">Wiring-complete surface; do not touch the notification logic (<code>subscribeToNotifications</code>, mark-read/clear handlers, <code>switchBoard</code> + <code>onNavigateToCard</code>). This adds presentation only — except the dead mobile tab, which is a real wiring fix.</div>
+  <div class="build">
+    <div class="grp">
+      <div class="gh">Desktop dropdown — restyle (NotificationBell.tsx)</div>
+      <ul>
+        <li class="fx">Replace the legacy <code>bg-white dark:bg-gray-800</code> / <code>ring-gray-*</code> dropdown with the glass pattern: <code>rgba(42,37,34,.72)</code> + <code>blur(22px) saturate(1.2)</code>, border <code>rgba(255,255,255,.09)</code>, radius 16px, Level-3 shadow. Frozen header (title + Mark all read / Clear all), scrollable body</li>
+        <li class="fx">Notification rows reuse the <b>Due Dates card pattern</b>: <code>--surface-2</code>, Level-2 shadow, colored <b>left-border by type</b> — mention/unread <code>--purple</code>, due-soon <code>--amber</code>, overdue <code>--red</code>, read = neutral <code>--border-2</code>. Unread shows the glowing purple dot; read hides it</li>
+        <li class="kp">Bell badge stays the pink unread count (already live-computed — don't change the count logic)</li>
+      </ul>
+    </div>
+    <div class="grp">
+      <div class="gh">Mobile — NEW full-screen takeover view</div>
+      <ul>
+        <li class="wire">Build a full-screen mobile notifications view: back arrow (top-left) + "Notifications" title + <b>Mark all read</b> (header action) and a sub-bar with unread count + <b>Clear all</b> — full parity with desktop actions, all wired to the existing handlers</li>
+        <li class="wire">Full takeover: <b>tab bar hidden</b> while open; back arrow dismisses and returns to the board with the tab bar restored</li>
+        <li class="fx">Same notification cards as desktop, roomier padding (44px touch targets); list scrolls, header/sub-bar frozen</li>
+      </ul>
+    </div>
+    <div class="grp">
+      <div class="gh">Wire the dead mobile tab (KanbanBoard.tsx ~line 392)</div>
+      <ul>
+        <li class="wire">The bottom-tab <b>"Alerts"</b> button is currently a dead <code>&lt;button&gt;</code> with no <code>onClick</code> — wire it to open the new full-screen mobile view. Set its <code>active</code> state correctly when open</li>
+        <li class="kp">This duplicates the working header bell on mobile — that's intended (tab bar is the primary mobile nav); both should open the same view/state</li>
+      </ul>
+    </div>
+    <div class="grp">
+      <div class="gh">Tokens & guardrails</div>
+      <ul>
+        <li class="kp">Canonical tokens only (<code>--surface-2</code>, <code>--purple-l</code>, <code>--green/--amber/--red</code>). No <code>dark:</code>-paired classes or hardcoded colors</li>
+        <li class="fx">Glass-modal trap: if the dropdown/view animates, transform on an outer wrapper, glass on an inner static element. Respect <code>prefers-reduced-motion</code></li>
+        <li class="kp">Preserve all existing states: missing-Firestore-index error state, permission-denied suppression, empty state</li>
+      </ul>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>
