@@ -40,6 +40,7 @@ const CardModal = ({ isOpen, onClose, card, boardId, canEdit = false }: CardModa
   const addDependency = useKanbanStore((state) => state.addDependency);
   const removeDependency = useKanbanStore((state) => state.removeDependency);
   const boards = useKanbanStore((state) => state.boards);
+  const setShareModalBoardId = useKanbanStore((state) => state.setShareModalBoardId);
 
   // Get current board for owner and collaborator info
   const currentBoard = boards.find((b) => b.id === boardId);
@@ -215,6 +216,7 @@ const CardModal = ({ isOpen, onClose, card, boardId, canEdit = false }: CardModa
 
 
   const handleAddChecklistItem = () => {
+    if (!canEdit) return;
     if (checklistInput.trim() && card) {
       // Create the new item locally first so it shows immediately in the UI
       const newItem: ChecklistItem = {
@@ -282,6 +284,7 @@ const CardModal = ({ isOpen, onClose, card, boardId, canEdit = false }: CardModa
   }, []);
 
   const handleToggleChecklistItem = (itemId: string) => {
+    if (!canEdit) return;
     const updatedChecklist = checklist.map((item) =>
       item.id === itemId ? { ...item, completed: !item.completed } : item
     );
@@ -300,6 +303,7 @@ const CardModal = ({ isOpen, onClose, card, boardId, canEdit = false }: CardModa
   };
 
   const handleDeleteChecklistItem = (itemId: string) => {
+    if (!canEdit) return;
     setChecklist(checklist.filter((item) => item.id !== itemId));
     if (card) {
       deleteChecklistItem(boardId, card.id, itemId);
@@ -307,6 +311,7 @@ const CardModal = ({ isOpen, onClose, card, boardId, canEdit = false }: CardModa
   };
 
   const handleAddTag = () => {
+    if (!canEdit) return;
     if (tagInput.trim() && !tags.includes(tagInput.trim())) {
       setTags([...tags, tagInput.trim()]);
       setTagInput('');
@@ -314,6 +319,7 @@ const CardModal = ({ isOpen, onClose, card, boardId, canEdit = false }: CardModa
   };
 
   const handleRemoveTag = (tag: string) => {
+    if (!canEdit) return;
     setTags(tags.filter((t) => t !== tag));
     // Clean up color entry
     setTagColors((prev) => {
@@ -594,8 +600,9 @@ const CardModal = ({ isOpen, onClose, card, boardId, canEdit = false }: CardModa
           <div className="flex gap-2 mb-3">
             <input
               value={tagInput}
-              onChange={(e) => setTagInput(e.target.value)}
-              placeholder="Add tag"
+              onChange={(e) => canEdit && setTagInput(e.target.value)}
+              placeholder={canEdit ? 'Add tag' : 'View only'}
+              disabled={!canEdit}
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {
                   e.preventDefault();
@@ -624,25 +631,22 @@ const CardModal = ({ isOpen, onClose, card, boardId, canEdit = false }: CardModa
             />
             <button
               onClick={handleAddTag}
+              disabled={!canEdit}
               style={{
                 minWidth: '80px',
                 padding: '10px 16px',
-                background: 'var(--purple)',
-                color: '#fff',
+                background: canEdit ? 'var(--purple)' : 'var(--surface-3)',
+                color: canEdit ? '#fff' : 'var(--muted)',
                 border: 'none',
                 borderRadius: '10px',
                 fontSize: '13px',
                 fontWeight: '500',
-                cursor: 'pointer',
-                boxShadow: '0 0 24px var(--glow)',
+                cursor: canEdit ? 'pointer' : 'not-allowed',
+                boxShadow: canEdit ? '0 0 24px var(--glow)' : 'none',
                 transition: 'all 0.2s',
               }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.opacity = '0.9';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.opacity = '1';
-              }}
+              onMouseEnter={(e) => { if (canEdit) e.currentTarget.style.opacity = '0.9'; }}
+              onMouseLeave={(e) => { if (canEdit) e.currentTarget.style.opacity = '1'; }}
             >
               Add
             </button>
@@ -767,14 +771,17 @@ const CardModal = ({ isOpen, onClose, card, boardId, canEdit = false }: CardModa
               return (
                 <button
                   key={index}
-                  onClick={() => setColor(colorValue)}
-                  className={`w-10 h-10 rounded-full border-2 transition-all duration-200 transform hover:scale-110 shadow-md ${
-                    isSelected
-                      ? 'border-purple-600 dark:border-purple-400 scale-110 ring-4 ring-purple-200 dark:ring-purple-800'
-                      : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
+                  onClick={() => canEdit && setColor(colorValue)}
+                  disabled={!canEdit}
+                  className={`w-10 h-10 rounded-full border-2 transition-all duration-200 transform shadow-md ${
+                    !canEdit
+                      ? 'opacity-50 cursor-not-allowed'
+                      : isSelected
+                        ? 'hover:scale-110 border-purple-600 dark:border-purple-400 scale-110 ring-4 ring-purple-200 dark:ring-purple-800'
+                        : 'hover:scale-110 border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
                   }`}
                   style={{ backgroundColor: displayColor }}
-                  title={CARD_COLOR_NAMES[index]}
+                  title={canEdit ? CARD_COLOR_NAMES[index] : 'View only'}
                   aria-label={`Select ${CARD_COLOR_NAMES[index]} color`}
                 />
               );
@@ -788,8 +795,9 @@ const CardModal = ({ isOpen, onClose, card, boardId, canEdit = false }: CardModa
           <div className="flex gap-2 mb-3">
             <input
               value={checklistInput}
-              onChange={(e) => setChecklistInput(e.target.value)}
-              placeholder="Add item"
+              onChange={(e) => canEdit && setChecklistInput(e.target.value)}
+              placeholder={canEdit ? 'Add item' : 'View only'}
+              disabled={!canEdit}
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {
                   e.preventDefault();
@@ -806,8 +814,11 @@ const CardModal = ({ isOpen, onClose, card, boardId, canEdit = false }: CardModa
                 fontSize: '13px',
                 fontFamily: 'inherit',
                 outline: 'none',
+                opacity: canEdit ? 1 : 0.5,
+                cursor: canEdit ? 'text' : 'not-allowed',
               }}
               onFocus={(e) => {
+                if (!canEdit) return;
                 e.currentTarget.style.borderColor = 'var(--purple-l)';
                 e.currentTarget.style.boxShadow = '0 0 0 3px rgba(147,51,234,.18)';
               }}
@@ -818,24 +829,22 @@ const CardModal = ({ isOpen, onClose, card, boardId, canEdit = false }: CardModa
             />
             <button
               onClick={handleAddChecklistItem}
+              disabled={!canEdit}
               style={{
                 minWidth: '80px',
                 padding: '10px 16px',
-                background: 'var(--purple)',
-                color: '#fff',
+                background: canEdit ? 'var(--purple)' : 'var(--surface-3)',
+                color: canEdit ? '#fff' : 'var(--muted)',
                 border: 'none',
                 borderRadius: '10px',
                 fontSize: '13px',
                 fontWeight: '500',
-                cursor: 'pointer',
-                boxShadow: '0 0 24px var(--glow)',
+                cursor: canEdit ? 'pointer' : 'not-allowed',
+                boxShadow: canEdit ? '0 0 24px var(--glow)' : 'none',
                 transition: 'all 0.2s',
               }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.opacity = '0.9';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.opacity = '1';
+              onMouseEnter={(e) => { if (canEdit) e.currentTarget.style.opacity = '0.9'; }}
+              onMouseLeave={(e) => { if (canEdit) e.currentTarget.style.opacity = '1';
               }}
             >
               Add
@@ -852,7 +861,9 @@ const CardModal = ({ isOpen, onClose, card, boardId, canEdit = false }: CardModa
                     type="checkbox"
                     checked={item.completed}
                     onChange={() => handleToggleChecklistItem(item.id)}
-                    className="w-5 h-5 rounded accent-purple-600 cursor-pointer transition"
+                    disabled={!canEdit}
+                    className="w-5 h-5 rounded accent-purple-600 transition"
+                    style={{ cursor: canEdit ? 'pointer' : 'not-allowed' }}
                   />
                   <span
                     className={`flex-1 text-sm ${
@@ -865,7 +876,8 @@ const CardModal = ({ isOpen, onClose, card, boardId, canEdit = false }: CardModa
                   </span>
                   <button
                     onClick={() => handleDeleteChecklistItem(item.id)}
-                    className="opacity-0 group-hover:opacity-100 text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 transition-all"
+                    disabled={!canEdit}
+                    className={`${canEdit ? 'opacity-0 group-hover:opacity-100 text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300' : 'hidden'} transition-all`}
                     aria-label={`Delete ${item.text}`}
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -884,8 +896,9 @@ const CardModal = ({ isOpen, onClose, card, boardId, canEdit = false }: CardModa
           <RichTextEditor
             value={notes}
             onChange={setNotes}
-            placeholder="Add detailed notes..."
+            placeholder={canEdit ? 'Add detailed notes...' : 'No notes'}
             className="text-sm"
+            editable={canEdit}
           />
         </div>
 
@@ -948,8 +961,23 @@ const CardModal = ({ isOpen, onClose, card, boardId, canEdit = false }: CardModa
             ownerId={currentBoard?.ownerId || ''}
             ownerEmail={currentBoard?.ownerEmail || ''}
             collaborators={currentBoard?.sharedWith || []}
-            onAddComment={(content, mentions?: MentionedUser[]) => {
-              if (user) {
+            onAddComment={async (content, mentions?: MentionedUser[]) => {
+              if (!user) return;
+              if (!canEdit) {
+                // Viewer: Firestore rules block direct board writes, so route through the
+                // server-side comment endpoint which enforces board membership only.
+                try {
+                  const token = await user.getIdToken();
+                  await fetch(`/api/boards/${boardId}/cards/${card.id}/comment`, {
+                    method: 'POST',
+                    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ content }),
+                  });
+                  // Store updates via the Firestore real-time listener after the server writes
+                } catch (err) {
+                  console.error('[CardModal] Viewer comment failed:', err);
+                }
+              } else {
                 addComment(boardId, card.id, user.uid, user.email || '', content, mentions);
               }
             }}
@@ -960,6 +988,7 @@ const CardModal = ({ isOpen, onClose, card, boardId, canEdit = false }: CardModa
               deleteComment(boardId, card.id, commentId);
             }}
             canComment={!!user}
+            onShare={currentBoard?.ownerId === user?.uid ? () => setShareModalBoardId(boardId) : undefined}
           />
         </div>
       )}

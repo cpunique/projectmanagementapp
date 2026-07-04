@@ -72,7 +72,10 @@
       "Bash(do netstat -ano)",
       "Bash(xargs:*)",
       "Bash(done)",
-      "Bash(Get-NetTCPConnection -LocalPort 3000 -ErrorAction SilentlyContinue)"
+      "Bash(Get-NetTCPConnection -LocalPort 3000 -ErrorAction SilentlyContinue)",
+      "Bash(PORT=3007 npm run dev:*)",
+      "Bash(npx next build:*)",
+      "Bash(npx firebase:*)"
     ],
     "deny": [],
     "ask": []

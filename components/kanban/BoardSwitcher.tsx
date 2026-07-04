@@ -16,7 +16,6 @@ import { BOARD_TEMPLATES, type BoardTemplate } from '@/lib/boardTemplates';
 import { downloadBoardAsJSON, parseBoardImportJSON } from '@/lib/utils/exportBoard';
 
 const CloneBoardModal = dynamic(() => import('@/components/kanban/CloneBoardModal'), { ssr: false });
-const ShareBoardModal = dynamic(() => import('@/components/kanban/ShareBoardModal'), { ssr: false });
 
 const BoardSwitcher = () => {
   const { user } = useAuth();
@@ -38,8 +37,6 @@ const BoardSwitcher = () => {
   const [isSavingDefaultBoard, setIsSavingDefaultBoard] = useState(false);
   const [isCloneModalOpen, setIsCloneModalOpen] = useState(false);
   const [boardToClone, setBoardToClone] = useState<string | null>(null);
-  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
-  const [boardToShare, setBoardToShare] = useState<string | null>(null);
   const [selectedTemplate, setSelectedTemplate] = useState<BoardTemplate>(BOARD_TEMPLATES[0]);
   const [importError, setImportError] = useState<string | null>(null);
   const importInputRef = useRef<HTMLInputElement>(null);
@@ -332,8 +329,7 @@ const BoardSwitcher = () => {
                           onClick={(e) => {
                             e.stopPropagation();
                             e.preventDefault();
-                            setBoardToShare(board.id);
-                            setIsShareModalOpen(true);
+                            useKanbanStore.getState().setShareModalBoardId(board.id);
                           }}
                           className="p-1 rounded text-sm transition-colors"
                           style={{ color: 'var(--green)' }}
@@ -527,22 +523,6 @@ const BoardSwitcher = () => {
         />
       )}
 
-      {/* Share Board Modal */}
-      {user && boardToShare && (
-        <ShareBoardModal
-          isOpen={isShareModalOpen}
-          onClose={() => { setIsShareModalOpen(false); setBoardToShare(null); }}
-          board={boards.find((b) => b.id === boardToShare) || null}
-          currentUserId={user.uid}
-          onBoardUpdated={(updatedBoard) => {
-            const currentBoards = useKanbanStore.getState().boards;
-            const updatedBoards = currentBoards.map((b) =>
-              b.id === updatedBoard.id ? updatedBoard : b
-            );
-            useKanbanStore.setState({ boards: updatedBoards });
-          }}
-        />
-      )}
     </>
   );
 };

@@ -191,6 +191,9 @@ export interface KanbanState {
   // Create-board modal: cross-component trigger (e.g. from onboarding) to open
   // the existing create-board flow owned by BoardSwitcher
   createBoardModalOpen: boolean;
+  // Share-board modal: store-driven singleton — any entry point sets this to open
+  // the portaled ShareBoardModal rendered at the app root
+  shareModalBoardId: string | null;
   dueDatePanelWidth: number;
   // Active view: board or calendar
   activeView: 'board' | 'calendar';
@@ -311,6 +314,9 @@ export interface KanbanActions {
 
   // Create-board modal actions (cross-component trigger)
   setCreateBoardModalOpen: (isOpen: boolean) => void;
+
+  // Share-board modal actions
+  setShareModalBoardId: (boardId: string | null) => void;
 
   // View actions
   setActiveView: (view: 'board' | 'calendar') => void;

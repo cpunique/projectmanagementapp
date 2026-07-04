@@ -129,6 +129,7 @@ export const useKanbanStore = create<KanbanStore>()(
       searchFocusTick: 0,
       activeCardId: null,
       createBoardModalOpen: false,
+      shareModalBoardId: null,
       activeView: 'board' as const,
       dueDatePanelWidth: 320,
       zoomLevel: 80,
@@ -1133,6 +1134,8 @@ export const useKanbanStore = create<KanbanStore>()(
 
       setCreateBoardModalOpen: (isOpen: boolean) => set({ createBoardModalOpen: isOpen }),
 
+      setShareModalBoardId: (boardId: string | null) => set({ shareModalBoardId: boardId }),
+
       setActiveView: (view: 'board' | 'calendar') => set({ activeView: view }),
 
       // Due dates panel actions
@@ -1319,7 +1322,7 @@ export const useKanbanStore = create<KanbanStore>()(
       // Only persistent client-side UI state (darkMode, filters, etc.) should be in localStorage
       partialize: (state) => {
         // Exclude Firebase-managed state and transient state from localStorage
-        const { boards, activeBoard, defaultBoardId, demoMode, conflictState, activityPanelOpen, analyticsPanelOpen, archivePanelOpen, createBoardModalOpen, mobileAlertsOpen, mobileSearchOpen, activeCardId, searchFocusTick, ...rest } = state;
+        const { boards, activeBoard, defaultBoardId, demoMode, conflictState, activityPanelOpen, analyticsPanelOpen, archivePanelOpen, createBoardModalOpen, shareModalBoardId, mobileAlertsOpen, mobileSearchOpen, activeCardId, searchFocusTick, ...rest } = state;
         return rest;
       },
       merge: (persistedState, currentState) => {
@@ -1340,6 +1343,7 @@ export const useKanbanStore = create<KanbanStore>()(
           analyticsPanelOpen: currentState.analyticsPanelOpen,
           archivePanelOpen: currentState.archivePanelOpen,
           createBoardModalOpen: currentState.createBoardModalOpen,
+          shareModalBoardId: currentState.shareModalBoardId,
           mobileAlertsOpen: currentState.mobileAlertsOpen,
           mobileSearchOpen: currentState.mobileSearchOpen,
           activeCardId: currentState.activeCardId,

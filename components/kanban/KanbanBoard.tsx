@@ -147,6 +147,7 @@ const KanbanBoard = () => {
 
   const handleColumnDrop = (e: React.DragEvent, toColumnId: string) => {
     e.preventDefault();
+    if (!canEdit) return;
 
     // Check if this is a column reorder (not a card drop)
     const columnId = e.dataTransfer.getData('columnId');
@@ -215,6 +216,7 @@ const KanbanBoard = () => {
   const handleColumnReorder = (e: React.DragEvent, targetColumnId: string) => {
     e.preventDefault();
     e.stopPropagation();
+    if (!canEdit) return;
 
     const sourceColumnId = e.dataTransfer.getData('columnId');
     if (!sourceColumnId || sourceColumnId === targetColumnId || !board) return;
@@ -412,8 +414,30 @@ const KanbanBoard = () => {
                 maxVisible={4}
               />
             )}
+            <div className="ml-auto flex items-center gap-2">
+            {userRole === 'owner' && !demoMode && (
+              <button
+                onClick={() => useKanbanStore.getState().setShareModalBoardId(board.id)}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '6px',
+                  padding: '6px 12px', borderRadius: '8px',
+                  fontSize: '12px', fontWeight: 500,
+                  background: board.background ? 'rgba(255,255,255,.2)' : 'var(--surface-2)',
+                  color: board.background ? '#fff' : 'var(--body)',
+                  border: board.background ? 'none' : '1px solid var(--border)',
+                  cursor: 'pointer', transition: 'background 0.15s',
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.background = board.background ? 'rgba(255,255,255,.3)' : 'var(--surface-3)'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = board.background ? 'rgba(255,255,255,.2)' : 'var(--surface-2)'; }}
+              >
+                <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8M16 6l-4-4-4 4M12 2v13" />
+                </svg>
+                Share
+              </button>
+            )}
             {canEdit && (
-              <div className="relative ml-auto" ref={bgPickerRef}>
+              <div className="relative" ref={bgPickerRef}>
                 <button
                   onClick={() => setShowBgPicker(!showBgPicker)}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
@@ -457,6 +481,7 @@ const KanbanBoard = () => {
                 )}
               </div>
             )}
+            </div>
           </div>
           <BoardHeader boardId={board.id} onGenerateTasks={canEdit ? () => setShowAITasksModal(true) : undefined} />
           <p className={`mt-1 ${board.background ? 'text-white/80' : 'text-gray-600 dark:text-gray-400'}`}>

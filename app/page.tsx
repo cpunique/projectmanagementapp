@@ -12,6 +12,7 @@ import { useOverdueChecker } from '@/lib/hooks/useOverdueChecker';
 import { useKanbanStore } from '@/lib/store';
 
 const OnboardingModal = dynamic(() => import('@/components/onboarding/OnboardingModal'), { ssr: false });
+const ShareBoardModal = dynamic(() => import('@/components/kanban/ShareBoardModal'), { ssr: false });
 
 function AppContent() {
   const { showOnboarding, completeOnboarding } = useOnboarding();
@@ -43,6 +44,7 @@ function AppContent() {
           onCreateFirstBoard={handleCreateFirstBoard}
         />
       )}
+      <ShareBoardModal />
     </div>
   );
 }

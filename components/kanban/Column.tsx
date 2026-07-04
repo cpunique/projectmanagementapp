@@ -210,7 +210,7 @@ const Column = ({
   return (
     <motion.div
       layout
-      draggable={true}
+      draggable={canEdit}
       onDragStart={handleColumnDragStart}
       onDragEnd={onColumnDragEndProp}
       onDragEnter={(e) => onColumnDragEnter(e as any, column.id)}

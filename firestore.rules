@@ -23,15 +23,12 @@ service cloud.firestore {
              request.auth.uid in resource.data.editorUserIds;
     }
 
-    // Check if user is owner or editor (can modify board)
-    // For backwards compatibility: if editorUserIds doesn't exist, fall back to checking sharedWithUserIds
+    // Check if user is owner or editor (can modify board content).
+    // Viewers (in sharedWithUserIds but not editorUserIds) are explicitly denied writes.
+    // The old backwards-compat fallback (editorUserIds == null → all sharedWith can write)
+    // has been removed — it was the primary viewer-write security hole.
     function canEdit() {
-      return isOwner() ||
-             isEditor() ||
-             // Backwards compatibility: allow all collaborators to edit if editorUserIds doesn't exist
-             (resource.data.editorUserIds == null &&
-              resource.data.sharedWithUserIds != null &&
-              request.auth.uid in resource.data.sharedWithUserIds);
+      return isOwner() || isEditor();
     }
 
     // Validate board data structure and constraints
@@ -144,9 +141,15 @@ service cloud.firestore {
                      (get(/databases/$(database)/documents/boards/$(boardId)).data.sharedWithUserIds != null &&
                       request.auth.uid in get(/databases/$(database)/documents/boards/$(boardId)).data.sharedWithUserIds));
 
-      // Create: Authenticated user logging their own activity
+      // Create: Authenticated user logging their own activity, AND they must be a board member.
+      // This prevents any random authenticated user from injecting activity entries into boards
+      // they don't belong to. Owners, editors, and viewers (sharedWithUserIds) may all log.
       allow create: if isAuthenticated() &&
-                      request.resource.data.actorId == request.auth.uid;
+                      request.resource.data.actorId == request.auth.uid &&
+                      exists(/databases/$(database)/documents/boards/$(boardId)) &&
+                      (get(/databases/$(database)/documents/boards/$(boardId)).data.ownerId == request.auth.uid ||
+                       (get(/databases/$(database)/documents/boards/$(boardId)).data.sharedWithUserIds != null &&
+                        request.auth.uid in get(/databases/$(database)/documents/boards/$(boardId)).data.sharedWithUserIds));
 
       // Activities are immutable — no updates or deletes
       allow update, delete: if false;

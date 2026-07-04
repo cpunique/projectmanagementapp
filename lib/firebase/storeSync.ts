@@ -20,11 +20,15 @@ import {
   getBoard,
   ensureUserProfile,
 } from './firestore';
-import { saveBoards, loadBoards, clearBoards, clearPreferences, enqueueSyncOperation, getPendingCount, savePreference, loadPreference } from '@/lib/db';
+import { saveBoards, loadBoards, clearBoards, clearPreferences, enqueueSyncOperation, getPendingCount, clearUserSyncQueue, savePreference, loadPreference } from '@/lib/db';
 import type { Board } from '@/types';
 
 // Track active subscriptions to prevent memory leaks
 const activeSubscriptions = new Map<string, () => void>();
+
+// Track the UID of the currently logged-in user so cleanupFirebaseSync() can
+// clear their sync queue on logout (even though it receives no user param).
+let currentUserUid: string | null = null;
 
 // Flag to prevent syncing TO Firebase when changes come FROM Firebase
 let isSyncingFromFirebase = false;
@@ -313,6 +317,12 @@ export function cleanupFirebaseSync() {
   // Clear IndexedDB to prevent cross-account data leakage
   clearBoards().catch(err => console.error('[Sync] Failed to clear IndexedDB:', err));
   clearPreferences().catch(err => console.error('[Sync] Failed to clear preferences:', err));
+  // Clear this user's sync queue so their failed writes (e.g. viewer permission-denied ops)
+  // don't persist into the next user's session and trigger spurious errors or replays.
+  if (currentUserUid) {
+    clearUserSyncQueue(currentUserUid).catch(err => console.error('[Sync] Failed to clear sync queue:', err));
+    currentUserUid = null;
+  }
 
   // Clear conflict detection state
   boardRemoteVersions.clear();
@@ -397,6 +407,7 @@ export async function flushPendingSync(): Promise<void> {
  * Returns an unsubscribe function
  */
 export function subscribeToStoreChanges(user: User) {
+  currentUserUid = user.uid;
   let syncTimeout: NodeJS.Timeout;
   let lastBoardsMap = new Map<string, string>();
   // Initialize from current store state to avoid false change detection on first fire.
@@ -466,12 +477,12 @@ export function subscribeToStoreChanges(user: User) {
           if (!navigator.onLine) {
             for (const board of changedBoards) {
               if (board.id !== 'default-board' && (board as any).ownerId) {
-                await enqueueSyncOperation(board.id, board).catch(err =>
+                await enqueueSyncOperation(board.id, board, user.uid).catch(err =>
                   console.error('[Sync] Failed to enqueue operation:', err)
                 );
               }
             }
-            const pending = await getPendingCount().catch(() => 0);
+            const pending = await getPendingCount(user.uid).catch(() => 0);
             useKanbanStore.getState().setPendingOperations(pending);
             return;
           }
@@ -543,6 +554,14 @@ export function subscribeToStoreChanges(user: User) {
                 boardRemoteVersions.set(board.id, new Date().toISOString());
                 boardBaseVersions.set(board.id, structuredClone(board));
               } catch (error: any) {
+                // permission-denied is permanent — never enqueue a write that can never succeed.
+                // This prevents a viewer's rejected writes from polluting the queue and
+                // leaking into the next user's session (the session-leakage root cause).
+                if (error?.code === 'permission-denied') {
+                  console.warn(`[Sync] Permission denied writing board ${board.id} — discarding (not retryable)`);
+                  continue;
+                }
+
                 // Firestore SDK v12 known bug: AsyncQueue enters a permanently failed state
                 // after a watch stream race condition (ID: b815/ca9). Reinitialize the
                 // Firestore instance and retry the write immediately with a fresh SDK.
@@ -560,10 +579,10 @@ export function subscribeToStoreChanges(user: User) {
                 }
                 // Enqueue failed writes for retry
                 console.warn(`[Sync] Firebase write failed for board ${board.id}, queueing for retry:`, error?.code || error);
-                await enqueueSyncOperation(board.id, board).catch(err =>
+                await enqueueSyncOperation(board.id, board, user.uid).catch(err =>
                   console.error('[Sync] Failed to enqueue operation:', err)
                 );
-                const pending = await getPendingCount().catch(() => 0);
+                const pending = await getPendingCount(user.uid).catch(() => 0);
                 useKanbanStore.getState().setPendingOperations(pending);
               }
             } else {

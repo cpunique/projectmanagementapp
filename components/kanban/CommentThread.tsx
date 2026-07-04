@@ -26,6 +26,8 @@ interface CommentThreadProps {
   ownerId: string;
   ownerEmail?: string;
   collaborators?: BoardCollaborator[];
+  // Optional share trigger — shown only to the board owner
+  onShare?: () => void;
 }
 
 export default function CommentThread({
@@ -41,6 +43,7 @@ export default function CommentThread({
   ownerId,
   ownerEmail,
   collaborators = [],
+  onShare,
 }: CommentThreadProps) {
   const [newComment, setNewComment] = useState('');
   const [isExpanded, setIsExpanded] = useState(true);
@@ -255,32 +258,44 @@ export default function CommentThread({
   return (
     <div className="border-t border-gray-200 dark:border-gray-700 pt-4 mt-4">
       {/* Header */}
-      <button
-        onClick={() => setIsExpanded(!isExpanded)}
-        className="flex items-center gap-2 mb-3 w-full text-left"
-      >
-        <svg
-          className={`w-4 h-4 text-gray-500 transition-transform ${isExpanded ? 'rotate-90' : ''}`}
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
+      <div className="flex items-center gap-2 mb-3">
+        <button
+          onClick={() => setIsExpanded(!isExpanded)}
+          className="flex items-center gap-2 flex-1 text-left min-w-0"
         >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M9 5l7 7-7 7"
-          />
-        </svg>
-        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-          Comments
-        </span>
-        {comments.length > 0 && (
-          <span className="px-2 py-0.5 text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded-full">
-            {comments.length}
+          <svg
+            className={`w-4 h-4 text-gray-500 transition-transform flex-shrink-0 ${isExpanded ? 'rotate-90' : ''}`}
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M9 5l7 7-7 7"
+            />
+          </svg>
+          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+            Comments
           </span>
+          {comments.length > 0 && (
+            <span className="px-2 py-0.5 text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded-full">
+              {comments.length}
+            </span>
+          )}
+        </button>
+        {onShare && (
+          <button
+            onClick={onShare}
+            style={{ fontSize: '11px', fontWeight: 500, color: 'var(--purple-l)', background: 'none', border: 'none', cursor: 'pointer', padding: '2px 0', flexShrink: 0, opacity: 1, transition: 'opacity 0.15s' }}
+            onMouseEnter={(e) => { e.currentTarget.style.opacity = '0.65'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.opacity = '1'; }}
+          >
+            Share board
+          </button>
         )}
-      </button>
+      </div>
 
       {isExpanded && (
         <div className="space-y-4">

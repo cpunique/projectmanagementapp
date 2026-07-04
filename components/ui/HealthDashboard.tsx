@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useKanbanStore } from '@/lib/store';
 import { getPendingCount } from '@/lib/db';
+import { getAuth } from 'firebase/auth';
 import Modal from '@/components/ui/Modal';
 
 interface HealthDashboardProps {
@@ -22,8 +23,9 @@ export default function HealthDashboard({ isOpen, onClose }: HealthDashboardProp
 
   useEffect(() => {
     if (!isOpen) return;
-    // Refresh pending count
-    getPendingCount().then(setPendingCount).catch(() => {});
+    // Refresh pending count (scoped to current user)
+    const uid = getAuth().currentUser?.uid;
+    if (uid) getPendingCount(uid).then(setPendingCount).catch(() => {});
     // Check storage estimate
     if (navigator.storage?.estimate) {
       navigator.storage.estimate().then((est) => {

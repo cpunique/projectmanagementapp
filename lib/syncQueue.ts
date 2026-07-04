@@ -28,8 +28,17 @@ export async function processQueue(): Promise<void> {
   const store = useKanbanStore.getState();
   if (!store.isOnline) return;
 
+  // Only process ops belonging to the currently logged-in user.
+  // This prevents a prior session's failed ops (e.g. a viewer's permission-denied writes)
+  // from being replayed under a different user's auth context.
+  const uid = getAuth().currentUser?.uid;
+  if (!uid) {
+    isProcessing = false;
+    return;
+  }
+
   isProcessing = true;
-  const operations = await getPendingOperations();
+  const operations = await getPendingOperations(uid);
 
   if (operations.length === 0) {
     isProcessing = false;
@@ -87,11 +96,21 @@ export async function processQueue(): Promise<void> {
       await removeOperation(op.id!);
       completed++;
 
-      const remaining = await getPendingCount();
+      const remaining = await getPendingCount(uid);
       store.setPendingOperations(remaining);
       store.setSyncProgress({ completed, total: operations.length });
     } catch (error: any) {
       const errorMsg = error?.message || String(error);
+
+      // permission-denied is permanent — this write can never succeed for this user.
+      // Discard immediately without retrying or incrementing the retry counter.
+      if (error?.code === 'permission-denied') {
+        console.warn('[SyncQueue] Permission denied for board:', op.boardId, '— discarding (not retryable)');
+        await removeOperation(op.id!);
+        completed++;
+        continue;
+      }
+
       // Firestore SDK v12 bug: reinitialize so the next retry uses a fresh instance
       if (errorMsg.includes('INTERNAL ASSERTION FAILED')) {
         console.warn('[SyncQueue] Firestore SDK assertion failure — reinitializing for next retry');
@@ -107,7 +126,7 @@ export async function processQueue(): Promise<void> {
     }
   }
 
-  const remaining = await getPendingCount();
+  const remaining = await getPendingCount(uid);
   store.setPendingOperations(remaining);
   store.setSyncProgress(undefined);
 
@@ -144,7 +163,14 @@ export function stopQueueProcessor(): void {
  */
 export async function retrySyncQueue(): Promise<void> {
   const store = useKanbanStore.getState();
-  const ops = await getPendingOperations();
+  const uid = getAuth().currentUser?.uid;
+
+  if (!uid) {
+    store.setSyncState('synced');
+    return;
+  }
+
+  const ops = await getPendingOperations(uid);
 
   // Reconcile store count with actual queue
   const actualCount = ops.length;
