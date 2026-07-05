@@ -268,6 +268,7 @@ export interface KanbanActions {
 
   // Comment actions
   addComment: (boardId: string, cardId: string, authorId: string, authorEmail: string, content: string, mentions?: MentionedUser[], authorType?: 'human' | 'agent', agentName?: string) => void;
+  insertRemoteComment: (boardId: string, cardId: string, comment: CardComment) => void;
   editComment: (boardId: string, cardId: string, commentId: string, content: string, mentions?: MentionedUser[]) => void;
   deleteComment: (boardId: string, cardId: string, commentId: string) => void;
 

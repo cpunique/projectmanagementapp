@@ -483,17 +483,11 @@ const KanbanBoard = () => {
             )}
             </div>
           </div>
-          <BoardHeader boardId={board.id} onGenerateTasks={canEdit ? () => setShowAITasksModal(true) : undefined} />
+          <BoardHeader boardId={board.id} canEdit={canEdit} onGenerateTasks={canEdit ? () => setShowAITasksModal(true) : undefined} />
           <p className={`mt-1 ${board.background ? 'text-white/80' : 'text-gray-600 dark:text-gray-400'}`}>
             {board.columns.length} column{board.columns.length !== 1 ? 's' : ''} • {board.columns.reduce((sum, col) => sum + col.cards.length, 0)} total card{board.columns.reduce((sum, col) => sum + col.cards.length, 0) !== 1 ? 's' : ''}
           </p>
         </div>
-
-        {isViewOnly && (
-          <div className="mb-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded-lg text-sm text-yellow-800 dark:text-yellow-200">
-            You have read-only access to this board. Contact the board owner to request editing permissions.
-          </div>
-        )}
 
         {/* All columns — horizontal scroll */}
         <div className="overflow-x-auto overflow-y-visible pb-4 h-[calc(100vh-200px)] scroll-smooth">

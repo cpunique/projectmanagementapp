@@ -14,6 +14,7 @@ interface CardContextMenuProps {
   card: Card;
   boardId: string;
   columnId: string;
+  canEdit: boolean;
   onClose: () => void;
   onEditCard: () => void;
   onDeleteCard: () => void;
@@ -25,6 +26,7 @@ const CardContextMenu = ({
   card,
   boardId,
   columnId,
+  canEdit,
   onClose,
   onEditCard,
   onDeleteCard,
@@ -187,8 +189,8 @@ const CardContextMenu = ({
           className="min-w-[200px] bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg py-1"
           onClick={(e) => e.stopPropagation()}
         >
-          {/* Move to Descoped / Restore to Active */}
-          {descopedColumn && (
+          {/* Move to Descoped / Restore to Active — write actions, editors only */}
+          {canEdit && descopedColumn && (
             <>
               {!isDescopedColumn && (
                 <button
@@ -232,17 +234,19 @@ const CardContextMenu = ({
             Edit Card
           </button>
 
-          {/* Archive Card */}
-          <button
-            onClick={handleArchive}
-            className="w-full px-4 py-2 text-left text-sm text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/20 transition-colors flex items-center gap-3"
-            title="Archive this card (can be restored)"
-          >
-            <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
-            </svg>
-            Archive Card
-          </button>
+          {/* Archive Card — write action, editors only */}
+          {canEdit && (
+            <button
+              onClick={handleArchive}
+              className="w-full px-4 py-2 text-left text-sm text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/20 transition-colors flex items-center gap-3"
+              title="Archive this card (can be restored)"
+            >
+              <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+              </svg>
+              Archive Card
+            </button>
+          )}
 
           {/* Duplicate Card */}
           <button
@@ -287,19 +291,23 @@ const CardContextMenu = ({
             </>
           )}
 
-          <div className="h-px bg-gray-200 dark:bg-gray-700 my-1" />
+          {canEdit && (
+            <>
+              <div className="h-px bg-gray-200 dark:bg-gray-700 my-1" />
 
-          {/* Delete Card */}
-          <button
-            onClick={handleDelete}
-            className="w-full px-4 py-2 text-left text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors flex items-center gap-3"
-            title="Delete this card"
-          >
-            <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-            </svg>
-            Delete Card
-          </button>
+              {/* Delete Card — write action, editors only */}
+              <button
+                onClick={handleDelete}
+                className="w-full px-4 py-2 text-left text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors flex items-center gap-3"
+                title="Delete this card"
+              >
+                <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+                Delete Card
+              </button>
+            </>
+          )}
         </motion.div>
       )}
     </AnimatePresence>,

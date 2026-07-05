@@ -35,6 +35,7 @@ const CardModal = ({ isOpen, onClose, card, boardId, canEdit = false }: CardModa
   const deleteChecklistItem = useKanbanStore((state) => state.deleteChecklistItem);
   const toggleChecklistItem = useKanbanStore((state) => state.toggleChecklistItem);
   const addComment = useKanbanStore((state) => state.addComment);
+  const insertRemoteComment = useKanbanStore((state) => state.insertRemoteComment);
   const editComment = useKanbanStore((state) => state.editComment);
   const deleteComment = useKanbanStore((state) => state.deleteComment);
   const addDependency = useKanbanStore((state) => state.addDependency);
@@ -436,7 +437,8 @@ const CardModal = ({ isOpen, onClose, card, boardId, canEdit = false }: CardModa
             <input
               type="text"
               value={title}
-              onChange={(e) => setTitle(e.target.value)}
+              onChange={(e) => canEdit && setTitle(e.target.value)}
+              readOnly={!canEdit}
               placeholder="Card title"
               style={{
                 width: '100%',
@@ -449,8 +451,10 @@ const CardModal = ({ isOpen, onClose, card, boardId, canEdit = false }: CardModa
                 fontWeight: '500',
                 fontFamily: 'inherit',
                 outline: 'none',
+                cursor: canEdit ? 'text' : 'default',
               }}
               onFocus={(e) => {
+                if (!canEdit) return;
                 e.currentTarget.style.borderColor = 'var(--purple-l)';
                 e.currentTarget.style.boxShadow = '0 0 0 3px rgba(147,51,234,.18)';
               }}
@@ -469,7 +473,8 @@ const CardModal = ({ isOpen, onClose, card, boardId, canEdit = false }: CardModa
             <input
               type="text"
               value={description}
-              onChange={(e) => setDescription(e.target.value)}
+              onChange={(e) => canEdit && setDescription(e.target.value)}
+              readOnly={!canEdit}
               placeholder="Brief description"
               style={{
                 width: '100%',
@@ -481,8 +486,10 @@ const CardModal = ({ isOpen, onClose, card, boardId, canEdit = false }: CardModa
                 fontSize: '14px',
                 fontFamily: 'inherit',
                 outline: 'none',
+                cursor: canEdit ? 'text' : 'default',
               }}
               onFocus={(e) => {
+                if (!canEdit) return;
                 e.currentTarget.style.borderColor = 'var(--purple-l)';
                 e.currentTarget.style.boxShadow = '0 0 0 3px rgba(147,51,234,.18)';
               }}
@@ -502,11 +509,11 @@ const CardModal = ({ isOpen, onClose, card, boardId, canEdit = false }: CardModa
             </label>
             <select
               value={priority || ''}
-              onChange={(e) =>
-                setPriority(
-                  (e.target.value as 'low' | 'medium' | 'high') || undefined
-                )
-              }
+              onChange={(e) => {
+                if (!canEdit) return;
+                setPriority((e.target.value as 'low' | 'medium' | 'high') || undefined);
+              }}
+              disabled={!canEdit}
               style={{
                 width: '100%',
                 padding: '10px 12px',
@@ -517,8 +524,11 @@ const CardModal = ({ isOpen, onClose, card, boardId, canEdit = false }: CardModa
                 fontSize: '13px',
                 fontFamily: 'inherit',
                 outline: 'none',
+                cursor: canEdit ? 'pointer' : 'not-allowed',
+                opacity: canEdit ? 1 : 0.6,
               }}
               onFocus={(e) => {
+                if (!canEdit) return;
                 e.currentTarget.style.borderColor = 'var(--purple-l)';
                 e.currentTarget.style.boxShadow = '0 0 0 3px rgba(147,51,234,.18)';
               }}
@@ -542,7 +552,8 @@ const CardModal = ({ isOpen, onClose, card, boardId, canEdit = false }: CardModa
             <input
               type="date"
               value={dueDate}
-              onChange={(e) => setDueDate(e.target.value)}
+              onChange={(e) => { if (!canEdit) return; setDueDate(e.target.value); }}
+              disabled={!canEdit}
               style={{
                 width: '100%',
                 padding: '10px 12px',
@@ -553,8 +564,11 @@ const CardModal = ({ isOpen, onClose, card, boardId, canEdit = false }: CardModa
                 fontSize: '13px',
                 fontFamily: 'inherit',
                 outline: 'none',
+                cursor: canEdit ? 'pointer' : 'not-allowed',
+                opacity: canEdit ? 1 : 0.6,
               }}
               onFocus={(e) => {
+                if (!canEdit) return;
                 e.currentTarget.style.borderColor = 'var(--purple-l)';
                 e.currentTarget.style.boxShadow = '0 0 0 3px rgba(147,51,234,.18)';
               }}
@@ -674,10 +688,10 @@ const CardModal = ({ isOpen, onClose, card, boardId, canEdit = false }: CardModa
                     }}
                     className={isPickingThis ? 'ring-2' : ''}
                   >
-                    {/* Color dot — click to open/close picker */}
+                    {/* Color dot — click to open/close picker (editors only) */}
                     <button
                       type="button"
-                      onClick={() => setSelectedTag(isPickingThis ? null : tag)}
+                      onClick={() => canEdit && setSelectedTag(isPickingThis ? null : tag)}
                       style={{
                         width: '6px',
                         height: '6px',
@@ -964,18 +978,28 @@ const CardModal = ({ isOpen, onClose, card, boardId, canEdit = false }: CardModa
             onAddComment={async (content, mentions?: MentionedUser[]) => {
               if (!user) return;
               if (!canEdit) {
-                // Viewer: Firestore rules block direct board writes, so route through the
-                // server-side comment endpoint which enforces board membership only.
+                // Viewer path: Firestore rules block direct writes, so POST through
+                // the server-side route which allows board members (including viewers).
+                const targetCardId = card.id; // capture synchronously; closure is safe
                 try {
                   const token = await user.getIdToken();
-                  await fetch(`/api/boards/${boardId}/cards/${card.id}/comment`, {
+                  const res = await fetch(`/api/boards/${boardId}/cards/${targetCardId}/comment`, {
                     method: 'POST',
                     headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
                     body: JSON.stringify({ content }),
                   });
-                  // Store updates via the Firestore real-time listener after the server writes
+                  if (!res.ok) {
+                    const err = await res.json().catch(() => ({}));
+                    showToast(err?.error || `Failed to post comment (${res.status})`, 'error');
+                    return;
+                  }
+                  const { comment } = await res.json();
+                  // Apply immediately so the comment appears without waiting for the
+                  // Firestore real-time listener (which would take 1-5 s).
+                  insertRemoteComment(boardId, targetCardId, comment);
                 } catch (err) {
                   console.error('[CardModal] Viewer comment failed:', err);
+                  showToast('Failed to post comment. Please try again.', 'error');
                 }
               } else {
                 addComment(boardId, card.id, user.uid, user.email || '', content, mentions);

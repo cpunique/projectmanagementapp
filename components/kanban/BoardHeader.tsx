@@ -16,10 +16,11 @@ const PURPOSE_OPTIONS: { value: InstructionType; label: string; icon: string; de
 
 interface BoardHeaderProps {
   boardId: string;
+  canEdit?: boolean;
   onGenerateTasks?: () => void;
 }
 
-export default function BoardHeader({ boardId, onGenerateTasks }: BoardHeaderProps) {
+export default function BoardHeader({ boardId, canEdit = false, onGenerateTasks }: BoardHeaderProps) {
   const { user } = useAuth();
   const boards = useKanbanStore((state) => state.boards);
   const updateBoardDescription = useKanbanStore((state) => state.updateBoardDescription);
@@ -67,7 +68,7 @@ export default function BoardHeader({ boardId, onGenerateTasks }: BoardHeaderPro
   return (
     <div className="mt-2 space-y-2">
       {/* Board Purpose Selector + Generate Tasks */}
-      {user && (
+      {user && canEdit && (
         <div className="flex items-center gap-2 flex-wrap">
         <div className="relative inline-block">
           <button
@@ -159,7 +160,7 @@ export default function BoardHeader({ boardId, onGenerateTasks }: BoardHeaderPro
               {isExpanded ? ' [less]' : ' [more]'}
             </span>
           )}
-          {user && (
+          {user && canEdit && (
             <button
               onClick={(e) => {
                 e.stopPropagation();
@@ -174,8 +175,8 @@ export default function BoardHeader({ boardId, onGenerateTasks }: BoardHeaderPro
         </div>
       )}
 
-      {/* Empty State */}
-      {!hasDescription && !isEditing && user && (
+      {/* Empty State — only shown to editors */}
+      {!hasDescription && !isEditing && user && canEdit && (
         <button
           onClick={() => setIsEditing(true)}
           className="text-sm text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors"
@@ -184,8 +185,8 @@ export default function BoardHeader({ boardId, onGenerateTasks }: BoardHeaderPro
         </button>
       )}
 
-      {/* Edit Mode */}
-      {isEditing && (
+      {/* Edit Mode — editors only */}
+      {isEditing && canEdit && (
         <div className="mt-1 space-y-2">
           <textarea
             value={editValue}

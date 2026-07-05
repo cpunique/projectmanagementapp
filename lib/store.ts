@@ -1091,6 +1091,30 @@ export const useKanbanStore = create<KanbanStore>()(
         }));
       },
 
+      // Append a server-created comment to the local store without triggering a board sync.
+      // Used by the viewer comment path so the comment appears immediately after the server
+      // route returns 201, without waiting for the Firestore real-time listener.
+      insertRemoteComment: (boardId: string, cardId: string, comment: CardComment) => {
+        set((state) => ({
+          boards: state.boards.map((b) =>
+            b.id === boardId
+              ? {
+                  ...b,
+                  columns: b.columns.map((c) => ({
+                    ...c,
+                    cards: c.cards.map((card) =>
+                      card.id === cardId
+                        ? { ...card, comments: [...(card.comments || []), comment] }
+                        : card
+                    ),
+                  })),
+                }
+              : b
+          ),
+          // hasUnsavedChanges deliberately NOT set — server already wrote this.
+        }));
+      },
+
       // Notification actions
       addNotification: (notification) => {
         set((state) => ({

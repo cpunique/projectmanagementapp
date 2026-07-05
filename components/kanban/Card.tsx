@@ -626,6 +626,7 @@ const Card = ({ card, boardId, columnId, onDragStart, onDragEnd, isDragging, can
         card={card}
         boardId={boardId}
         columnId={columnId}
+        canEdit={canEdit}
         onClose={() => setContextMenu(null)}
         onEditCard={() => setIsModalOpen(true)}
         onDeleteCard={handleDelete}
