@@ -117,7 +117,7 @@ export default function SettingsPage() {
       case 'notifications':
         return <NotificationsSection />;
       case 'subscription':
-        return <SubscriptionSection />;
+        return <SubscriptionSection isPro={isPro} />;
       case 'advanced':
         return <AdvancedSection />;
       case 'about-legal':
