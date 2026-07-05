@@ -7,7 +7,7 @@ import { useToast } from '@/components/ui/Toast';
 import SettingCard from '../SettingCard';
 
 export default function AccountSection() {
-  const { user } = useAuth();
+  const { user, reloadUser } = useAuth();
   const { showToast } = useToast();
   const [editingName, setEditingName] = useState(false);
   const [nameValue, setNameValue] = useState('');
@@ -23,6 +23,7 @@ export default function AccountSection() {
     setSaving(true);
     try {
       await updateProfile(user, { displayName: nameValue.trim() || null });
+      await reloadUser();
       setEditingName(false);
       showToast('Display name updated', 'success');
     } catch (err) {

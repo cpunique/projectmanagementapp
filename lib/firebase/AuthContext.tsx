@@ -23,6 +23,7 @@ interface AuthContextType {
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
   markToSAccepted: () => void;
+  reloadUser: () => Promise<void>;
   error: string | null;
 }
 
@@ -197,6 +198,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setRequiresToSAcceptance(false);
   };
 
+  // Call after updateProfile() — forces all useAuth() consumers to re-render
+  // with the updated User object. onAuthStateChanged doesn't re-fire for profile
+  // updates, so without this the in-place mutation is invisible to React.
+  const reloadUser = async () => {
+    const auth = getAuth();
+    if (auth.currentUser) {
+      await auth.currentUser.reload();
+      setUser({ ...auth.currentUser });
+    }
+  };
+
   return (
     <AuthContext.Provider value={{
       user,
@@ -207,6 +219,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       signInWithGoogle,
       signOut,
       markToSAccepted,
+      reloadUser,
       error
     }}>
       {children}
