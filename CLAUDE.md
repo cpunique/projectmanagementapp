@@ -154,6 +154,21 @@ Was previously duplicated inline in `ActivityFeedPanel.tsx` and `CardActivityTim
 
 **Lesson:** when a fix appears not to work on production despite correct data and correct code, suspect a second copy of the logic before re-fixing the first copy. Same failure class as the two-codebase MCP enforcement split — a rule enforced in one place but silently duplicated-and-unfixed elsewhere. If actor-label logic ever needs to change (new actor type, label format), edit `lib/utils/getActorLabel.ts` only — both surfaces update automatically.
 
+## Display-Name Propagation — Deferred Product Decision
+
+The app is currently **email-identity based**: comments, avatar initials, activity attribution, and collaborator lists all derive from the email prefix (`authorEmail.split('@')[0]`), NOT from Firebase `displayName`. Only the header user-menu dropdown and the Settings name field consume `displayName`.
+
+Current state after Settings / Account implementation:
+- `updateProfile({ displayName })` + `reloadUser()` updates the header menu and Settings name field immediately (no reload).
+- Comments, avatar initials, activity feed actor labels, and collaborator lists are unchanged — they still show the email prefix and are unaffected by any name change.
+
+**Open decision** (revisit in the collaboration/launch chapter): should `displayName` become the app-wide identity (show chosen name in comments/avatars/activity), or should the app stay email-identity and the name feature remain cosmetic (header/Settings only)?
+
+Implications:
+- Chosen names are friendlier on shared boards but ambiguous (two "Bob"s on the same board). Email is unambiguous and already displayed in tooltips/menus.
+- If names propagate to comments/activity, those surfaces must snapshot `authorName` at write time (historical record — same pattern as `authorEmail` today), and avatar initials would derive from the name rather than the email.
+- This is not urgent and is not a regression — the current email-identity behaviour is consistent and intentional. Not worth building until the collaborative-identity story is decided.
+
 ## Engineering Critical Path (next up)
 
 Stripe test mode → 3-board enforcement → `featureGate.ts` cleanup (remove the hardcoded UID allowlist — must precede Stripe live keys) → cancellation/downgrade → Stripe live keys → MCP Phase B (Pro gating, revocation on cancel, audit logging). Operational prereq: Loops account + API key + waitlist audience before the landing-page waitlist goes live.
