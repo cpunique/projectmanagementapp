@@ -169,6 +169,23 @@ Implications:
 - If names propagate to comments/activity, those surfaces must snapshot `authorName` at write time (historical record — same pattern as `authorEmail` today), and avatar initials would derive from the name rather than the email.
 - This is not urgent and is not a regression — the current email-identity behaviour is consistent and intentional. Not worth building until the collaborative-identity story is decided.
 
+## Pricing Strategy (decided 2026-07-04)
+
+Repositioned around AI as the differentiator after MCP agent capability shipped.
+
+**Key insight:** Kan-do's AI is *agentic* (the agent operates the board — moves cards, creates tasks, leaves notes) vs. incumbents' *assistive* AI (Trello Premium $10/mo = AI that writes/summarizes text). Position as "the Kanban board your AI can operate," not "cheaper Trello."
+
+**Model B — AI is the star of Pro, boards are the adoption lever:**
+
+- **FREE:** 7 boards (revised up from 3), unlimited cards, full app, + a metered taste of the AI agent (drives conversion + validates the workflow in discovery phase).
+- **PRO ($10/mo, $96/yr):** Unlimited boards, full/higher AI agent limits, priority support — the agent is the reason to upgrade.
+
+**Agent-action metering is a core build requirement:** enforces the free taste, measures usage (discovery signal), provides a usage lever for Firestore costs and future cloud-MCP. Cost context: BYO-key model (user's Claude key — LLM costs us nothing), but agent activity is Firestore-op-intensive (maxed Firestore during MCP testing) — so metering matters for infra costs even without LLM cost.
+
+**Deferred:** Cloud-MCP hosting (revisit if user demand justifies it).
+
+**Open sub-decision:** exact definition of "an agent action" — per tool-call? per session? Resolve before building the metering gate.
+
 ## Engineering Critical Path (next up)
 
 Stripe test mode → 3-board enforcement → `featureGate.ts` cleanup (remove the hardcoded UID allowlist — must precede Stripe live keys) → cancellation/downgrade → Stripe live keys → MCP Phase B (Pro gating, revocation on cancel, audit logging). Operational prereq: Loops account + API key + waitlist audience before the landing-page waitlist goes live.
