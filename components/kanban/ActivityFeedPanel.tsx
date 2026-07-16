@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { useKanbanStore } from '@/lib/store';
 import { useAuth } from '@/lib/firebase/AuthContext';
 import { subscribeToActivities } from '@/lib/firebase/activities';
@@ -9,6 +8,7 @@ import { formatTimeAgo } from '@/lib/utils/formatTimeAgo';
 import { markActivitiesSeen } from '@/lib/hooks/useUnreadActivityCount';
 import { type ActivityEntry, type ActivityEventType } from '@/types';
 import { getActorLabel } from '@/lib/utils/getActorLabel';
+import PanelShell from '@/components/ui/PanelShell';
 
 const EVENT_ICONS: Record<ActivityEventType, string> = {
   card_added: '+',
@@ -28,27 +28,26 @@ const EVENT_ICONS: Record<ActivityEventType, string> = {
   card_copied: '⎘',
 };
 
-const EVENT_COLORS: Record<ActivityEventType, string> = {
-  card_added: 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400',
-  card_deleted: 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400',
-  card_moved: 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400',
-  card_updated: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400',
-  comment_added: 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400',
-  column_added: 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400',
-  column_deleted: 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400',
-  board_shared: 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400',
-  card_assigned: 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400',
-  card_unassigned: 'bg-gray-100 dark:bg-gray-700/50 text-gray-600 dark:text-gray-400',
-  card_archived: 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400',
-  card_restored: 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400',
-  column_archived: 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400',
-  column_restored: 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400',
-  card_copied: 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400',
+const EVENT_COLORS: Record<ActivityEventType, { background: string; color: string }> = {
+  card_added:      { background: 'rgba(74,222,128,.15)',  color: 'var(--green)' },
+  card_deleted:    { background: 'rgba(251,113,133,.15)', color: 'var(--red)' },
+  card_moved:      { background: 'rgba(96,165,250,.15)',  color: '#60a5fa' },
+  card_updated:    { background: 'rgba(251,191,36,.15)',  color: 'var(--amber)' },
+  comment_added:   { background: 'rgba(192,132,252,.15)', color: 'var(--purple-l)' },
+  column_added:    { background: 'rgba(74,222,128,.15)',  color: 'var(--green)' },
+  column_deleted:  { background: 'rgba(251,113,133,.15)', color: 'var(--red)' },
+  board_shared:    { background: 'rgba(192,132,252,.15)', color: 'var(--purple-l)' },
+  card_assigned:   { background: 'rgba(96,165,250,.15)',  color: '#60a5fa' },
+  card_unassigned: { background: 'rgba(107,94,88,.15)',   color: 'var(--muted)' },
+  card_archived:   { background: 'rgba(251,191,36,.15)',  color: 'var(--amber)' },
+  card_restored:   { background: 'rgba(74,222,128,.15)',  color: 'var(--green)' },
+  column_archived: { background: 'rgba(251,191,36,.15)',  color: 'var(--amber)' },
+  column_restored: { background: 'rgba(74,222,128,.15)',  color: 'var(--green)' },
+  card_copied:     { background: 'rgba(96,165,250,.15)',  color: '#60a5fa' },
 };
 
 function getActivityDescription(entry: ActivityEntry, currentUserId?: string): string {
   const actor = getActorLabel(entry, currentUserId);
-
   switch (entry.eventType) {
     case 'card_added':
       return `${actor} added "${entry.cardTitle}"${entry.columnTitle ? ` to ${entry.columnTitle}` : ''}`;
@@ -97,111 +96,121 @@ export default function ActivityFeedPanel() {
       setLoading(false);
       return;
     }
-
     setLoading(true);
-    // Mark activities as seen when panel is opened
     markActivitiesSeen(activeBoard).catch(() => {});
     const unsubscribe = subscribeToActivities(activeBoard, (newActivities) => {
       setActivities(newActivities);
       setLoading(false);
     });
-
     return () => {
       try { unsubscribe(); } catch (_) { /* Firestore SDK v12 internal race — safe to ignore */ }
     };
   }, [activityPanelOpen, activeBoard, user]);
 
   return (
-    <AnimatePresence>
-      {activityPanelOpen && (
-        <motion.div
-          id="activity-feed-panel"
-          initial={{ x: '100%' }}
-          animate={{ x: 0 }}
-          exit={{ x: '100%' }}
-          transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-          style={{ width: '320px' }}
-          className={`
-            flex flex-col border-l border-gray-200 dark:border-gray-700
-            bg-white dark:bg-gray-800 h-full
-            overflow-hidden md:static fixed right-0 top-16 z-30 bottom-0
-            md:relative
-          `}
-        >
-          {/* Header */}
-          <div className={`
-            flex items-center justify-between px-4 py-4 border-b border-gray-200 dark:border-gray-700
-            flex-shrink-0 bg-gray-50 dark:bg-gray-900/50
-          `}>
-            <div className="flex-1">
-              <h2 className="text-lg font-bold text-gray-900 dark:text-white">
-                Activity
-              </h2>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                {activities.length} recent events
-              </p>
-            </div>
-            <button
-              onClick={() => useKanbanStore.getState().setActivityPanelOpen(false)}
-              className="p-1.5 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-              aria-label="Close activity panel"
-            >
-              <svg className="w-5 h-5 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
+    <PanelShell
+      open={activityPanelOpen}
+      id="activity-feed-panel"
+      title="Activity"
+      subtitle={`${activities.length} recent event${activities.length !== 1 ? 's' : ''}`}
+      onClose={() => useKanbanStore.getState().setActivityPanelOpen(false)}
+    >
+      <div style={{ flex: 1, overflowY: 'auto' }}>
+        {loading ? (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px 0' }}>
+            <div style={{
+              width: 24,
+              height: 24,
+              borderRadius: '50%',
+              border: '2px solid var(--border-2)',
+              borderTopColor: 'var(--purple-l)',
+              animation: 'spin 0.75s linear infinite',
+            }} />
           </div>
-
-          {/* Activity List */}
-          <div className="flex-1 overflow-y-auto">
-            {loading ? (
-              <div className="flex items-center justify-center py-12">
-                <div className="w-6 h-6 border-2 border-purple-200 dark:border-purple-800 border-t-purple-600 dark:border-t-purple-400 rounded-full animate-spin" />
-              </div>
-            ) : activities.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-12 px-4">
-                <svg className="w-12 h-12 text-gray-300 dark:text-gray-600 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <p className="text-sm text-gray-500 dark:text-gray-400 text-center">
-                  No activity yet
-                </p>
-                <p className="text-xs text-gray-400 dark:text-gray-500 text-center mt-1">
-                  Actions like adding cards, moving tasks, and comments will appear here.
-                </p>
-              </div>
-            ) : (
-              <ul className="divide-y divide-gray-100 dark:divide-gray-700/50">
-                {activities.map((entry) => (
-                  <li key={entry.id} className="px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
-                    <div className="flex gap-3">
-                      {/* Event Icon */}
-                      <div className={`flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${EVENT_COLORS[entry.eventType]}`}>
-                        {EVENT_ICONS[entry.eventType]}
-                      </div>
-
-                      {/* Content */}
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm text-gray-800 dark:text-gray-200 leading-snug">
-                          {getActivityDescription(entry, user?.uid)}
-                        </p>
-                        <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                          {formatTimeAgo(entry.createdAt)}
-                        </p>
-                        {entry.commentSnippet && (
-                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 italic truncate">
-                            &ldquo;{entry.commentSnippet}&rdquo;
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            )}
+        ) : activities.length === 0 ? (
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 16px', textAlign: 'center' }}>
+            <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"
+              style={{ color: 'var(--muted)', marginBottom: 12 }}>
+              <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <p style={{ fontSize: 13, color: 'var(--body)' }}>No activity yet</p>
+            <p style={{ fontSize: 11.5, color: 'var(--muted)', marginTop: 4 }}>
+              Actions like adding cards, moving tasks, and comments will appear here.
+            </p>
           </div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+        ) : (
+          <div>
+            {activities.map((entry, i) => (
+              <ActivityItem
+                key={entry.id}
+                entry={entry}
+                currentUserId={user?.uid}
+                borderTop={i > 0}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+    </PanelShell>
+  );
+}
+
+function ActivityItem({
+  entry,
+  currentUserId,
+  borderTop,
+}: {
+  entry: ActivityEntry;
+  currentUserId?: string;
+  borderTop: boolean;
+}) {
+  const [hovered, setHovered] = useState(false);
+  const colors = EVENT_COLORS[entry.eventType];
+
+  return (
+    <div
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        padding: '12px 16px',
+        borderTop: borderTop ? '1px solid var(--border)' : 'none',
+        background: hovered ? 'var(--surface-2)' : 'transparent',
+        transition: 'background 0.1s',
+      }}
+    >
+      <div style={{ display: 'flex', gap: 12 }}>
+        {/* Event icon */}
+        <div style={{
+          flexShrink: 0,
+          width: 28,
+          height: 28,
+          borderRadius: '50%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontSize: 12,
+          fontWeight: 700,
+          background: colors.background,
+          color: colors.color,
+        }}>
+          {EVENT_ICONS[entry.eventType]}
+        </div>
+
+        {/* Content */}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <p style={{ fontSize: 13, color: 'var(--text)', lineHeight: 1.4 }}>
+            {getActivityDescription(entry, currentUserId)}
+          </p>
+          <p style={{ fontSize: 11.5, color: 'var(--muted)', marginTop: 3 }}>
+            {formatTimeAgo(entry.createdAt)}
+          </p>
+          {entry.commentSnippet && (
+            <p style={{ fontSize: 11.5, color: 'var(--body)', marginTop: 4, fontStyle: 'italic', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              &ldquo;{entry.commentSnippet}&rdquo;
+            </p>
+          )}
+        </div>
+      </div>
+    </div>
   );
 }

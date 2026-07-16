@@ -1,13 +1,13 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { useKanbanStore } from '@/lib/store';
+import PanelShell from '@/components/ui/PanelShell';
 
 const PRIORITY_DOTS: Record<string, string> = {
-  high: 'bg-red-500',
-  medium: 'bg-yellow-500',
-  low: 'bg-green-500',
+  high: 'var(--red)',
+  medium: 'var(--amber)',
+  low: 'var(--green)',
 };
 
 export default function ArchivePanel() {
@@ -22,22 +22,16 @@ export default function ArchivePanel() {
 
   const { archivedCards, archivedColumns } = useMemo(() => {
     if (!board) return { archivedCards: [], archivedColumns: [] };
-
     const cards = board.columns.flatMap((col) =>
-      col.cards
-        .filter((c) => c.archived)
-        .map((c) => ({ ...c, columnTitle: col.title }))
+      col.cards.filter((c) => c.archived).map((c) => ({ ...c, columnTitle: col.title }))
     );
-
     const columns = board.columns.filter((c) => c.archived).map((c) => ({
       ...c,
       cardCount: c.cards.filter((card) => !card.archived).length,
     }));
-
     return { archivedCards: cards, archivedColumns: columns };
   }, [board]);
 
-  // Group archived cards by column title
   const cardsByColumn = useMemo(() => {
     const groups: Record<string, typeof archivedCards> = {};
     for (const card of archivedCards) {
@@ -48,165 +42,192 @@ export default function ArchivePanel() {
     return groups;
   }, [archivedCards]);
 
+  const subtitle = `${archivedCards.length} card${archivedCards.length !== 1 ? 's' : ''}, ${archivedColumns.length} column${archivedColumns.length !== 1 ? 's' : ''}`;
+
   return (
-    <AnimatePresence>
-      {archivePanelOpen && (
-        <motion.div
-          id="archive-panel"
-          initial={{ x: '100%' }}
-          animate={{ x: 0 }}
-          exit={{ x: '100%' }}
-          transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-          style={{ width: '320px' }}
-          className={`
-            flex flex-col border-l border-gray-200 dark:border-gray-700
-            bg-white dark:bg-gray-800 h-full
-            overflow-hidden md:static fixed right-0 top-16 z-30 bottom-0
-            md:relative
-          `}
-        >
-          {/* Header */}
-          <div className="flex items-center justify-between px-4 py-4 border-b border-gray-200 dark:border-gray-700 flex-shrink-0 bg-gray-50 dark:bg-gray-900/50">
-            <div className="flex-1">
-              <h2 className="text-lg font-bold text-gray-900 dark:text-white">Archive</h2>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                {archivedCards.length} card{archivedCards.length !== 1 ? 's' : ''},{' '}
-                {archivedColumns.length} column{archivedColumns.length !== 1 ? 's' : ''}
+    <PanelShell
+      open={archivePanelOpen}
+      id="archive-panel"
+      title="Archive"
+      subtitle={subtitle}
+      onClose={() => useKanbanStore.getState().setArchivePanelOpen(false)}
+    >
+      {/* Tabs — fixed above scroll */}
+      <div style={{ display: 'flex', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
+        {(['cards', 'columns'] as const).map((tab) => {
+          const count = tab === 'cards' ? archivedCards.length : archivedColumns.length;
+          const active = activeTab === tab;
+          return (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              style={{
+                flex: 1,
+                padding: '10px 0',
+                fontSize: 13,
+                fontWeight: 500,
+                color: active ? 'var(--purple-l)' : 'var(--muted)',
+                background: 'transparent',
+                borderTop: 'none',
+                borderLeft: 'none',
+                borderRight: 'none',
+                borderBottom: active ? '2px solid var(--purple-l)' : '2px solid transparent',
+                cursor: 'pointer',
+                transition: 'color 0.12s',
+              }}
+            >
+              {tab.charAt(0).toUpperCase() + tab.slice(1)} ({count})
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Scrollable content */}
+      <div style={{ flex: 1, overflowY: 'auto', padding: 16 }}>
+        {!board && (
+          <p style={{ fontSize: 13, color: 'var(--muted)', textAlign: 'center', padding: '32px 0' }}>
+            No board selected
+          </p>
+        )}
+
+        {/* Cards Tab */}
+        {activeTab === 'cards' && board && (
+          archivedCards.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '40px 0' }}>
+              <div style={{ fontSize: 36, marginBottom: 10 }}>📦</div>
+              <p style={{ fontSize: 13, color: 'var(--body)' }}>No archived cards</p>
+              <p style={{ fontSize: 11.5, color: 'var(--muted)', marginTop: 4 }}>
+                Archive cards from their edit menu to keep your board tidy
               </p>
             </div>
-            <button
-              onClick={() => useKanbanStore.getState().setArchivePanelOpen(false)}
-              className="p-1.5 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-              aria-label="Close archive panel"
-            >
-              <svg className="w-5 h-5 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
-
-          {/* Tabs */}
-          <div className="flex border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
-            <button
-              onClick={() => setActiveTab('cards')}
-              className={`flex-1 py-2.5 text-sm font-medium transition-colors ${
-                activeTab === 'cards'
-                  ? 'text-purple-600 dark:text-purple-400 border-b-2 border-purple-600 dark:border-purple-400'
-                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
-              }`}
-            >
-              Cards ({archivedCards.length})
-            </button>
-            <button
-              onClick={() => setActiveTab('columns')}
-              className={`flex-1 py-2.5 text-sm font-medium transition-colors ${
-                activeTab === 'columns'
-                  ? 'text-purple-600 dark:text-purple-400 border-b-2 border-purple-600 dark:border-purple-400'
-                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
-              }`}
-            >
-              Columns ({archivedColumns.length})
-            </button>
-          </div>
-
-          {/* Content */}
-          <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
-            {!board && (
-              <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-8">No board selected</p>
-            )}
-
-            {/* Cards Tab */}
-            {activeTab === 'cards' && board && (
-              <>
-                {archivedCards.length === 0 ? (
-                  <div className="text-center py-12">
-                    <div className="text-4xl mb-3">📦</div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">No archived cards</p>
-                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                      Archive cards from their edit menu to keep your board tidy
-                    </p>
-                  </div>
-                ) : (
-                  Object.entries(cardsByColumn).map(([columnTitle, cards]) => (
-                    <div key={columnTitle}>
-                      <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">
-                        {columnTitle}
-                      </p>
-                      <div className="space-y-2">
-                        {cards.map((card) => (
-                          <div
-                            key={card.id}
-                            className="flex items-start gap-2 p-2.5 rounded-lg bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-700"
-                          >
-                            {card.priority && (
-                              <div className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${PRIORITY_DOTS[card.priority] || 'bg-gray-400'}`} />
-                            )}
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm text-gray-800 dark:text-gray-200 truncate font-medium">
-                                {card.title}
-                              </p>
-                              {card.description && (
-                                <p className="text-xs text-gray-500 dark:text-gray-400 truncate mt-0.5">
-                                  {card.description}
-                                </p>
-                              )}
-                            </div>
-                            <button
-                              onClick={() => restoreCard(card.boardId, card.id)}
-                              className="text-xs text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 font-medium shrink-0 transition-colors"
-                              title="Restore this card to the board"
-                            >
-                              Restore
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ))
-                )}
-              </>
-            )}
-
-            {/* Columns Tab */}
-            {activeTab === 'columns' && board && (
-              <>
-                {archivedColumns.length === 0 ? (
-                  <div className="text-center py-12">
-                    <div className="text-4xl mb-3">📋</div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">No archived columns</p>
-                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                      Archive columns from the column menu to hide them without deleting
-                    </p>
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    {archivedColumns.map((col) => (
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              {Object.entries(cardsByColumn).map(([columnTitle, cards]) => (
+                <div key={columnTitle}>
+                  <p style={{
+                    fontSize: 11,
+                    fontWeight: 600,
+                    textTransform: 'uppercase',
+                    letterSpacing: '.6px',
+                    color: 'var(--purple-l)',
+                    marginBottom: 8,
+                  }}>
+                    {columnTitle}
+                  </p>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    {cards.map((card) => (
                       <div
-                        key={col.id}
-                        className="flex items-center gap-3 p-3 rounded-lg bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-700"
+                        key={card.id}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'flex-start',
+                          gap: 8,
+                          padding: '10px 12px',
+                          borderRadius: 10,
+                          background: 'var(--surface-2)',
+                          border: '1px solid var(--border)',
+                        }}
                       >
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-gray-800 dark:text-gray-200 truncate">{col.title}</p>
-                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                            {col.cardCount} active card{col.cardCount !== 1 ? 's' : ''}
+                        {card.priority && (
+                          <div style={{
+                            width: 7,
+                            height: 7,
+                            borderRadius: '50%',
+                            background: PRIORITY_DOTS[card.priority] ?? 'var(--muted)',
+                            marginTop: 5,
+                            flexShrink: 0,
+                          }} />
+                        )}
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <p style={{ fontSize: 13, color: 'var(--text)', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {card.title}
                           </p>
+                          {card.description && (
+                            <p style={{ fontSize: 11.5, color: 'var(--muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginTop: 2 }}>
+                              {card.description}
+                            </p>
+                          )}
                         </div>
                         <button
-                          onClick={() => restoreColumn(col.boardId, col.id)}
-                          className="text-xs text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 font-medium shrink-0 transition-colors"
-                          title="Restore this column to the board"
+                          onClick={() => restoreCard(card.boardId, card.id)}
+                          title="Restore this card to the board"
+                          style={{
+                            fontSize: 11.5,
+                            color: 'var(--purple-l)',
+                            background: 'none',
+                            border: 'none',
+                            cursor: 'pointer',
+                            fontWeight: 500,
+                            flexShrink: 0,
+                            padding: '2px 4px',
+                          }}
                         >
                           Restore
                         </button>
                       </div>
                     ))}
                   </div>
-                )}
-              </>
-            )}
-          </div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+                </div>
+              ))}
+            </div>
+          )
+        )}
+
+        {/* Columns Tab */}
+        {activeTab === 'columns' && board && (
+          archivedColumns.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '40px 0' }}>
+              <div style={{ fontSize: 36, marginBottom: 10 }}>📋</div>
+              <p style={{ fontSize: 13, color: 'var(--body)' }}>No archived columns</p>
+              <p style={{ fontSize: 11.5, color: 'var(--muted)', marginTop: 4 }}>
+                Archive columns from the column menu to hide them without deleting
+              </p>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {archivedColumns.map((col) => (
+                <div
+                  key={col.id}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 12,
+                    padding: '10px 12px',
+                    borderRadius: 10,
+                    background: 'var(--surface-2)',
+                    border: '1px solid var(--border)',
+                  }}
+                >
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ fontSize: 13, fontWeight: 500, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {col.title}
+                    </p>
+                    <p style={{ fontSize: 11.5, color: 'var(--muted)', marginTop: 2 }}>
+                      {col.cardCount} active card{col.cardCount !== 1 ? 's' : ''}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => restoreColumn(board.id, col.id)}
+                    title="Restore this column to the board"
+                    style={{
+                      fontSize: 11.5,
+                      color: 'var(--purple-l)',
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      fontWeight: 500,
+                      flexShrink: 0,
+                      padding: '2px 4px',
+                    }}
+                  >
+                    Restore
+                  </button>
+                </div>
+              ))}
+            </div>
+          )
+        )}
+      </div>
+    </PanelShell>
   );
 }

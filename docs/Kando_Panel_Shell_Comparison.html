@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kan-do — Panel Shell Comparison</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#161412; --surface-1:#1d1a17; --surface-2:#231f1c; --surface-3:#2a2522;
+    --border:#322d2a; --border-2:#4a4240;
+    --text:#f5f0ee; --body:#a89890; --muted:#6b5e58;
+    --purple:#9333ea; --purple-l:#c084fc; --pink:#f472b6;
+    --glow:rgba(147,51,234,.45);
+    --green:#4ade80; --amber:#fbbf24; --red:#fb7185; --blue:#60a5fa;
+    --font:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:var(--font);background:#0f0d0c;color:var(--text);-webkit-font-smoothing:antialiased;padding:28px}
+  .wrap{max-width:1240px;margin:0 auto}
+
+  .section-label{font-size:13px;font-weight:600;color:var(--purple-l);letter-spacing:1px;text-transform:uppercase;margin:40px 0 12px;padding-bottom:8px;border-bottom:1px solid var(--border)}
+  .section-label:first-child{margin-top:0}
+  .note{font-size:13px;color:var(--body);margin-bottom:20px;line-height:1.6;max-width:900px}
+  .note b{color:var(--text)}
+
+  /* fake board behind the panels, so docking reads correctly */
+  .stage{background:var(--bg);border:1px solid var(--border);border-radius:14px;overflow:hidden;position:relative;display:flex;height:430px}
+  .board-bg{flex:1;padding:16px;display:flex;gap:10px;opacity:.55;min-width:0}
+  .col{width:120px;flex-shrink:0}
+  .col-h{font-size:11px;font-weight:600;color:var(--body);margin-bottom:8px}
+  .mini-card{background:var(--surface-1);border:1px solid var(--border);border-radius:8px;height:44px;margin-bottom:7px;border-top:2px solid var(--purple)}
+  .mini-card.g{border-top-color:var(--green)} .mini-card.a{border-top-color:var(--amber)}
+
+  /* ===== SHARED panel internals — identical in all 3, ONLY the shell differs ===== */
+  .p-head{display:flex;align-items:flex-start;justify-content:space-between;padding:16px 16px 14px;border-bottom:1px solid var(--border);flex-shrink:0}
+  .p-title{font-size:17px;font-weight:600;color:var(--text)}
+  .p-sub{font-size:11.5px;color:var(--muted);margin-top:3px}
+  .p-close{width:28px;height:28px;border-radius:8px;border:1px solid var(--border);background:var(--surface-2);color:var(--body);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0}
+  .p-close svg{width:13px;height:13px}
+  .p-body{padding:14px;overflow:hidden;flex:1}
+  .row{display:flex;gap:10px;padding:10px 0;border-bottom:1px solid rgba(50,45,42,.6)}
+  .row:last-child{border-bottom:none}
+  .r-ico{width:26px;height:26px;border-radius:50%;background:rgba(147,51,234,.14);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .r-ico svg{width:12px;height:12px;color:var(--purple-l)}
+  .r-ico.g{background:rgba(74,222,128,.14)} .r-ico.g svg{color:var(--green)}
+  .r-txt{font-size:12.5px;color:var(--body);line-height:1.45}
+  .r-txt b{color:var(--text);font-weight:500}
+  .r-time{font-size:10.5px;color:var(--muted);margin-top:3px}
+
+  /* ===== THE THREE SHELLS ===== */
+  /* A — flush docked */
+  .shell-a{width:300px;flex-shrink:0;display:flex;flex-direction:column;
+    background:var(--surface-1);
+    border-left:1px solid var(--border);
+    box-shadow:-6px 0 24px rgba(0,0,0,.28);}
+  /* C — flush + light glass */
+  .shell-c{width:300px;flex-shrink:0;display:flex;flex-direction:column;
+    background:rgba(29,26,23,.82);
+    backdrop-filter:blur(10px) saturate(1.1);-webkit-backdrop-filter:blur(10px) saturate(1.1);
+    border-left:1px solid var(--border);
+    box-shadow:-6px 0 24px rgba(0,0,0,.32);}
+  /* B — floating glass card */
+  .shell-b{width:300px;flex-shrink:0;display:flex;flex-direction:column;margin:12px 12px 12px 0;
+    background:rgba(42,37,34,.72);
+    backdrop-filter:blur(22px) saturate(1.2);-webkit-backdrop-filter:blur(22px) saturate(1.2);
+    border:1px solid rgba(255,255,255,.09);
+    border-radius:18px;
+    box-shadow:0 24px 60px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.07);
+    overflow:hidden;}
+
+  .tag{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:600;color:var(--muted);margin-bottom:9px;text-transform:uppercase;letter-spacing:.5px}
+  .tag .dot{width:6px;height:6px;border-radius:50%;background:var(--purple-l)}
+  .tag .rec{font-size:9.5px;font-weight:600;color:var(--purple-l);background:rgba(147,51,234,.14);padding:2px 7px;border-radius:99px;letter-spacing:.3px}
+
+  .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:18px}
+
+  /* stress test rows */
+  .stress{background:var(--bg);border:1px solid var(--border);border-radius:14px;overflow:hidden;display:flex;height:300px;margin-bottom:8px}
+  .stress .board-bg{opacity:.4}
+  .stress .shell-a,.stress .shell-c,.stress .shell-b{width:196px}
+  .stress .p-head{padding:12px 12px 10px}
+  .stress .p-title{font-size:14px}
+  .stress .p-sub{font-size:10px}
+  .stress .p-close{width:22px;height:22px}
+  .stress .p-body{padding:10px}
+  .stress .r-txt{font-size:11px}
+
+  .verdict{background:var(--surface-1);border:1px solid var(--border);border-radius:14px;padding:18px 20px;margin-top:8px}
+  .verdict h4{font-size:12px;font-weight:600;color:var(--purple-l);text-transform:uppercase;letter-spacing:.5px;margin-bottom:9px}
+  .verdict p{font-size:12.5px;color:var(--body);line-height:1.6;margin-bottom:9px}
+  .verdict p:last-child{margin-bottom:0}
+  .verdict b{color:var(--text)}
+  .verdict code{font-family:ui-monospace,monospace;font-size:11px;color:var(--purple-l);background:rgba(147,51,234,.1);padding:1px 5px;border-radius:4px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="section-label">One panel — the three shell options</div>
+  <div class="note">Identical header + content in all three. <b>Only the container treatment differs.</b> Docked against a board so the edge behavior reads correctly.</div>
+
+  <div class="grid3">
+    <div>
+      <div class="tag"><span class="dot"></span>A — Flush docked</div>
+      <div class="stage" style="height:380px">
+        <div class="board-bg"><div class="col"><div class="col-h">TODO</div><div class="mini-card"></div><div class="mini-card g"></div></div><div class="col"><div class="col-h">In Progress</div><div class="mini-card a"></div></div></div>
+        <div class="shell-a">
+          <div class="p-head"><div><div class="p-title">Activity</div><div class="p-sub">39 recent events</div></div><button class="p-close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>
+          <div class="p-body">
+            <div class="row"><div class="r-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M5 12h14M13 5l7 7-7 7"/></svg></div><div><div class="r-txt">You moved <b>"Define product requirements"</b> to Backlog</div><div class="r-time">1w ago</div></div></div>
+            <div class="row"><div class="r-ico g"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></div><div><div class="r-txt">You restored <b>"Define product requirements"</b></div><div class="r-time">1w ago</div></div></div>
+            <div class="row"><div class="r-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M11 4h2M4 11v2M12 8v8M8 12h8"/></svg></div><div><div class="r-txt">You updated <b>"Define product requirements"</b> (tags)</div><div class="r-time">1w ago</div></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="tag"><span class="dot"></span>C — Flush + light glass</div>
+      <div class="stage" style="height:380px">
+        <div class="board-bg"><div class="col"><div class="col-h">TODO</div><div class="mini-card"></div><div class="mini-card g"></div></div><div class="col"><div class="col-h">In Progress</div><div class="mini-card a"></div></div></div>
+        <div class="shell-c">
+          <div class="p-head"><div><div class="p-title">Activity</div><div class="p-sub">39 recent events</div></div><button class="p-close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>
+          <div class="p-body">
+            <div class="row"><div class="r-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M5 12h14M13 5l7 7-7 7"/></svg></div><div><div class="r-txt">You moved <b>"Define product requirements"</b> to Backlog</div><div class="r-time">1w ago</div></div></div>
+            <div class="row"><div class="r-ico g"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></div><div><div class="r-txt">You restored <b>"Define product requirements"</b></div><div class="r-time">1w ago</div></div></div>
+            <div class="row"><div class="r-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M11 4h2M4 11v2M12 8v8M8 12h8"/></svg></div><div><div class="r-txt">You updated <b>"Define product requirements"</b> (tags)</div><div class="r-time">1w ago</div></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="tag"><span class="dot"></span>B — Floating glass <span class="rec">current Analytics</span></div>
+      <div class="stage" style="height:380px">
+        <div class="board-bg"><div class="col"><div class="col-h">TODO</div><div class="mini-card"></div><div class="mini-card g"></div></div><div class="col"><div class="col-h">In Progress</div><div class="mini-card a"></div></div></div>
+        <div class="shell-b">
+          <div class="p-head"><div><div class="p-title">Activity</div><div class="p-sub">39 recent events</div></div><button class="p-close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>
+          <div class="p-body">
+            <div class="row"><div class="r-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M5 12h14M13 5l7 7-7 7"/></svg></div><div><div class="r-txt">You moved <b>"Define product requirements"</b> to Backlog</div><div class="r-time">1w ago</div></div></div>
+            <div class="row"><div class="r-ico g"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></div><div><div class="r-txt">You restored <b>"Define product requirements"</b></div><div class="r-time">1w ago</div></div></div>
+            <div class="row"><div class="r-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M11 4h2M4 11v2M12 8v8M8 12h8"/></svg></div><div><div class="r-txt">You updated <b>"Define product requirements"</b> (tags)</div><div class="r-time">1w ago</div></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-label">The real test — three panels open at once</div>
+  <div class="note">This is the composition that exposed the problem. <b>The single-panel view flatters B; the multi-panel view is where the difference actually bites.</b></div>
+
+  <div class="tag" style="margin-top:6px"><span class="dot"></span>A — Flush docked, three open</div>
+  <div class="stress">
+    <div class="board-bg"><div class="col"><div class="col-h">TODO</div><div class="mini-card"></div><div class="mini-card g"></div></div></div>
+    <div class="shell-a"><div class="p-head"><div><div class="p-title">Archive</div><div class="p-sub">1 card</div></div><button class="p-close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div><div class="p-body"><div class="row"><div class="r-txt"><b>__mcp-phase-b-e2e-test__</b><div class="r-time">Backlog</div></div></div></div></div>
+    <div class="shell-a"><div class="p-head"><div><div class="p-title">Activity</div><div class="p-sub">39 events</div></div><button class="p-close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div><div class="p-body"><div class="row"><div class="r-txt">You moved <b>"Define product…"</b><div class="r-time">1w ago</div></div></div><div class="row"><div class="r-txt">You restored <b>"Define product…"</b><div class="r-time">1w ago</div></div></div></div></div>
+    <div class="shell-a"><div class="p-head"><div><div class="p-title">Due Dates</div><div class="p-sub">11 upcoming</div></div><button class="p-close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div><div class="p-body"><div class="row"><div class="r-txt"><b>Set up cross-platform…</b><div class="r-time" style="color:var(--red)">Jun 29 Overdue</div></div></div></div></div>
+  </div>
+
+  <div class="tag" style="margin-top:22px"><span class="dot"></span>B — Floating glass, three open</div>
+  <div class="stress">
+    <div class="board-bg"><div class="col"><div class="col-h">TODO</div><div class="mini-card"></div><div class="mini-card g"></div></div></div>
+    <div class="shell-b"><div class="p-head"><div><div class="p-title">Archive</div><div class="p-sub">1 card</div></div><button class="p-close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div><div class="p-body"><div class="row"><div class="r-txt"><b>__mcp-phase-b-e2e-test__</b><div class="r-time">Backlog</div></div></div></div></div>
+    <div class="shell-b"><div class="p-head"><div><div class="p-title">Activity</div><div class="p-sub">39 events</div></div><button class="p-close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div><div class="p-body"><div class="row"><div class="r-txt">You moved <b>"Define product…"</b><div class="r-time">1w ago</div></div></div><div class="row"><div class="r-txt">You restored <b>"Define product…"</b><div class="r-time">1w ago</div></div></div></div></div>
+    <div class="shell-b"><div class="p-head"><div><div class="p-title">Due Dates</div><div class="p-sub">11 upcoming</div></div><button class="p-close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div><div class="p-body"><div class="row"><div class="r-txt"><b>Set up cross-platform…</b><div class="r-time" style="color:var(--red)">Jun 29 Overdue</div></div></div></div></div>
+  </div>
+
+  <div class="section-label">The read</div>
+  <div class="verdict">
+    <h4>What the multi-panel test shows</h4>
+    <p><b>A (flush)</b> — the panels read as <b>one continuous piece of app chrome</b>. Dividers separate them cleanly, the board stays the focus, and adding a 4th costs nothing visually. Calm.</p>
+    <p><b>B (floating glass)</b> — beautiful alone, but three floating cards jammed edge-to-edge create <b>competing shadows and gaps</b>. Each panel shouts "I'm a separate floating thing," and they fight each other. This is why the 4-panel screenshot read as busy.</p>
+    <p><b>C (flush + light glass)</b> — flush behavior with a hint of depth. Board shows through faintly. Safe middle if A feels too flat.</p>
+    <h4 style="margin-top:16px">Recommendation</h4>
+    <p><b>A or C.</b> Docked panels are <i>chrome</i>, not <i>content</i> — they should recede and let the board be the star. Glass + radius + big shadow is the <b>modal</b> language (Share, Help, dropdowns) — things that <i>float over</i> and demand attention. Analytics is the outlier that should <b>change</b>, not the reference the others copy.</p>
+    <h4 style="margin-top:16px">Dev — the shared shell</h4>
+    <p>Extract <code>&lt;PanelShell&gt;</code> owning: container (bg/border/shadow), the spring animation (<code>stiffness:300, damping:30</code> — currently copy-pasted in all 4), header (title + subtitle + close), and the scroll body. Each panel supplies <b>only its content</b>. Fixes audit items 1–11 + 18 at once, and makes a 5th panel automatically consistent.</p>
+    <p>Header is now uniform: 16px padding, title 17px/600 <code>var(--text)</code>, subtitle 11.5px <code>var(--muted)</code>, close 28×28 <code>var(--surface-2)</code>/<code>var(--border)</code>, divider <code>var(--border)</code>. <b>Due Dates gets a close button</b> (currently has none).</p>
+    <p><b>Legitimate differences stay:</b> Analytics keeps its stat tiles/charts/purple section headings; Due Dates keeps resizable width + semantic left-accent borders; Activity keeps divider-separated dense rows. The <b>frame</b> is identical; the <b>content</b> differs appropriately.</p>
+  </div>
+
+</div>
+</body>
+</html>

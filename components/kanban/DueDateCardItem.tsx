@@ -21,7 +21,7 @@ export function DueDateCardItem({ card, columnTitle, boardId }: DueDateCardItemP
   const formattedDate = card.dueDate ? formatDate(card.dueDate) : '';
 
   // Determine border color: red for overdue, or priority color
-  const borderColor = overdue ? '#fb7185' : (card.priority ? PRIORITY_COLORS[card.priority] : 'var(--border)');
+  const borderColor = overdue ? 'var(--red)' : (card.priority ? PRIORITY_COLORS[card.priority] : 'var(--border)');
 
   const handleCardClick = () => {
     setIsCardModalOpen(true);
@@ -51,7 +51,7 @@ export function DueDateCardItem({ card, columnTitle, boardId }: DueDateCardItemP
 
         {/* Due Date Row */}
         <div className="flex items-center justify-between gap-2 mb-2" style={{ fontSize: '12px' }}>
-          <span style={{ color: overdue ? '#fb7185' : 'var(--muted)', fontWeight: overdue ? 500 : 400 }}>
+          <span style={{ color: overdue ? 'var(--red)' : 'var(--muted)', fontWeight: overdue ? 500 : 400 }}>
             📅 {formattedDate}
             {overdue && <span className="ml-1">Overdue</span>}
           </span>
