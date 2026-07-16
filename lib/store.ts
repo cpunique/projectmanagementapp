@@ -119,10 +119,7 @@ export const useKanbanStore = create<KanbanStore>()(
       darkMode: true, // dark-only app — see toggleDarkMode/setDarkMode, light is not reachable
       searchQuery: '',
       filters: {},
-      dueDatePanelOpen: true,
-      activityPanelOpen: false,
-      analyticsPanelOpen: false,
-      archivePanelOpen: false,
+      openPanel: null as 'archive' | 'activity' | 'analytics' | 'dueDates' | null,
       mobileAlertsOpen: false,
       mobileSearchOpen: false,
       searchScope: 'this-board' as const,
@@ -1140,16 +1137,10 @@ export const useKanbanStore = create<KanbanStore>()(
         set({ notifications: [] });
       },
 
-      // Activity panel actions
-      toggleActivityPanel: () => set((state) => ({ activityPanelOpen: !state.activityPanelOpen })),
-      setActivityPanelOpen: (isOpen: boolean) => set({ activityPanelOpen: isOpen }),
-
-      // Analytics panel actions
-      toggleAnalyticsPanel: () => set((state) => ({ analyticsPanelOpen: !state.analyticsPanelOpen })),
-      setAnalyticsPanelOpen: (isOpen: boolean) => set({ analyticsPanelOpen: isOpen }),
-
-      toggleArchivePanel: () => set((state) => ({ archivePanelOpen: !state.archivePanelOpen })),
-      setArchivePanelOpen: (isOpen: boolean) => set({ archivePanelOpen: isOpen }),
+      // Panel actions — single-panel model
+      setOpenPanel: (panel: 'archive' | 'activity' | 'analytics' | 'dueDates' | null) => set({ openPanel: panel }),
+      togglePanel: (panel: 'archive' | 'activity' | 'analytics' | 'dueDates') =>
+        set((state) => ({ openPanel: state.openPanel === panel ? null : panel })),
 
       setMobileAlertsOpen: (isOpen: boolean) => set({ mobileAlertsOpen: isOpen }),
       setMobileSearchOpen: (isOpen: boolean) => set({ mobileSearchOpen: isOpen }),
@@ -1162,9 +1153,6 @@ export const useKanbanStore = create<KanbanStore>()(
 
       setActiveView: (view: 'board' | 'calendar') => set({ activeView: view }),
 
-      // Due dates panel actions
-      toggleDueDatePanel: () => set((state) => ({ dueDatePanelOpen: !state.dueDatePanelOpen })),
-      setDueDatePanelOpen: (isOpen: boolean) => set({ dueDatePanelOpen: isOpen }),
       setDueDatePanelWidth: (width: number) => {
         const MIN_WIDTH = 280;
         const MAX_WIDTH = 600;
@@ -1346,7 +1334,7 @@ export const useKanbanStore = create<KanbanStore>()(
       // Only persistent client-side UI state (darkMode, filters, etc.) should be in localStorage
       partialize: (state) => {
         // Exclude Firebase-managed state and transient state from localStorage
-        const { boards, activeBoard, defaultBoardId, demoMode, conflictState, activityPanelOpen, analyticsPanelOpen, archivePanelOpen, createBoardModalOpen, shareModalBoardId, mobileAlertsOpen, mobileSearchOpen, activeCardId, searchFocusTick, ...rest } = state;
+        const { boards, activeBoard, defaultBoardId, demoMode, conflictState, openPanel, createBoardModalOpen, shareModalBoardId, mobileAlertsOpen, mobileSearchOpen, activeCardId, searchFocusTick, ...rest } = state;
         return rest;
       },
       merge: (persistedState, currentState) => {
@@ -1363,9 +1351,7 @@ export const useKanbanStore = create<KanbanStore>()(
           defaultBoardId: currentState.defaultBoardId,
           demoMode: currentState.demoMode,
           conflictState: currentState.conflictState,
-          activityPanelOpen: currentState.activityPanelOpen,
-          analyticsPanelOpen: currentState.analyticsPanelOpen,
-          archivePanelOpen: currentState.archivePanelOpen,
+          openPanel: currentState.openPanel,
           createBoardModalOpen: currentState.createBoardModalOpen,
           shareModalBoardId: currentState.shareModalBoardId,
           mobileAlertsOpen: currentState.mobileAlertsOpen,

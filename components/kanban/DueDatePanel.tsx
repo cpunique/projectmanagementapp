@@ -13,8 +13,8 @@ interface CardWithColumnInfo extends Card {
 }
 
 export function DueDatePanel() {
-  const { boards, activeBoard, dueDatePanelOpen, dueDatePanelWidth, setDueDatePanelWidth, setDueDatePanelOpen } =
-    useKanbanStore();
+  const { boards, activeBoard, dueDatePanelWidth, setDueDatePanelWidth } = useKanbanStore();
+  const dueDatePanelOpen = useKanbanStore((s) => s.openPanel === 'dueDates');
   const [isDragging, setIsDragging] = useState(false);
   const [isHandleHovered, setIsHandleHovered] = useState(false);
   const dragStartXRef = useRef<number>(0);
@@ -114,7 +114,7 @@ export function DueDatePanel() {
       id="due-date-panel"
       title="Due Dates"
       subtitle={`${cardsWithDueDates.length} upcoming`}
-      onClose={() => setDueDatePanelOpen(false)}
+      onClose={() => useKanbanStore.getState().setOpenPanel(null)}
       width={dueDatePanelWidth}
       overlay={resizeHandle}
     >

@@ -11,7 +11,7 @@ const PRIORITY_DOTS: Record<string, string> = {
 };
 
 export default function ArchivePanel() {
-  const archivePanelOpen = useKanbanStore((state) => state.archivePanelOpen);
+  const archivePanelOpen = useKanbanStore((state) => state.openPanel === 'archive');
   const boards = useKanbanStore((state) => state.boards);
   const activeBoard = useKanbanStore((state) => state.activeBoard);
   const restoreCard = useKanbanStore((state) => state.restoreCard);
@@ -50,7 +50,7 @@ export default function ArchivePanel() {
       id="archive-panel"
       title="Archive"
       subtitle={subtitle}
-      onClose={() => useKanbanStore.getState().setArchivePanelOpen(false)}
+      onClose={() => useKanbanStore.getState().setOpenPanel(null)}
     >
       {/* Tabs — fixed above scroll */}
       <div style={{ display: 'flex', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>

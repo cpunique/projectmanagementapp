@@ -29,14 +29,11 @@ const Header = () => {
   const { showToast } = useToast();
   const darkMode = useKanbanStore((state) => state.darkMode);
   const demoMode = useKanbanStore((state) => state.demoMode);
-  const dueDatePanelOpen = useKanbanStore((state) => state.dueDatePanelOpen);
   const toggleDemoMode = useKanbanStore((state) => state.toggleDemoMode);
-  const toggleDueDatePanel = useKanbanStore((state) => state.toggleDueDatePanel);
   const activeBoard = useKanbanStore((state) => state.activeBoard);
   const boards = useKanbanStore((state) => state.boards);
   const zoomLevel = useKanbanStore((state) => state.zoomLevel);
   const setZoomLevel = useKanbanStore((state) => state.setZoomLevel);
-  const archivePanelOpen = useKanbanStore((state) => state.archivePanelOpen);
   const activeView = useKanbanStore((state) => state.activeView);
 
   // Live calendar date — updates at midnight so the icon always shows today
@@ -75,9 +72,9 @@ const Header = () => {
   const syncState = useKanbanStore((state) => state.syncState);
   useEffect(() => {
     if (user && syncState === 'synced') {
-      setUserUIPreferences(user.uid, { dueDatePanelOpen, zoomLevel, darkMode });
+      setUserUIPreferences(user.uid, { zoomLevel, darkMode });
     }
-  }, [dueDatePanelOpen, zoomLevel, darkMode, user, syncState]);
+  }, [zoomLevel, darkMode, user, syncState]);
 
   // Calculate badge count for due dates
   const board = boards.find((b) => b.id === activeBoard);
@@ -254,7 +251,7 @@ const Header = () => {
                     id: 'archive',
                     label: 'Archive',
                     icon: '📦',
-                    onClick: () => useKanbanStore.getState().toggleArchivePanel(),
+                    onClick: () => useKanbanStore.getState().togglePanel('archive'),
                     tooltip: 'Toggle archive panel',
                     disabled: !activeBoard,
                   },
@@ -262,7 +259,7 @@ const Header = () => {
                     id: 'analytics',
                     label: 'Analytics',
                     icon: '📊',
-                    onClick: () => useKanbanStore.getState().toggleAnalyticsPanel(),
+                    onClick: () => useKanbanStore.getState().togglePanel('analytics'),
                     tooltip: 'Toggle analytics panel',
                     disabled: !activeBoard,
                   },
@@ -270,7 +267,7 @@ const Header = () => {
                     id: 'duedates',
                     label: `Due Dates${cardsWithDueDates > 0 ? ` (${cardsWithDueDates})` : ''}`,
                     icon: '📅',
-                    onClick: toggleDueDatePanel,
+                    onClick: () => useKanbanStore.getState().togglePanel('dueDates'),
                     tooltip: 'Toggle due dates panel',
                     disabled: !activeBoard,
                   },
@@ -278,7 +275,7 @@ const Header = () => {
                     id: 'activity',
                     label: `Activity${unreadActivityCount > 0 ? ` (${unreadActivityCount})` : ''}`,
                     icon: '⏰',
-                    onClick: () => useKanbanStore.getState().toggleActivityPanel(),
+                    onClick: () => useKanbanStore.getState().togglePanel('activity'),
                     tooltip: 'Toggle activity feed',
                     disabled: !activeBoard,
                   },

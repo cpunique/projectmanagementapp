@@ -169,14 +169,8 @@ export interface KanbanState {
   // Internal state for demo mode - stored boards before entering demo
   _userBoardsBackup?: Board[];
   _preDemoActiveBoard?: string | null;
-  // Due dates panel state
-  dueDatePanelOpen: boolean;
-  // Activity feed panel state
-  activityPanelOpen: boolean;
-  // Analytics panel state
-  analyticsPanelOpen: boolean;
-  // Archive panel state
-  archivePanelOpen: boolean;
+  // Single open panel — at most one panel is open at a time
+  openPanel: 'archive' | 'activity' | 'analytics' | 'dueDates' | null;
   // Mobile full-screen Alerts/Notifications takeover view state
   mobileAlertsOpen: boolean;
   // Mobile full-screen Search takeover view state
@@ -289,22 +283,10 @@ export interface KanbanActions {
   setSearchScope: (scope: 'this-board' | 'all-boards') => void;
   triggerSearchFocus: () => void;
 
-  // Due dates panel actions
-  toggleDueDatePanel: () => void;
-  setDueDatePanelOpen: (isOpen: boolean) => void;
+  // Panel actions — single open panel at a time
+  setOpenPanel: (panel: 'archive' | 'activity' | 'analytics' | 'dueDates' | null) => void;
+  togglePanel: (panel: 'archive' | 'activity' | 'analytics' | 'dueDates') => void;
   setDueDatePanelWidth: (width: number) => void;
-
-  // Activity panel actions
-  toggleActivityPanel: () => void;
-  setActivityPanelOpen: (isOpen: boolean) => void;
-
-  // Analytics panel actions
-  toggleAnalyticsPanel: () => void;
-  setAnalyticsPanelOpen: (isOpen: boolean) => void;
-
-  // Archive panel actions
-  toggleArchivePanel: () => void;
-  setArchivePanelOpen: (isOpen: boolean) => void;
 
   // Mobile full-screen Alerts view actions
   setMobileAlertsOpen: (isOpen: boolean) => void;

@@ -85,7 +85,8 @@ function getActivityDescription(entry: ActivityEntry, currentUserId?: string): s
 }
 
 export default function ActivityFeedPanel() {
-  const { activityPanelOpen, activeBoard } = useKanbanStore();
+  const activeBoard = useKanbanStore((s) => s.activeBoard);
+  const activityPanelOpen = useKanbanStore((s) => s.openPanel === 'activity');
   const { user } = useAuth();
   const [activities, setActivities] = useState<ActivityEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -113,7 +114,7 @@ export default function ActivityFeedPanel() {
       id="activity-feed-panel"
       title="Activity"
       subtitle={`${activities.length} recent event${activities.length !== 1 ? 's' : ''}`}
-      onClose={() => useKanbanStore.getState().setActivityPanelOpen(false)}
+      onClose={() => useKanbanStore.getState().setOpenPanel(null)}
     >
       <div style={{ flex: 1, overflowY: 'auto' }}>
         {loading ? (

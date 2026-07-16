@@ -117,8 +117,6 @@ export interface UserDocument extends UserLegalConsent {
   /** User's default board preference */
   defaultBoardId?: string | null;
 
-  /** UI preferences */
-  dueDatePanelOpen?: boolean;
 }
 
 /**

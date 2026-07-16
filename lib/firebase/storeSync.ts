@@ -215,16 +215,11 @@ export async function initializeFirebaseSync(user: User) {
         store.setZoomLevel(uiPreferences.zoomLevel);
       }
 
-      if (uiPreferences.dueDatePanelOpen !== undefined) {
-        store.setDueDatePanelOpen(uiPreferences.dueDatePanelOpen);
-      }
-
       // Sync local values back to Firestore so other devices get the latest
       const currentStore = useKanbanStore.getState();
       setUserUIPreferences(user.uid, {
         darkMode: currentStore.darkMode,
         zoomLevel: currentStore.zoomLevel,
-        dueDatePanelOpen: currentStore.dueDatePanelOpen,
       }).catch(() => {});
 
       // Disable demo mode if enabled - but DON'T use toggleDemoMode() because that would
@@ -335,7 +330,7 @@ export function cleanupFirebaseSync() {
   // They will be overridden by initializeFirebaseSync on next login if the
   // new user has different preferences stored in Firestore
   store.setDefaultBoard(null);
-  store.setDueDatePanelOpen(false);
+  store.setOpenPanel(null);
 
   // Reset syncState so the next account's hooks (useOnboarding, useOverdueChecker,
   // useDefaultBoardSaver) can't be satisfied by this account's stale 'synced' value

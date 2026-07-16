@@ -17,7 +17,7 @@ interface BoardWithPanelProps {
 }
 
 export function BoardWithPanel({ children }: BoardWithPanelProps) {
-  const { dueDatePanelOpen, activityPanelOpen, analyticsPanelOpen, archivePanelOpen, activeView, boards, activeBoard, mobileAlertsOpen, mobileSearchOpen } = useKanbanStore();
+  const { openPanel, activeView, boards, activeBoard, mobileAlertsOpen, mobileSearchOpen } = useKanbanStore();
   const { user } = useAuth();
 
   // Calculate total cards with due dates for badge
@@ -37,7 +37,7 @@ export function BoardWithPanel({ children }: BoardWithPanelProps) {
     return false;
   })();
 
-  const anyPanelOpen = dueDatePanelOpen || activityPanelOpen || analyticsPanelOpen || archivePanelOpen;
+  const anyPanelOpen = openPanel !== null;
 
   return (
     <div className="flex h-full w-full">
@@ -115,20 +115,15 @@ export function BoardWithPanel({ children }: BoardWithPanelProps) {
         {anyPanelOpen && (
           <div
             className="fixed inset-0 top-16 bg-black/50 z-20 md:hidden"
-            onClick={() => {
-              if (dueDatePanelOpen) useKanbanStore.getState().toggleDueDatePanel();
-              if (activityPanelOpen) useKanbanStore.getState().setActivityPanelOpen(false);
-              if (analyticsPanelOpen) useKanbanStore.getState().setAnalyticsPanelOpen(false);
-              if (archivePanelOpen) useKanbanStore.getState().setArchivePanelOpen(false);
-            }}
+            onClick={() => useKanbanStore.getState().setOpenPanel(null)}
           />
         )}
 
         {/* Panels on mobile */}
-        {dueDatePanelOpen && <DueDatePanel />}
-        {activityPanelOpen && <ActivityFeedPanel />}
-        {analyticsPanelOpen && <AnalyticsPanel />}
-        {archivePanelOpen && <ArchivePanel />}
+        {openPanel === 'dueDates' && <DueDatePanel />}
+        {openPanel === 'activity' && <ActivityFeedPanel />}
+        {openPanel === 'analytics' && <AnalyticsPanel />}
+        {openPanel === 'archive' && <ArchivePanel />}
       </div>
     </div>
   );

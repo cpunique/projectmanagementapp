@@ -8,13 +8,13 @@ interface DueDatePanelToggleButtonProps {
 }
 
 export function DueDatePanelToggleButton({ badge = 0 }: DueDatePanelToggleButtonProps) {
-  const { dueDatePanelOpen, toggleDueDatePanel } = useKanbanStore();
+  const dueDatePanelOpen = useKanbanStore((s) => s.openPanel === 'dueDates');
 
   return (
     <motion.button
       whileHover={{ scale: 1.1 }}
       whileTap={{ scale: 0.95 }}
-      onClick={toggleDueDatePanel}
+      onClick={() => useKanbanStore.getState().togglePanel('dueDates')}
       aria-label="Toggle due dates panel"
       aria-expanded={dueDatePanelOpen}
       className={`

@@ -13,7 +13,7 @@ import { savePreference, loadPreference } from '@/lib/db';
  */
 export function useUnreadActivityCount(boardId: string | null): number {
   const { user } = useAuth();
-  const activityPanelOpen = useKanbanStore((s) => s.activityPanelOpen);
+  const activityPanelOpen = useKanbanStore((s) => s.openPanel === 'activity');
   const [count, setCount] = useState(0);
 
   useEffect(() => {

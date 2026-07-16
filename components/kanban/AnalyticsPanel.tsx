@@ -214,7 +214,7 @@ function StatCard({ label, value, sub, valueColor }: {
 }
 
 export default function AnalyticsPanel() {
-  const analyticsPanelOpen = useKanbanStore((state) => state.analyticsPanelOpen);
+  const analyticsPanelOpen = useKanbanStore((state) => state.openPanel === 'analytics');
   const boards = useKanbanStore((state) => state.boards);
   const activeBoard = useKanbanStore((state) => state.activeBoard);
 
@@ -240,7 +240,7 @@ export default function AnalyticsPanel() {
       id="analytics-panel"
       title="Analytics"
       subtitle={board?.name}
-      onClose={() => useKanbanStore.getState().setAnalyticsPanelOpen(false)}
+      onClose={() => useKanbanStore.getState().setOpenPanel(null)}
     >
       <div style={{ flex: 1, overflowY: 'auto', padding: 16, display: 'flex', flexDirection: 'column', gap: 22 }}>
         {!analytics ? (
