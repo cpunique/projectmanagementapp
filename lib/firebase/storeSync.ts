@@ -108,36 +108,45 @@ export async function initializeFirebaseSync(user: User) {
     // Set flag to prevent sync loop during initialization
     isSyncingFromFirebase = true;
 
-    // First, attempt aggressive recovery if boards were corrupted with 'default-board' ID
-    try {
-      const recoveredBoards = await recoverCorruptedBoards(user.uid);
-      if (recoveredBoards.length > 0) {
-        console.log('[Sync] ✅ Recovered', recoveredBoards.length, 'corrupted board(s)');
-        // Give Firestore a moment to process the recovery
-        await new Promise(resolve => setTimeout(resolve, 500));
+    // Gate behind an IndexedDB flag: both repair functions address a historical one-time
+    // corruption that was already resolved. Running them on every login costs ~29 Firestore
+    // reads for nothing. Run once per device, then skip permanently.
+    const hasRunBoardRepair = await loadPreference('hasRunBoardRepair').catch(() => null);
+    if (!hasRunBoardRepair) {
+      // First, attempt aggressive recovery if boards were corrupted with 'default-board' ID
+      try {
+        const recoveredBoards = await recoverCorruptedBoards(user.uid);
+        if (recoveredBoards.length > 0) {
+          console.log('[Sync] ✅ Recovered', recoveredBoards.length, 'corrupted board(s)');
+          // Give Firestore a moment to process the recovery
+          await new Promise(resolve => setTimeout(resolve, 500));
+        }
+      } catch (error: any) {
+        // Permission denied during recovery is normal on first login - user doc might not exist yet
+        if (error?.code === 'permission-denied') {
+          console.log('[Sync] Skipping recovery (permission denied - normal on first login)');
+        } else {
+          console.warn('[Sync] Aggressive recovery skipped or failed:', error);
+        }
       }
-    } catch (error: any) {
-      // Permission denied during recovery is normal on first login - user doc might not exist yet
-      if (error?.code === 'permission-denied') {
-        console.log('[Sync] Skipping recovery (permission denied - normal on first login)');
-      } else {
-        console.warn('[Sync] Aggressive recovery skipped or failed:', error);
-      }
-    }
 
-    // Then, repair any remaining corrupted board IDs
-    try {
-      const repairedBoards = await repairBoardIds(user.uid);
-      if (repairedBoards.length > 0) {
-        console.log('[Sync] Repaired boards:', repairedBoards);
+      // Then, repair any remaining corrupted board IDs
+      try {
+        const repairedBoards = await repairBoardIds(user.uid);
+        if (repairedBoards.length > 0) {
+          console.log('[Sync] Repaired boards:', repairedBoards);
+        }
+      } catch (error: any) {
+        // Permission denied during repair is normal on first login
+        if (error?.code === 'permission-denied') {
+          console.log('[Sync] Skipping repair (permission denied - normal on first login)');
+        } else {
+          console.warn('[Sync] Board repair skipped or failed:', error);
+        }
       }
-    } catch (error: any) {
-      // Permission denied during repair is normal on first login
-      if (error?.code === 'permission-denied') {
-        console.log('[Sync] Skipping repair (permission denied - normal on first login)');
-      } else {
-        console.warn('[Sync] Board repair skipped or failed:', error);
-      }
+
+      // Mark as done so future logins skip these reads (~29 reads saved per login)
+      await savePreference('hasRunBoardRepair', 'true').catch(() => {});
     }
 
     // Ensure email is written to the user doc so board-sharing lookup works.
@@ -415,7 +424,14 @@ export function subscribeToStoreChanges(user: User) {
   });
 
   return useKanbanStore.subscribe(
-    (state) => {
+    (state, prevState) => {
+      // Fast path: only proceed if the data that drives saves actually changed.
+      // Without this, every UI state change (openPanel, search, zoom, etc.) fires
+      // this callback and triggers JSON.stringify on all boards needlessly.
+      if (state.boards === prevState.boards && state.defaultBoardId === prevState.defaultBoardId) {
+        return;
+      }
+
       // CRITICAL: Skip sync if in demo mode UNLESS user is admin
       // Admin can edit and persist demo board changes; others just test ephemeral state
       if (state.demoMode && !isAdmin(user)) {
@@ -511,7 +527,7 @@ export function subscribeToStoreChanges(user: User) {
               try {
                 // If this board has never been synced to Firebase, create it instead of updating
                 if (!boardRemoteVersions.has(board.id)) {
-                  await createBoard(user.uid, { ...board, ownerEmail: user.email || '' }, user.email || undefined);
+                    await createBoard(user.uid, { ...board, ownerEmail: user.email || '' }, user.email || undefined);
                   boardRemoteVersions.set(board.id, new Date().toISOString());
                   boardBaseVersions.set(board.id, structuredClone(board));
                   continue;
@@ -599,7 +615,7 @@ export function subscribeToStoreChanges(user: User) {
 
         // Register so flushPendingSync() can force-write before page sleep/unload
         _pendingFlushFn = doWrite;
-        _moduleSyncTimeout = syncTimeout = setTimeout(doWrite, 2000); // 2s debounce to reduce write frequency
+        _moduleSyncTimeout = syncTimeout = setTimeout(doWrite, 5000); // 5s debounce to reduce write frequency
       }
     }
   );
