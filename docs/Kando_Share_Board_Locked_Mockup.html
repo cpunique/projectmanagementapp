@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kan-do — Share Board (Locked Target)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#161412; --surface-1:#1d1a17; --surface-2:#231f1c; --surface-3:#2a2522;
+    --border:#322d2a; --border-2:#4a4240;
+    --text:#f5f0ee; --body:#a89890; --muted:#6b5e58;
+    --purple:#9333ea; --purple-l:#c084fc; --pink:#f472b6;
+    --glow:rgba(147,51,234,.45);
+    --green:#4ade80; --amber:#fbbf24; --red:#fb7185; --blue:#60a5fa;
+    --font:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:var(--font);background:#0f0d0c;color:var(--text);-webkit-font-smoothing:antialiased;padding:32px;display:flex;justify-content:center}
+  .mesh{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+  .blob{position:absolute;border-radius:50%;filter:blur(140px);opacity:.3}
+  .blob.b1{width:600px;height:600px;background:#5b21b6;top:-200px;left:-150px}
+  .blob.b2{width:500px;height:500px;background:#3b1d80;bottom:-150px;right:-120px;opacity:.25}
+  .wrap{position:relative;z-index:2;max-width:900px;width:100%}
+
+  .section-label{font-size:13px;font-weight:600;color:var(--purple-l);letter-spacing:1px;text-transform:uppercase;margin:0 0 14px;padding-bottom:8px;border-bottom:1px solid var(--border)}
+  .note{font-size:13px;color:var(--body);margin-bottom:20px;line-height:1.6}
+  .note b{color:var(--text)}
+
+  /* backdrop + glass modal */
+  .stage{background:rgba(0,0,0,.4);border-radius:20px;padding:40px;display:flex;justify-content:center}
+  .modal{width:520px;max-width:100%;
+    background:rgba(42,37,34,.72);backdrop-filter:blur(24px) saturate(1.2);-webkit-backdrop-filter:blur(24px) saturate(1.2);
+    border:1px solid rgba(255,255,255,.09);border-radius:18px;box-shadow:0 24px 60px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.07);overflow:hidden}
+  .m-head{display:flex;align-items:center;justify-content:space-between;padding:20px 22px;border-bottom:1px solid var(--border)}
+  .m-title{font-size:17px;font-weight:600}
+  .m-title span{color:var(--purple-l)}
+  .m-close{width:30px;height:30px;border-radius:8px;border:1px solid var(--border);background:var(--surface-2);color:var(--body);display:flex;align-items:center;justify-content:center;cursor:pointer}
+  .m-body{padding:22px}
+
+  .field-label{font-size:11px;font-weight:600;color:var(--purple-l);text-transform:uppercase;letter-spacing:.6px;margin-bottom:11px}
+
+  /* invite row */
+  .invite-row{display:flex;gap:9px;margin-bottom:24px}
+  .invite-email{flex:1;background:var(--surface-2);border:1px solid var(--border-2);border-radius:10px;padding:11px 13px;color:var(--text);font-size:13px;font-family:var(--font)}
+  .invite-email::placeholder{color:var(--muted)}
+  .invite-email:focus{outline:none;border-color:var(--purple-l);box-shadow:0 0 0 3px rgba(147,51,234,.15)}
+  .role-picker{position:relative}
+  .role-btn{display:flex;align-items:center;gap:7px;background:var(--surface-2);border:1px solid var(--border-2);border-radius:10px;padding:11px 13px;color:var(--text);font-size:13px;cursor:pointer;white-space:nowrap}
+  .role-btn svg{width:13px;height:13px;color:var(--muted)}
+  .role-menu{position:absolute;top:calc(100% + 6px);left:0;right:0;min-width:150px;
+    background:rgba(42,37,34,.85);backdrop-filter:blur(18px);border:1px solid rgba(255,255,255,.09);border-radius:11px;box-shadow:0 18px 40px rgba(0,0,0,.5);overflow:hidden;z-index:5}
+  .role-opt{padding:10px 13px;cursor:pointer}
+  .role-opt:hover{background:var(--surface-2)}
+  .role-opt.active{background:rgba(147,51,234,.14)}
+  .role-opt .r-name{font-size:13px;color:var(--text);display:flex;align-items:center;gap:7px}
+  .role-opt.active .r-name{color:var(--purple-l)}
+  .role-opt .r-desc{font-size:11px;color:var(--muted);margin-top:2px}
+  .btn-invite{background:var(--purple);color:#fff;border:none;border-radius:10px;padding:11px 18px;font-size:13px;font-weight:600;cursor:pointer;box-shadow:0 4px 14px var(--glow)}
+
+  /* collaborator list */
+  .collab{display:flex;align-items:center;gap:12px;background:var(--surface-2);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:9px;box-shadow:inset 0 1px 0 rgba(255,255,255,.04)}
+  .collab:last-of-type{margin-bottom:0}
+  .avatar{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600;color:#fff;flex-shrink:0;position:relative}
+  .avatar.a-owner{background:linear-gradient(135deg,var(--purple),#5b21b6)}
+  .avatar.a-1{background:linear-gradient(135deg,#3b82f6,#1d4ed8)}
+  .avatar.a-2{background:linear-gradient(135deg,#059669,#047857)}
+  .presence{position:absolute;bottom:-1px;right:-1px;width:11px;height:11px;border-radius:50%;background:var(--green);border:2px solid var(--surface-2);box-shadow:0 0 6px rgba(74,222,128,.5)}
+  .presence.off{background:var(--muted);box-shadow:none}
+  .collab-info{flex:1;min-width:0}
+  .collab-name{font-size:13.5px;font-weight:600;color:var(--text);display:flex;align-items:center;gap:8px}
+  .online-txt{font-size:11px;color:var(--green);font-weight:500}
+  .collab-sub{font-size:11.5px;color:var(--muted);margin-top:1px}
+  .role-pill{font-size:10.5px;font-weight:600;padding:4px 11px;border-radius:99px;text-transform:uppercase;letter-spacing:.3px}
+  .role-pill.owner{background:rgba(147,51,234,.16);color:var(--purple-l)}
+  .role-pill.editor{background:rgba(96,165,250,.15);color:var(--blue)}
+  .role-pill.viewer{background:var(--surface-3);color:var(--body)}
+  .revoke{background:transparent;border:none;color:var(--muted);font-size:11.5px;font-weight:500;cursor:pointer;padding:5px 9px;border-radius:7px;margin-left:4px}
+  .revoke:hover{color:var(--red);background:rgba(251,113,133,.1)}
+
+  .empty{padding:22px;text-align:center;font-size:12.5px;color:var(--muted)}
+
+  /* sharing tips — modernized calm info panel */
+  .tips{margin-top:20px;background:rgba(147,51,234,.06);border:1px solid rgba(147,51,234,.18);border-radius:12px;padding:14px 16px}
+  .tips-h{font-size:12px;font-weight:600;color:var(--purple-l);margin-bottom:9px;display:flex;align-items:center;gap:7px}
+  .tips-h svg{width:14px;height:14px}
+  .tips ul{list-style:none}
+  .tips li{font-size:12px;color:var(--body);line-height:1.5;padding:3px 0 3px 18px;position:relative}
+  .tips li::before{content:"";position:absolute;left:4px;top:9px;width:4px;height:4px;border-radius:50%;background:var(--purple-l)}
+  .tips li b{color:var(--text);font-weight:600}
+
+  .entry-note{background:var(--surface-1);border:1px solid var(--border);border-radius:12px;padding:16px 18px;margin-top:24px}
+  .entry-note h4{font-size:12px;font-weight:600;color:var(--purple-l);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
+  .entry-note p{font-size:12.5px;color:var(--body);line-height:1.55}
+  .entry-note code{font-family:ui-monospace,monospace;font-size:11px;color:var(--purple-l);background:rgba(147,51,234,.1);padding:1px 5px;border-radius:4px}
+</style>
+</head>
+<body>
+<div class="mesh"><div class="blob b1"></div><div class="blob b2"></div></div>
+<div class="wrap">
+
+  <div class="section-label">Share Board — modernized (glass, canonical tokens)</div>
+  <div class="note">The same feature that exists on the old branch, rebuilt on current surfaces. Reuses the <b>existing viewer/editor + collaborators backend</b> (already on main, server-enforced) — this is UI only. Reachable from both entry points (toolbar "Share" + card-modal "Share Board") per the collaboration intent. Role picker is a <b>dropdown defaulting to Viewer</b> (safer default; opt up to Editor). Sharing tips kept + modernized.</div>
+
+  <div class="stage">
+    <div class="modal">
+      <div class="m-head">
+        <div class="m-title">Share <span>"Kanban-app Features"</span></div>
+        <button class="m-close"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+      </div>
+      <div class="m-body">
+
+        <div class="field-label">Invite people</div>
+        <div class="invite-row">
+          <input class="invite-email" placeholder="user@example.com">
+          <div class="role-picker">
+            <div class="role-btn">Viewer <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></div>
+            <div class="role-menu">
+              <div class="role-opt active"><div class="r-name">Viewer</div><div class="r-desc">Can view the board only</div></div>
+              <div class="role-opt"><div class="r-name">Editor</div><div class="r-desc">Can view and modify cards</div></div>
+            </div>
+          </div>
+          <button class="btn-invite">Invite</button>
+        </div>
+
+        <div class="field-label">People with access</div>
+
+        <div class="collab">
+          <div class="avatar a-owner">R<span class="presence"></span></div>
+          <div class="collab-info">
+            <div class="collab-name">You <span class="online-txt">● Online</span></div>
+            <div class="collab-sub">rcaton1105@gmail.com</div>
+          </div>
+          <span class="role-pill owner">Owner</span>
+        </div>
+
+        <div class="collab">
+          <div class="avatar a-1">MP<span class="presence"></span></div>
+          <div class="collab-info">
+            <div class="collab-name">Maria Perez <span class="online-txt">● Online</span></div>
+            <div class="collab-sub">maria@example.com</div>
+          </div>
+          <span class="role-pill editor">Editor</span>
+          <button class="revoke">Remove</button>
+        </div>
+
+        <div class="collab">
+          <div class="avatar a-2">JL<span class="presence off"></span></div>
+          <div class="collab-info">
+            <div class="collab-name">Julian Lee</div>
+            <div class="collab-sub">julian@example.com · last seen 2h ago</div>
+          </div>
+          <span class="role-pill viewer">Viewer</span>
+          <button class="revoke">Remove</button>
+        </div>
+
+        <div class="tips">
+          <div class="tips-h"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/></svg>How sharing works</div>
+          <ul>
+            <li><b>Editors</b> can view and modify all cards and columns</li>
+            <li><b>Viewers</b> can only view the board (read-only)</li>
+            <li>The <b>green dot</b> shows who's currently viewing the board</li>
+            <li>Changes sync across everyone every 10–30 seconds</li>
+          </ul>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <div class="entry-note">
+    <h4>Two entry points (kept — collaboration intent)</h4>
+    <p>This same modal opens from BOTH the board toolbar <code>Share</code> button and the card-modal <code>Share Board</code> button — the deliberate multi-surface access to promote collaboration. One shared modal component, surfaced from two places.</p>
+  </div>
+
+  <div class="section-label" style="margin-top:36px">Dev build notes</div>
+  <div class="entry-note" style="margin-top:0">
+    <h4>Backend — reuse, don't rebuild</h4>
+    <p>The viewer/editor + <code>collaborators[]</code> / <code>sharedWithUserIds</code> model and share API routes ALREADY exist on current main and are server-enforced (Firestore rules). This is UI-only — wire the modernized modal to the existing invite / role-change / revoke endpoints. Do NOT reimplement sharing logic or touch the enforcement.</p>
+    <h4 style="margin-top:14px">UI</h4>
+    <p>Glass modal (canonical tokens, Level-3 shadow, frozen header). Invite row: email + <b>role dropdown (Viewer default, Editor option)</b> reusing the glass <code>Dropdown</code> + Invite. Collaborator rows: avatar w/ presence dot, name + online state, role pill (Owner=purple, Editor=blue, Viewer=neutral), <b>Remove</b> (revoke) on collaborators — NOT on owner. Empty state when no collaborators. Modernized "How sharing works" tips panel. Same modal opens from both entry points. No <code>dark:</code>/hardcoded colors.</p>
+  </div>
+
+</div>
+</body>
+</html>
