@@ -45,5 +45,6 @@ next-env.d.ts
 nul
 memory.md
 
-# design chat exports (large binary, not a project artifact)
+# design chat exports and binary docs (large, not project artifacts)
 docs/*.zip
+*.docx
