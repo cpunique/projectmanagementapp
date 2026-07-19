@@ -35,14 +35,11 @@ export default function PanelShell({
           animate={{ x: 0 }}
           exit={{ x: '100%' }}
           transition={PANEL_SPRING}
-          className="md:static fixed right-0 top-16 z-30 bottom-0 md:relative"
+          className="fixed right-0 top-16 z-30 bottom-0"
           style={{
-            position: 'relative',
             width: typeof width === 'number' ? `${width}px` : width,
-            flexShrink: 0,
             display: 'flex',
             flexDirection: 'column',
-            height: '100%',
             overflow: 'hidden',
             background: 'var(--surface-1)',
             borderLeft: '1px solid var(--border)',

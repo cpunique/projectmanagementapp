@@ -129,6 +129,7 @@ export const useKanbanStore = create<KanbanStore>()(
       shareModalBoardId: null,
       activeView: 'board' as const,
       dueDatePanelWidth: 320,
+      dueDatePanelResizing: false,
       zoomLevel: 80,
       hasUnsavedChanges: false,
       // Sync state
@@ -1160,6 +1161,8 @@ export const useKanbanStore = create<KanbanStore>()(
         set({ dueDatePanelWidth: constrainedWidth });
       },
 
+      setDueDatePanelResizing: (resizing: boolean) => set({ dueDatePanelResizing: resizing }),
+
       // Zoom actions
       setZoomLevel: (level: number) => {
         const clamped = Math.max(50, Math.min(150, level));
@@ -1334,7 +1337,7 @@ export const useKanbanStore = create<KanbanStore>()(
       // Only persistent client-side UI state (darkMode, filters, etc.) should be in localStorage
       partialize: (state) => {
         // Exclude Firebase-managed state and transient state from localStorage
-        const { boards, activeBoard, defaultBoardId, demoMode, conflictState, openPanel, createBoardModalOpen, shareModalBoardId, mobileAlertsOpen, mobileSearchOpen, activeCardId, searchFocusTick, ...rest } = state;
+        const { boards, activeBoard, defaultBoardId, demoMode, conflictState, openPanel, createBoardModalOpen, shareModalBoardId, mobileAlertsOpen, mobileSearchOpen, activeCardId, searchFocusTick, dueDatePanelResizing, ...rest } = state;
         return rest;
       },
       merge: (persistedState, currentState) => {

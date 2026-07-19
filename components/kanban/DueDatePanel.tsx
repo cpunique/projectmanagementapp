@@ -51,6 +51,8 @@ export function DueDatePanel() {
 
   const handleMouseDown = (e: React.MouseEvent) => {
     setIsDragging(true);
+    useKanbanStore.getState().setDueDatePanelResizing(true);
+    document.documentElement.style.setProperty('--due-date-panel-width', `${dueDatePanelWidth}px`);
     dragStartXRef.current = e.clientX;
     dragStartWidthRef.current = dueDatePanelWidth;
   };
@@ -63,6 +65,7 @@ export function DueDatePanel() {
       const constrainedWidth = Math.max(280, Math.min(600, newWidth));
       const panel = document.getElementById('due-date-panel');
       if (panel) panel.style.width = `${constrainedWidth}px`;
+      document.documentElement.style.setProperty('--due-date-panel-width', `${constrainedWidth}px`);
     };
 
     const handleMouseUp = () => {
@@ -72,6 +75,7 @@ export function DueDatePanel() {
         const newWidth = parseInt(panel.style.width || String(dueDatePanelWidth));
         setDueDatePanelWidth(newWidth);
       }
+      useKanbanStore.getState().setDueDatePanelResizing(false);
       setIsDragging(false);
     };
 

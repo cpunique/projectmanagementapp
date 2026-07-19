@@ -17,7 +17,7 @@ interface BoardWithPanelProps {
 }
 
 export function BoardWithPanel({ children }: BoardWithPanelProps) {
-  const { openPanel, activeView, boards, activeBoard, mobileAlertsOpen, mobileSearchOpen } = useKanbanStore();
+  const { openPanel, activeView, boards, activeBoard, mobileAlertsOpen, mobileSearchOpen, dueDatePanelWidth, dueDatePanelResizing } = useKanbanStore();
   const { user } = useAuth();
 
   // Calculate total cards with due dates for badge
@@ -38,11 +38,24 @@ export function BoardWithPanel({ children }: BoardWithPanelProps) {
   })();
 
   const anyPanelOpen = openPanel !== null;
+  const activePanelWidth = openPanel === 'dueDates' ? dueDatePanelWidth : openPanel !== null ? 320 : 0;
+  // During DueDate resize, use a CSS var updated directly on every mousemove tick
+  // (no React state churn — avoids Firestore quota pressure from rapid store updates).
+  // For all other states, use the committed store value with a smooth transition.
+  const paddingRightValue = dueDatePanelResizing
+    ? `var(--due-date-panel-width, ${dueDatePanelWidth}px)`
+    : `${activePanelWidth}px`;
 
   return (
     <div className="flex h-full w-full">
       {/* Board / Calendar + mobile tab bar column */}
-      <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
+      <div
+        className="flex flex-col flex-1 min-w-0 overflow-hidden"
+        style={{
+          paddingRight: paddingRightValue,
+          transition: dueDatePanelResizing ? 'none' : 'padding-right 0.3s ease-out',
+        }}
+      >
         {/* View container */}
         <div className="flex-1 overflow-x-auto overflow-y-hidden min-w-0">
           {activeView === 'calendar' && activeBoard
@@ -98,8 +111,8 @@ export function BoardWithPanel({ children }: BoardWithPanelProps) {
         <MobileSearch onClose={() => useKanbanStore.getState().setMobileSearchOpen(false)} />
       )}
 
-      {/* Side Panels - Desktop (animations handled within components) */}
-      <div className="hidden md:flex">
+      {/* Side Panels - Desktop (position: fixed; no longer in flex flow) */}
+      <div className="hidden md:block">
         <ArchivePanel />
         <ActivityFeedPanel />
         <AnalyticsPanel />

@@ -189,6 +189,7 @@ export interface KanbanState {
   // the portaled ShareBoardModal rendered at the app root
   shareModalBoardId: string | null;
   dueDatePanelWidth: number;
+  dueDatePanelResizing: boolean;
   // Active view: board or calendar
   activeView: 'board' | 'calendar';
   // Page zoom level (percentage, default 80)
@@ -287,6 +288,7 @@ export interface KanbanActions {
   setOpenPanel: (panel: 'archive' | 'activity' | 'analytics' | 'dueDates' | null) => void;
   togglePanel: (panel: 'archive' | 'activity' | 'analytics' | 'dueDates') => void;
   setDueDatePanelWidth: (width: number) => void;
+  setDueDatePanelResizing: (resizing: boolean) => void;
 
   // Mobile full-screen Alerts view actions
   setMobileAlertsOpen: (isOpen: boolean) => void;
