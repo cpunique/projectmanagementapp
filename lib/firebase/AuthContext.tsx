@@ -86,8 +86,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setRequiresToSAcceptance(requiresAcceptance);
         } catch (err) {
           console.error('[AuthContext] Error checking ToS acceptance:', err);
-          // If we can't check, require acceptance to be safe
-          setRequiresToSAcceptance(true);
+          // Fail open: Firestore quota errors or transient failures should not
+          // gate existing users who already accepted. Only show the gate when
+          // we KNOW consent is missing, not when we can't confirm it.
+          setRequiresToSAcceptance(false);
         }
       } else {
         setRequiresToSAcceptance(false);
