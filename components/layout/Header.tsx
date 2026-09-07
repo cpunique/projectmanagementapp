@@ -293,15 +293,17 @@ const Header = () => {
                     onClick: () => setShowKeyboardShortcuts(true),
                   },
                   { id: 'divider2', label: '', icon: '', onClick: () => {}, disabled: true },
-                  ...(canEditDemo ? [
-                    {
-                      id: 'demo',
-                      label: demoMode ? 'Exit Demo' : 'Demo Mode',
-                      icon: demoMode ? '❌' : '✨',
-                      onClick: handleToggleDemoMode,
-                      disabled: loadingDemo,
-                    },
-                  ] : []),
+                  // Trying the demo board is open to any signed-in user (Header only
+                  // renders when authenticated); only saving a board AS the public
+                  // demo config is admin-only — that stays gated by canEditDemo on
+                  // the separate "Edit Demo"/"Save Demo" buttons above.
+                  {
+                    id: 'demo',
+                    label: demoMode ? 'Exit Demo' : 'Demo Mode',
+                    icon: demoMode ? '❌' : '✨',
+                    onClick: handleToggleDemoMode,
+                    disabled: loadingDemo,
+                  },
                 ].filter(item => item.id !== 'divider1' || true)} // Keep dividers for now
               />
             </div>
