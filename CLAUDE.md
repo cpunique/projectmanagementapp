@@ -24,6 +24,8 @@ npx next dev --port 3000
 - **System Health Modal status colors:** was caused by the `--green`/`--amber`/`--red` CSS variables not existing yet in `app/globals.css`. They're now defined (see Design Tokens below) and `components/ui/HealthDashboard.tsx` resolves `var(--green)` correctly. Resolved.
 - **Duplicate board names:** boards are keyed by `board.id` everywhere, never by `board.name` — two boards can legitimately share a name. Resolved/by design; keep this invariant when touching board-lookup code.
 - **Viewer write permissions (fixed 2026-07-04):** Role-based permissions are now enforced server-side on ALL write paths. The viewer/editor distinction was UI-only; Firestore rules gated board access but `canEdit()` had an `editorUserIds == null` legacy fallback that let pre-role-system boards treat all shared users as editors — viewers could write. Fixed: `canEdit() = isOwner || isEditor`, no fallback. Also tightened activities-subcollection writes to board members only (was: any authenticated user could inject feed entries). Viewer comments go through a dedicated Admin-SDK server route (`app/api/boards/[boardId]/cards/[cardId]/comment/route.ts`) that checks membership (viewers allowed, non-members 403) — comments don't open a board-write hole. All three write paths enforce role: client (Firestore rules), MCP (Admin SDK, already had it), comments (new route). Rejection-tested in prod with a real viewer account. Lesson: "server-enforced" must be verified for the SPECIFIC guarantee (access ≠ role); check EVERY write path; and audit legacy compat-fallbacks — they silently defeat security models.
+- **Demo Mode toggle blocked for non-admin users (fixed 2026-09-06):** `Header.tsx`'s "Demo Mode"/"Exit Demo" dropdown item was gated by `canEditDemo` (`isAdmin(user)`), the same flag meant only for the separate "Edit Demo"/"Save Demo" buttons that persist a board as the public landing-page demo config. Root cause: a Jan 2026 commit (`094c2c3`) that added the legitimate admin-only save flow, in the same diff, also changed an unrelated dropdown's visibility from `{user && ...}` to `{userIsAdmin && ...}` — conflating "can try the demo board" (should be any signed-in user) with "can overwrite the public demo" (correctly admin-only). Later refactors reopened the dropdown to all users for Archive/Analytics/etc. but never re-examined the Demo Mode entry specifically. Fixed: the toggle is now unconditional (any signed-in user); the admin-only save buttons and the matching `firestore.rules` write restriction on `demo-configs/{configId}` (`allow write: if ... uid == 'OWDbFDLVxgfW6ftSXoQBurAvAiB2'`) are untouched. Lesson: same failure class as the actor-label and MCP two-codebase duplication bugs — a flag/permission built for one narrow purpose gets reused for a second, unrelated purpose in the same commit, and nobody revisits the reuse when the surrounding code (here, the dropdown's general access level) changes later. When a feature "used to work for everyone" per user recollection, check git blame/history for the commit that narrowed a *shared* condition, not just the feature's own code.
+- **Missing PWA icons / `/icon-192.png` 404 (fixed 2026-09-06):** `public/manifest.json` referenced `icon-192.png` and `icon-512.png` that were never committed to `public/` — the directory only had default Next.js starter SVGs. Generated both sizes with `sharp` from an inline SVG matching the header logo exactly (`linear-gradient(135deg, #9333ea, #7c1d6f)`, rounded square, white bold "K") and committed them. Placeholder-quality but on-brand; swap for real app icon assets if/when produced.
 
 ## Design Tokens (`app/globals.css`)
 
@@ -188,7 +190,28 @@ Repositioned around AI as the differentiator after MCP agent capability shipped.
 
 ## Engineering Critical Path (next up)
 
-Stripe test mode → 3-board enforcement → `featureGate.ts` cleanup (remove the hardcoded UID allowlist — must precede Stripe live keys) → cancellation/downgrade → Stripe live keys → MCP Phase B (Pro gating, revocation on cancel, audit logging). Operational prereq: Loops account + API key + waitlist audience before the landing-page waitlist goes live.
+Stripe test mode → 3-board enforcement → ~~`featureGate.ts` cleanup~~ (done 2026-09-06, see below) → cancellation/downgrade → Stripe live keys → MCP Phase B (Pro gating, revocation on cancel, audit logging). Operational prereq: Loops account + API key + waitlist audience before the landing-page waitlist goes live.
+
+### `featureGate.ts` cleanup — done (2026-09-06)
+
+`lib/features/featureGate.ts` (the env-var UID allowlist — `NEXT_PUBLIC_PRO_USER_IDS` / `NEXT_PUBLIC_PRO_FEATURES_ENABLED`) is deleted. The one remaining consumer, AI Instructions (plain-text mode in `app/api/generate-prompt/route.ts` + `AIPromptModal.tsx`), is now gated on the real `users/{uid}.isPro` field — same source of truth already used by Generate Tasks, MCP tokens, and Settings → Subscription. All Pro gating in the app now reads `isPro` from Firestore; no more hardcoded UIDs anywhere in the gating path.
+
+Behavior note: the old allowlist had a secondary "soft launch" mode — if `NEXT_PUBLIC_PRO_FEATURES_ENABLED=true`, non-Pro users got rate-limited (not blocked) access to AI Instructions. That flag was `false` in production, so this had zero live effect, but the knob itself is gone now — AI Instructions is a hard Pro/non-Pro binary like the other AI features. Revive deliberately (not by re-adding an env allowlist) if a rate-limited free tier for this feature is wanted later.
+
+### Free vs. Pro gating map — verified 2026-09-06
+
+Ownership/role and admin-status gates are frequently mistaken for Pro/Free gates because they can *correlate* with tier by coincidence (e.g. the one hardcoded admin account also happens to be the one Pro account in testing data). They are NOT tier-based:
+- **Share button**: `userRole === 'owner'` only — board ownership, unrelated to tier.
+- **Background button**: `canEdit` (owner OR editor role) — unrelated to tier.
+- **Demo Mode toggle** (Header ⋮ menu): any signed-in user, fixed 2026-09-06 (was incorrectly reusing `canEditDemo`, the admin-only flag meant for the separate "save board as public demo" buttons — see Resolved Issues below).
+
+Actually Pro/Free (`isPro` on `users/{uid}`, real Firestore field, checked server-side):
+- Generate Tasks (structured AI generation) — Pro unlimited, non-Pro gets exactly 1 lifetime free generation (see Free Generation Gate below).
+- AI Instructions (plain-text AI generation) — Pro-only, no free tier (fixed 2026-09-06, see above).
+- MCP token generation.
+- Settings → Subscription tab display (cosmetic).
+
+Not currently enforced anywhere (dead/placeholder): `lib/tiers/config.ts` + `lib/tiers/utils.ts` — all tiers set to `maxBoards: 999999` ("unlimited during testing"), zero importers elsewhere in the app. This is the literal "3-board enforcement" work still ahead in the critical path above, not a bug.
 
 ### SCALE & COLLABORATION PERFORMANCE (tracked workstream — NOT yet started)
 Distinct from per-surface perceived-latency fixes (caching, loading states, lazy-loading),
