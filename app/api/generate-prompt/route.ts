@@ -556,6 +556,9 @@ ${instructionRequests[instructionType]}`;
     return NextResponse.json(
       {
         error: 'Failed to generate instructions. Please try again.',
+        // TEMPORARY diagnostic field — remove once the 2026-09-07 production
+        // failure investigation is resolved. Message only, no stack.
+        debug: errorMessage,
       },
       { status: 500 }
     );
