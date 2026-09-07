@@ -5,7 +5,8 @@ import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useKanbanStore } from '@/lib/store';
 import { useAuth } from '@/lib/firebase/AuthContext';
-import { canAccessProFeatures } from '@/lib/features/featureGate';
+import { getDb } from '@/lib/firebase/config';
+import { doc, getDoc } from 'firebase/firestore';
 import { type Card, type InstructionType } from '@/types';
 import Modal from '@/components/ui/Modal';
 import Button from '@/components/ui/Button';
@@ -44,7 +45,25 @@ const AIPromptModal = ({ isOpen, onClose, card, boardId }: AIPromptModalProps) =
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [isPro, setIsPro] = useState<boolean | null>(null);
   const warningRef = useRef<HTMLDivElement>(null);
+
+  // Pro gate — reads the real users/{uid}.isPro field directly (same source of
+  // truth the server enforces on the actual generate call). This client check is
+  // cosmetic UX only; the server 403s regardless if it disagrees.
+  useEffect(() => {
+    if (!isOpen || !user) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const snap = await getDoc(doc(getDb(), 'users', user.uid));
+        if (!cancelled) setIsPro(snap.data()?.isPro === true);
+      } catch {
+        if (!cancelled) setIsPro(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [isOpen, user]);
 
   // Completeness score: count how many fields beyond title are included
   const richFieldCount = [
@@ -70,11 +89,22 @@ const AIPromptModal = ({ isOpen, onClose, card, boardId }: AIPromptModalProps) =
 
   if (!isOpen) return null;
 
-  // Check if user has Pro access
-  const hasProAccess = canAccessProFeatures(user);
+  // Still fetching isPro — avoid a flash of the lock screen before we know.
+  if (isPro === null) {
+    return typeof window !== 'undefined'
+      ? createPortal(
+          <Modal isOpen={isOpen} onClose={onClose} contentClassName="max-w-sm">
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '48px 0' }}>
+              <div className="w-5 h-5 rounded-full border-2 border-purple-800 border-t-purple-400 animate-spin" />
+            </div>
+          </Modal>,
+          document.body
+        )
+      : null;
+  }
 
   // Show Pro feature lock screen if user doesn't have access
-  if (!hasProAccess) {
+  if (!isPro) {
     return typeof window !== 'undefined'
       ? createPortal(
           <Modal isOpen={isOpen} onClose={onClose} contentClassName="max-w-sm">

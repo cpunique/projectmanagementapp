@@ -50,7 +50,7 @@ export default function SubscriptionSection({ isPro }: SubscriptionSectionProps)
               {isPro ? 'Pro plan' : 'Free plan'}
             </div>
             <div style={{ fontSize: '11.5px', color: 'var(--muted)', marginTop: '2px' }}>
-              {isPro ? 'Unlimited boards · MCP integration · priority support' : '3 boards · unlimited cards'}
+              {isPro ? 'Unlimited boards · MCP integration · priority support' : '7 boards · unlimited cards'}
             </div>
           </div>
           <button style={{

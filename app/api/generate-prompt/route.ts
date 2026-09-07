@@ -3,8 +3,6 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { Timestamp, FieldValue } from 'firebase-admin/firestore';
-import { aiPromptRatelimit } from '@/lib/ratelimit';
-import { canAccessProFeaturesById, isProUserId } from '@/lib/features/featureGate';
 
 // How long a claimed-but-not-finalized free generation blocks a second concurrent
 // request before it's treated as abandoned (e.g. server crashed mid-request) and
@@ -185,8 +183,7 @@ const GeneratePromptSchema = z.object({
   boardName: z.string().max(200, 'Board name too long').optional(),
 });
 
-// Structured mode (board-level "Generate Tasks" flow) — gated independently of
-// canAccessProFeaturesById/the env Pro allowlist. Pro is read from the real
+// Structured mode (board-level "Generate Tasks" flow). Pro is read from the real
 // users/{uid}.isPro field; non-Pro users get exactly one lifetime free generation,
 // enforced here, not on the client.
 async function handleStructuredGeneration(
@@ -359,46 +356,26 @@ export async function POST(request: Request) {
     }
 
     // 4a. Structured mode — board-level "Generate Tasks" flow. Gated by the real
-    // users/{uid}.isPro field plus one free lifetime generation, NOT by
-    // canAccessProFeaturesById/the env Pro allowlist.
+    // users/{uid}.isPro field plus one free lifetime generation.
     if (data.structured) {
       return await handleStructuredGeneration(userId, data, apiKey);
     }
 
-    // 4b. Plain-text mode ("AI Instructions") — existing Pro gate + rate limiting, unchanged
-    if (!canAccessProFeaturesById(userId)) {
+    // 4b. Plain-text mode ("AI Instructions") — Pro-gated on the real
+    // users/{uid}.isPro field (consolidated from the legacy env-var UID
+    // allowlist, which is being retired ahead of Stripe live keys).
+    const { adminDb } = await import('@/lib/firebase/admin');
+    const userSnap = await adminDb.collection('users').doc(userId).get();
+    const isProUser = userSnap.data()?.isPro === true;
+
+    if (!isProUser) {
       return NextResponse.json(
         { error: 'AI Instructions is a Pro feature. Upgrade to Pro to unlock unlimited AI-generated instructions.' },
         { status: 403 }
       );
     }
 
-    const isProUser = isProUserId(userId);
-    let remaining = -1; // -1 indicates unlimited for Pro users
-
-    if (!isProUser) {
-      const rateResult = await aiPromptRatelimit.limit(userId);
-      remaining = rateResult.remaining;
-
-      if (!rateResult.success) {
-        return NextResponse.json(
-          {
-            error: `Rate limit exceeded. You can generate ${rateResult.limit} prompts per hour. Try again in ${Math.ceil((rateResult.reset - Date.now()) / 60000)} minutes.`,
-            limit: rateResult.limit,
-            remaining: 0,
-            reset: new Date(rateResult.reset).toISOString()
-          },
-          {
-            status: 429,
-            headers: {
-              'X-RateLimit-Limit': rateResult.limit.toString(),
-              'X-RateLimit-Remaining': '0',
-              'X-RateLimit-Reset': rateResult.reset.toString()
-            }
-          }
-        );
-      }
-    }
+    const remaining = -1; // Only Pro users reach this point — always unlimited
 
     const instructionType = data.instructionType as InstructionType;
     const systemPrompt = SYSTEM_PROMPTS[instructionType];
