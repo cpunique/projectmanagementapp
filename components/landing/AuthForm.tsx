@@ -74,7 +74,11 @@ export default function AuthForm({ onClose }: AuthFormProps) {
 
   return (
     <div
-      className="p-6"
+      // Extra top clearance only when the close × is present (top:16px,
+      // ~32px tall) so the tab row doesn't sit under it — sides/bottom stay
+      // the standard p-6 (24px). Without onClose (standalone embed, no ×)
+      // padding stays symmetric.
+      className={onClose ? 'pt-14 px-6 pb-6' : 'p-6'}
       style={{
         position: 'relative',
         background: 'rgba(42, 37, 34, 0.7)',
