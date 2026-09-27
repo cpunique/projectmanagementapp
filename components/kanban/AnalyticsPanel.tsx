@@ -221,6 +221,12 @@ export default function AnalyticsPanel() {
   const board = boards.find((b) => b.id === activeBoard);
   const analytics = useMemo(() => (board ? computeBoardAnalytics(board) : null), [board]);
   const [velocityData, setVelocityData] = useState<{ weekLabel: string; count: number }[]>([]);
+  // Separate from velocityData.length === 0 — an empty array can mean "still
+  // fetching" OR "no Done column to fetch from" OR "fetched, zero completions
+  // in range" (that last case is handled by VelocityChart's own allZero state).
+  // Without this flag those three were indistinguishable, so "Loading…" could
+  // never resolve when there was no Done column.
+  const [velocityLoading, setVelocityLoading] = useState(true);
 
   const doneColumn = board?.columns
     .filter((c) => !c.archived)
@@ -229,9 +235,13 @@ export default function AnalyticsPanel() {
   useEffect(() => {
     if (!analyticsPanelOpen || !board || !doneColumn) {
       setVelocityData([]);
+      setVelocityLoading(false);
       return;
     }
-    fetchCompletedByWeek(board.id, doneColumn.title).then(setVelocityData).catch(() => {});
+    setVelocityLoading(true);
+    fetchCompletedByWeek(board.id, doneColumn.title)
+      .then((data) => { setVelocityData(data); setVelocityLoading(false); })
+      .catch(() => { setVelocityLoading(false); });
   }, [analyticsPanelOpen, board?.id, doneColumn?.title]);
 
   return (
@@ -345,31 +355,34 @@ export default function AnalyticsPanel() {
               )}
             </div>
 
-            {/* Weekly Velocity */}
-            {doneColumn && (
-              <div>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 11 }}>
-                  <div style={sectH}>Weekly Velocity</div>
-                  {velocityData.length > 0 && velocityData.some((d) => d.count > 0) && (
-                    <span style={{ fontSize: 11, color: 'var(--muted)' }}>
-                      {velocityData.reduce((s, d) => s + d.count, 0)} in 8 wks
-                    </span>
-                  )}
-                </div>
-                {velocityData.length === 0 ? (
-                  <p style={{ fontSize: 12, color: 'var(--muted)', fontStyle: 'italic' }}>Loading…</p>
-                ) : (
-                  <>
-                    <VelocityChart data={velocityData} />
-                    {velocityData.some((d) => d.count > 0) && (
-                      <p style={{ fontSize: 11, color: 'var(--muted)', marginTop: 6 }}>
-                        Cards completed per week (moved to &ldquo;{doneColumn.title}&rdquo;)
-                      </p>
-                    )}
-                  </>
+            {/* Weekly Velocity — always shown; guides the user when there's no
+                Done column yet instead of hiding the section outright. */}
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 11 }}>
+                <div style={sectH}>Weekly Velocity</div>
+                {doneColumn && velocityData.length > 0 && velocityData.some((d) => d.count > 0) && (
+                  <span style={{ fontSize: 11, color: 'var(--muted)' }}>
+                    {velocityData.reduce((s, d) => s + d.count, 0)} in 8 wks
+                  </span>
                 )}
               </div>
-            )}
+              {!doneColumn ? (
+                <p style={{ fontSize: 12, color: 'var(--muted)', fontStyle: 'italic' }}>
+                  Move cards to a Done column to track velocity.
+                </p>
+              ) : velocityLoading ? (
+                <p style={{ fontSize: 12, color: 'var(--muted)', fontStyle: 'italic' }}>Loading…</p>
+              ) : (
+                <>
+                  <VelocityChart data={velocityData} />
+                  {velocityData.some((d) => d.count > 0) && (
+                    <p style={{ fontSize: 11, color: 'var(--muted)', marginTop: 6 }}>
+                      Cards completed per week (moved to &ldquo;{doneColumn.title}&rdquo;)
+                    </p>
+                  )}
+                </>
+              )}
+            </div>
 
             {/* Card Age */}
             {analytics.cardAgeBuckets.length > 0 && (

@@ -92,7 +92,11 @@ export default function ActivityFeedPanel() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!activityPanelOpen || !activeBoard || !user) {
+    // The demo board ('default-board') is never a real Firestore document, so
+    // subscribing to its activities subcollection always fails permission-denied
+    // (same reason useBoardPresence skips it). Show the empty state, not a spinner
+    // that can never resolve.
+    if (!activityPanelOpen || !activeBoard || !user || activeBoard === 'default-board') {
       setActivities([]);
       setLoading(false);
       return;
