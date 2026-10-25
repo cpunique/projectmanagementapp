@@ -76,12 +76,12 @@ describe('interpretPlanReply: full pipeline on a canned reply', () => {
     expect(b.tasks.find((c) => c.title === 'Build the email parser')!.description).toContain('Decision: Is alert speed good enough');
   });
 
-  it('raises a prerequisite to the priority of what depends on it (the old medium-shell bug)', () => {
+  it('never leaves a prerequisite below what depends on it, by lowering dependents', () => {
     const b = body(expertReply);
     const parser = b.structure.find((s) => s.key === 'T3')!; // medium in the reply, but T5 depends on it
     const setup = b.structure.find((s) => s.key === 'T2')!;
     const gate = b.structure.find((s) => s.key === 'G1')!;
-    // T5 is low, so T3 stays medium; T2 and G1 feed T3 (medium) and are already >= medium.
+    // T3 is medium and so are its prerequisite T2 and everything below it; the validation and its gate stay high.
     expect(parser.priority).toBe('medium');
     expect(setup.priority).toBe('medium');
     expect(gate.priority).toBe('high');

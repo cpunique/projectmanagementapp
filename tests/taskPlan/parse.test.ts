@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parsePlanReply, orderTasks, propagatePriority, normalizeTags } from '../../lib/ai/taskPlan/parse';
+import { parsePlanReply, orderTasks, assignPriorities, normalizeTags } from '../../lib/ai/taskPlan/parse';
 import { dependencyOrderViolations, priorityViolations } from '../../lib/ai/taskPlan/checks';
 import { makeTask } from './helpers';
 
@@ -97,7 +97,7 @@ describe('ordering and priority', () => {
     expect(warnings.some((w) => w.includes('Circular'))).toBe(true);
   });
 
-  it('raises a prerequisite to at least the priority of everything that depends on it', () => {
+  it('lowers dependents so a prerequisite is never below them (the old medium-shell bug)', () => {
     // The fixture bug: the app shell (medium) is needed by high-priority cards.
     const tasks = [
       makeTask({ key: 'shell', priority: 'medium' }),
@@ -106,9 +106,10 @@ describe('ordering and priority', () => {
       makeTask({ key: 'stripe', priority: 'low', dependsOn: ['matching'] }),
     ];
     expect(priorityViolations(tasks).length).toBeGreaterThan(0);
-    propagatePriority(tasks);
+    assignPriorities(tasks);
     expect(priorityViolations(tasks)).toEqual([]);
-    expect(tasks.map((t) => t.priority)).toEqual(['high', 'high', 'high', 'low']);
+    // The shell stays medium; what depends on it comes down to medium rather than the shell going up.
+    expect(tasks.map((t) => t.priority)).toEqual(['medium', 'medium', 'medium', 'low']);
   });
 
   it('keeps at most 12 distinct tags and at least one tag per card', () => {

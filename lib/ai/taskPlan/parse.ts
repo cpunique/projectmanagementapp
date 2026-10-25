@@ -178,16 +178,37 @@ export function orderTasks(tasks: PlanTask[], warnings: string[] = []): PlanTask
   return ordered;
 }
 
-// A card's priority must be at least that of every card that depends on it.
-export function propagatePriority(tasks: PlanTask[]): void {
+// Work in the second half of the plan whose title says it is a milestone rather than core build.
+const LATE_PHASE = /\b(beta|launch|go[- ]?live|paid|subscription|billing|pricing|release|rollout)\b/i;
+const RANK_TO_PRIORITY: Priority[] = ['low', 'medium', 'high'];
+
+// Keeps "high" for the critical path. Cards arrive in dependency order and are decided in
+// that order, so a card's prerequisites are final when it is reached:
+// - later-phase milestones (beta, launch, paid tier) are at most medium;
+// - a card is never above any of its prerequisites (the rule "a prerequisite is never
+//   lower than what depends on it", met by lowering the dependent, not raising the
+//   prerequisite), which also means "high" is always a connected block from the start;
+// - at most about a third of the cards stay high, earliest first.
+export function assignPriorities(tasks: PlanTask[]): void {
+  const n = tasks.length;
+  const highBudget = Math.max(1, Math.ceil(n / 3));
   const byKey = new Map(tasks.map((t) => [t.key, t]));
-  for (let i = tasks.length - 1; i >= 0; i--) {
-    const t = tasks[i];
+  let highs = 0;
+
+  tasks.forEach((t, i) => {
+    let rank = PRIORITY_RANK[t.priority];
+    const late = i >= Math.floor(n / 2) && (LATE_PHASE.test(t.title) || t.tags.some((tag) => /^(beta|launch)$/i.test(tag)));
+    if (late) rank = Math.min(rank, PRIORITY_RANK.medium);
     for (const d of t.dependsOn) {
       const dep = byKey.get(d);
-      if (dep && PRIORITY_RANK[dep.priority] < PRIORITY_RANK[t.priority]) dep.priority = t.priority;
+      if (dep) rank = Math.min(rank, PRIORITY_RANK[dep.priority]);
     }
-  }
+    if (rank === PRIORITY_RANK.high) {
+      if (highs >= highBudget) rank = PRIORITY_RANK.medium;
+      else highs++;
+    }
+    t.priority = RANK_TO_PRIORITY[rank];
+  });
 }
 
 // One vocabulary per plan: at most MAX_TAGS_PER_PLAN distinct tags, kebab-case,
@@ -233,7 +254,7 @@ export function parsePlanReply(rawText: string): ParseResult {
 
   resolveDependencies(parsed, warnings);
   const tasks = orderTasks(parsed, warnings);
-  propagatePriority(tasks);
+  assignPriorities(tasks);
   normalizeTags(tasks);
 
   const assumptions: Assumption[] = Array.isArray(json.assumptions)
