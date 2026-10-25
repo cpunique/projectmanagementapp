@@ -20,6 +20,23 @@ describe('scanner: an example tool is not a claim', () => {
   });
 });
 
+describe('scanner: made-up example domains are placeholders', () => {
+  const label = (item: string) =>
+    labelUnverifiedSpecifics(makePlan([makeTask({ key: 'T1', notes: item })]), '').findings.length;
+
+  it.each([
+    'Your site will live at yourname-dogwalking.com once the domain is set up.',
+    'Point yourbusiness.com at the new host.',
+    'Use a subdomain such as in.yourapp.com for inbound mail.',
+  ])('does not label: %s', (text) => {
+    expect(label(text)).toBe(0);
+  });
+
+  it('still labels a real-looking domain', () => {
+    expect(label('Prices are listed at youtube.com/pricing today.')).toBe(1);
+  });
+});
+
 describe('prompt: interpretation and dependency rules added after run 2', () => {
   const p = buildSystemPrompt('development');
   it.each([

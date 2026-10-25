@@ -15,7 +15,7 @@ const PERCENT = /\b\d+(?:\.\d+)?\s?%/g;
 const URL_LIKE =
   /\bhttps?:\/\/[^\s)"']+|\bwww\.[^\s)"']+|(?<![@\w.-])[a-z0-9][a-z0-9-]*(?:\.[a-z0-9-]+)*\.(?:com|org|net|io|gov|edu|app|dev|co|ai)\b(?:\/[^\s)"']*)?/gi;
 // Obvious stand-ins in examples ("in.yourapp.com") are not claims about the real world.
-const PLACEHOLDER_URL = /yourapp|yourdomain|yoursite|yourcompany|example\.|\.example\b/i;
+const PLACEHOLDER_URL = /(?:^|[./@])your[a-z0-9-]*[.-]|example\.|\.example\b/i;
 // A sentence that tells the reader to go and check something names a source; it is not itself a claim.
 const VERIFY_INSTRUCTION =
   /^\s*(?:assumption, verify:\s*)?(?:check|verify|confirm|look up|read|ask|see|visit|review|consult|contact|open|create|install|download|sign up|sign in|log in|register|go to|use|add|connect|enable|copy|paste|run|try|set up|get)\b/i;
