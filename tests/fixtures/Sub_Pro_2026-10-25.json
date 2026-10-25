@@ -1,0 +1,574 @@
+{
+  "version": 1,
+  "exportedAt": "2026-10-25T01:09:42.788Z",
+  "boards": [
+    {
+      "sharedWithUserIds": [],
+      "description": "",
+      "name": "Sub-Pro",
+      "purpose": "development",
+      "updatedAt": "2026-10-25T01:07:46.664Z",
+      "editorUserIds": [],
+      "createdAt": "2026-10-25T01:01:29.929Z",
+      "id": "kMXs4LdIaMNA8w6ZeU0kE",
+      "ownerId": "REDACTED",
+      "ownerEmail": "REDACTED",
+      "columns": [
+        {
+          "id": "XbG4bGqMs75wToJFcdie0",
+          "title": "Backlog",
+          "order": 0,
+          "boardId": "kMXs4LdIaMNA8w6ZeU0kE",
+          "cards": [
+            {
+              "title": "Run Frontline Email Timing Test",
+              "priority": "high",
+              "description": "Before building anything, validate the end-to-end latency from when Frontline sends a job email to when a sub could realistically receive a push alert. This test de-risks the core value proposition.",
+              "checklist": [
+                {
+                  "id": "cl-1792890461798-0",
+                  "text": "Set up a test forwarding address (e.g. via Mailgun or SendGrid inbound parse webhook)",
+                  "completed": false,
+                  "order": 0
+                },
+                {
+                  "id": "cl-1792890461798-1",
+                  "text": "Have 2-3 real subs forward live Frontline job emails to the address",
+                  "completed": false,
+                  "order": 1
+                },
+                {
+                  "id": "cl-1792890461798-2",
+                  "text": "Log exact timestamps: Frontline send time, inbound receipt time, and simulated alert delivery time",
+                  "completed": false,
+                  "order": 2
+                },
+                {
+                  "id": "cl-1792890461798-3",
+                  "text": "Calculate median and worst-case latency across 20+ real emails",
+                  "completed": false,
+                  "order": 3
+                },
+                {
+                  "id": "cl-1792890461798-4",
+                  "text": "Document findings and set a latency SLA target (e.g. alert within 90 seconds of Frontline send)",
+                  "completed": false,
+                  "order": 4
+                }
+              ],
+              "notes": "Frontline emails may be batched or delayed on Frontline's side — if latency exceeds 3-5 minutes consistently, the product pitch needs to be reframed. Use this data in beta marketing copy. Mailgun inbound parse is free up to 100 messages/day for testing.",
+              "tags": [
+                "research",
+                "email",
+                "validation"
+              ],
+              "color": "#ef4444",
+              "dueDate": "2026-10-27",
+              "id": "It0EeORW3VIWA1RtzX_sX",
+              "boardId": "kMXs4LdIaMNA8w6ZeU0kE",
+              "columnId": "XbG4bGqMs75wToJFcdie0",
+              "order": 0,
+              "createdAt": "2026-10-25T01:07:41.798Z",
+              "updatedAt": "2026-10-25T01:07:41.798Z"
+            },
+            {
+              "title": "Set Up Firebase Project and Auth",
+              "priority": "high",
+              "description": "Initialize the Firebase project with Authentication, Firestore, and Cloud Messaging enabled. This is the foundational infrastructure that all other services depend on.",
+              "checklist": [
+                {
+                  "id": "cl-1792890461807-0",
+                  "text": "Create Firebase project in console and enable Firestore in production mode",
+                  "completed": false,
+                  "order": 0
+                },
+                {
+                  "id": "cl-1792890461807-1",
+                  "text": "Enable Email/Password and Google OAuth providers in Firebase Auth",
+                  "completed": false,
+                  "order": 1
+                },
+                {
+                  "id": "cl-1792890461807-2",
+                  "text": "Enable Firebase Cloud Messaging (FCM) and save VAPID key",
+                  "completed": false,
+                  "order": 2
+                },
+                {
+                  "id": "cl-1792890461807-3",
+                  "text": "Set up Firebase environment config for dev and production environments",
+                  "completed": false,
+                  "order": 3
+                },
+                {
+                  "id": "cl-1792890461807-4",
+                  "text": "Create initial Firestore security rules restricting reads/writes to authenticated users",
+                  "completed": false,
+                  "order": 4
+                }
+              ],
+              "notes": "Store VAPID keys and service account credentials in Railway environment variables, never in source control. Set up a separate Firebase project for staging to avoid polluting production data during the parser dev phase.",
+              "tags": [
+                "firebase",
+                "auth",
+                "backend"
+              ],
+              "color": "#ef4444",
+              "dueDate": "2026-10-28",
+              "id": "eHKOnIo5kjjr2fhrsqFnd",
+              "boardId": "kMXs4LdIaMNA8w6ZeU0kE",
+              "columnId": "XbG4bGqMs75wToJFcdie0",
+              "order": 1,
+              "createdAt": "2026-10-25T01:07:41.807Z",
+              "updatedAt": "2026-10-25T01:07:41.807Z"
+            },
+            {
+              "title": "Build Frontline Email Parser on Railway",
+              "priority": "high",
+              "description": "Deploy a Node.js service on Railway that receives forwarded Frontline emails via inbound webhook, parses job details, and writes structured records to Firestore. This is the core data pipeline.",
+              "checklist": [
+                {
+                  "id": "cl-1792890461812-0",
+                  "text": "Scaffold Node/Express app and deploy to Railway with a health-check endpoint",
+                  "completed": false,
+                  "order": 0
+                },
+                {
+                  "id": "cl-1792890461812-1",
+                  "text": "Configure Mailgun or SendGrid inbound parse to POST to Railway webhook URL",
+                  "completed": false,
+                  "order": 1
+                },
+                {
+                  "id": "cl-1792890461812-2",
+                  "text": "Write regex/cheerio parser to extract: job date, school, district, grade, subject, pay rate, and job ID",
+                  "completed": false,
+                  "order": 2
+                },
+                {
+                  "id": "cl-1792890461812-3",
+                  "text": "Validate parser against at least 15 real Frontline email variants (different districts format differently)",
+                  "completed": false,
+                  "order": 3
+                },
+                {
+                  "id": "cl-1792890461812-4",
+                  "text": "Write parsed job object to Firestore jobs collection with sub's UID and received timestamp",
+                  "completed": false,
+                  "order": 4
+                }
+              ],
+              "notes": "Frontline email formatting varies significantly by NJ district — prioritize building a tolerant parser that logs unparsed fields rather than failing silently. Store the raw email HTML in Firestore alongside the parsed object so you can re-parse retroactively when the parser improves.",
+              "tags": [
+                "backend",
+                "parser",
+                "email"
+              ],
+              "color": "#ef4444",
+              "dueDate": "2026-11-01",
+              "id": "-7MOgKSx9UYzi2v5Rdf5S",
+              "boardId": "kMXs4LdIaMNA8w6ZeU0kE",
+              "columnId": "XbG4bGqMs75wToJFcdie0",
+              "order": 2,
+              "createdAt": "2026-10-25T01:07:41.812Z",
+              "updatedAt": "2026-10-25T01:07:41.812Z"
+            },
+            {
+              "title": "Implement Push Alerts and SMS Backup",
+              "priority": "high",
+              "description": "After a job is parsed and matched to a sub's preferences, trigger a Firebase Cloud Messaging push notification and fall back to SMS via Twilio if the push is not acknowledged within 30 seconds.",
+              "checklist": [
+                {
+                  "id": "cl-1792890461817-0",
+                  "text": "Register FCM service worker in the React PWA and request notification permission on onboarding",
+                  "completed": false,
+                  "order": 0
+                },
+                {
+                  "id": "cl-1792890461817-1",
+                  "text": "Store FCM device tokens per user in Firestore and handle token refresh",
+                  "completed": false,
+                  "order": 1
+                },
+                {
+                  "id": "cl-1792890461817-2",
+                  "text": "Write Cloud Function or Railway endpoint that sends FCM push with job title, school, date, and one-tap Frontline deep link",
+                  "completed": false,
+                  "order": 2
+                },
+                {
+                  "id": "cl-1792890461817-3",
+                  "text": "Integrate Twilio SMS as fallback triggered after 30-second push non-acknowledgment",
+                  "completed": false,
+                  "order": 3
+                },
+                {
+                  "id": "cl-1792890461817-4",
+                  "text": "Log alert delivery status (sent, delivered, clicked) back to Firestore for the missed-job log feature",
+                  "completed": false,
+                  "order": 4
+                }
+              ],
+              "notes": "iOS Safari requires the user to add the PWA to their home screen before FCM push works — make this a prominent step in the onboarding flow. Twilio SMS costs roughly $0.0079/message; factor this into paid tier pricing. The one-tap link should deep-link directly to the Frontline job accept page using the parsed job ID.",
+              "tags": [
+                "push",
+                "sms",
+                "notifications"
+              ],
+              "color": "#ef4444",
+              "dueDate": "2026-11-04",
+              "id": "9PgmTE2HOkY0Rl3xKtd6p",
+              "boardId": "kMXs4LdIaMNA8w6ZeU0kE",
+              "columnId": "XbG4bGqMs75wToJFcdie0",
+              "order": 3,
+              "createdAt": "2026-10-25T01:07:41.817Z",
+              "updatedAt": "2026-10-25T01:07:41.817Z"
+            },
+            {
+              "title": "Build Preference Matching Engine",
+              "priority": "high",
+              "description": "Allow subs to set job preferences (districts, grade levels, subjects, minimum pay, days of week) and filter incoming parsed jobs so alerts are only sent for matching opportunities.",
+              "checklist": [
+                {
+                  "id": "cl-1792890461821-0",
+                  "text": "Design Firestore user preferences schema covering district whitelist, grade range, subject tags, min pay, and blackout dates",
+                  "completed": false,
+                  "order": 0
+                },
+                {
+                  "id": "cl-1792890461821-1",
+                  "text": "Build preference settings UI in React with multi-select controls for each dimension",
+                  "completed": false,
+                  "order": 1
+                },
+                {
+                  "id": "cl-1792890461821-2",
+                  "text": "Write matching function that compares parsed job object against stored preferences before triggering alert",
+                  "completed": false,
+                  "order": 2
+                },
+                {
+                  "id": "cl-1792890461821-3",
+                  "text": "Add a 'notify me anyway' override toggle so subs can temporarily receive all alerts",
+                  "completed": false,
+                  "order": 3
+                },
+                {
+                  "id": "cl-1792890461821-4",
+                  "text": "Test matching logic with edge cases: missing pay data, multi-grade jobs, district name variations",
+                  "completed": false,
+                  "order": 4
+                }
+              ],
+              "notes": "NJ district names in Frontline emails may not exactly match what subs expect to type — build a district name normalization map early. Consider letting subs import their Frontline district list during onboarding to reduce setup friction.",
+              "tags": [
+                "matching",
+                "preferences",
+                "backend"
+              ],
+              "color": "#ef4444",
+              "dueDate": "2026-11-06",
+              "id": "YYSsq0-n7omUAzugl5HQ5",
+              "boardId": "kMXs4LdIaMNA8w6ZeU0kE",
+              "columnId": "XbG4bGqMs75wToJFcdie0",
+              "order": 4,
+              "createdAt": "2026-10-25T01:07:41.821Z",
+              "updatedAt": "2026-10-25T01:07:41.821Z"
+            },
+            {
+              "title": "Build Core PWA Shell and Onboarding Flow",
+              "priority": "medium",
+              "description": "Scaffold the React/Vite PWA with a manifest, service worker, and a step-by-step onboarding flow that walks new subs through email forwarding setup, notification permission, and preference configuration.",
+              "checklist": [
+                {
+                  "id": "cl-1792890461826-0",
+                  "text": "Initialize React/Vite project with PWA plugin (vite-plugin-pwa) and configure manifest.json",
+                  "completed": false,
+                  "order": 0
+                },
+                {
+                  "id": "cl-1792890461826-1",
+                  "text": "Build onboarding stepper: create account, copy forwarding address, grant push permission, set preferences",
+                  "completed": false,
+                  "order": 1
+                },
+                {
+                  "id": "cl-1792890461826-2",
+                  "text": "Generate a unique inbound email address per user and display it clearly with copy-to-clipboard",
+                  "completed": false,
+                  "order": 2
+                },
+                {
+                  "id": "cl-1792890461826-3",
+                  "text": "Add 'add to home screen' prompt with visual instructions for iOS and Android",
+                  "completed": false,
+                  "order": 3
+                },
+                {
+                  "id": "cl-1792890461826-4",
+                  "text": "Implement protected routing so unauthenticated users always land on onboarding",
+                  "completed": false,
+                  "order": 4
+                }
+              ],
+              "notes": "The forwarding address setup step is the highest drop-off risk in onboarding — include a short GIF or screenshot showing exactly how to set up email forwarding in Gmail, Outlook, and Apple Mail. The unique per-user inbound address is how you tie inbound emails to a Firestore UID without requiring login on every forward.",
+              "tags": [
+                "pwa",
+                "ui",
+                "onboarding"
+              ],
+              "color": "#f59e0b",
+              "dueDate": "2026-11-02",
+              "id": "V7ajt5Ey8rnOOH3-YqpkK",
+              "boardId": "kMXs4LdIaMNA8w6ZeU0kE",
+              "columnId": "XbG4bGqMs75wToJFcdie0",
+              "order": 5,
+              "createdAt": "2026-10-25T01:07:41.826Z",
+              "updatedAt": "2026-10-25T01:07:41.826Z"
+            },
+            {
+              "title": "Implement Feed Health Check and 20-Day Tracker",
+              "priority": "medium",
+              "description": "Surface a feed health indicator that warns subs if no emails have been received in 48 hours (likely a forwarding break), and track the 20-day substitute limit and credential expiration dates with proactive alerts.",
+              "checklist": [
+                {
+                  "id": "cl-1792890461830-0",
+                  "text": "Store lastEmailReceived timestamp per user in Firestore and run a daily Cloud Function to check for staleness",
+                  "completed": false,
+                  "order": 0
+                },
+                {
+                  "id": "cl-1792890461830-1",
+                  "text": "Send a push alert and in-app banner if no email received in 48 hours with troubleshooting steps",
+                  "completed": false,
+                  "order": 1
+                },
+                {
+                  "id": "cl-1792890461830-2",
+                  "text": "Build a credential tracker UI where subs enter their NJ substitute certificate expiration date",
+                  "completed": false,
+                  "order": 2
+                },
+                {
+                  "id": "cl-1792890461830-3",
+                  "text": "Send renewal reminder alerts at 60, 30, and 7 days before credential expiration",
+                  "completed": false,
+                  "order": 3
+                },
+                {
+                  "id": "cl-1792890461830-4",
+                  "text": "Build a 20-day counter that increments per accepted job and resets on a user-defined school year start date, with alert at day 18",
+                  "completed": false,
+                  "order": 4
+                }
+              ],
+              "notes": "The 20-day rule is specific to NJ subs without a teaching certificate — make the counter opt-in and clearly labeled so credentialed subs are not confused. The feed health check is a strong retention tool; a silent broken feed is the most common reason subs would churn.",
+              "tags": [
+                "health",
+                "compliance",
+                "alerts"
+              ],
+              "color": "#f59e0b",
+              "dueDate": "2026-11-08",
+              "id": "Npq9W4QOU5DJbG8F7RwhM",
+              "boardId": "kMXs4LdIaMNA8w6ZeU0kE",
+              "columnId": "XbG4bGqMs75wToJFcdie0",
+              "order": 6,
+              "createdAt": "2026-10-25T01:07:41.830Z",
+              "updatedAt": "2026-10-25T01:07:41.830Z"
+            },
+            {
+              "title": "Build Missed-Job Log and Calendar Sync",
+              "priority": "medium",
+              "description": "Give subs a searchable log of all jobs they were alerted to, whether they accepted or missed them, and allow them to sync accepted jobs to Google Calendar or iCal.",
+              "checklist": [
+                {
+                  "id": "cl-1792890461835-0",
+                  "text": "Display a paginated Firestore-backed job history list showing job details, alert timestamp, and accept status",
+                  "completed": false,
+                  "order": 0
+                },
+                {
+                  "id": "cl-1792890461835-1",
+                  "text": "Add a manual 'I took this job' toggle per log entry for subs who accepted directly in Frontline",
+                  "completed": false,
+                  "order": 1
+                },
+                {
+                  "id": "cl-1792890461835-2",
+                  "text": "Implement Google Calendar OAuth integration to push accepted jobs as calendar events",
+                  "completed": false,
+                  "order": 2
+                },
+                {
+                  "id": "cl-1792890461835-3",
+                  "text": "Generate an iCal feed URL per user as an alternative to Google Calendar OAuth",
+                  "completed": false,
+                  "order": 3
+                },
+                {
+                  "id": "cl-1792890461835-4",
+                  "text": "Add basic analytics summary: jobs alerted this month, jobs accepted, acceptance rate",
+                  "completed": false,
+                  "order": 4
+                }
+              ],
+              "notes": "Google Calendar OAuth requires verifying your app with Google if you request broad scopes — use the calendar.events scope only and consider iCal as the primary sync method to avoid OAuth review delays during beta. The missed-job log is a key sticky feature that creates a personal record subs will return to regularly.",
+              "tags": [
+                "calendar",
+                "history",
+                "ui"
+              ],
+              "color": "#f59e0b",
+              "dueDate": "2026-11-11",
+              "id": "hHkA_rSOxx6l-YNvbbKPf",
+              "boardId": "kMXs4LdIaMNA8w6ZeU0kE",
+              "columnId": "XbG4bGqMs75wToJFcdie0",
+              "order": 7,
+              "createdAt": "2026-10-25T01:07:41.835Z",
+              "updatedAt": "2026-10-25T01:07:41.835Z"
+            },
+            {
+              "title": "Launch Private Beta with 10-20 NJ Subs",
+              "priority": "medium",
+              "description": "Recruit a small group of real NJ substitute teachers for a private beta, gather qualitative feedback, and validate that the full alert pipeline works reliably before opening to the public.",
+              "checklist": [
+                {
+                  "id": "cl-1792890461839-0",
+                  "text": "Recruit 10-20 beta testers from NJ sub Facebook groups, Reddit (r/njteachers), and local district sub lists",
+                  "completed": false,
+                  "order": 0
+                },
+                {
+                  "id": "cl-1792890461839-1",
+                  "text": "Create a simple beta landing page with waitlist signup and a short screener form",
+                  "completed": false,
+                  "order": 1
+                },
+                {
+                  "id": "cl-1792890461839-2",
+                  "text": "Set up a Slack or Discord channel for beta tester feedback and bug reports",
+                  "completed": false,
+                  "order": 2
+                },
+                {
+                  "id": "cl-1792890461839-3",
+                  "text": "Define success metrics: alert latency under 90s for 90% of jobs, zero missed alerts due to parser failure",
+                  "completed": false,
+                  "order": 3
+                },
+                {
+                  "id": "cl-1792890461839-4",
+                  "text": "Run a structured feedback session at day 7 and day 21 with all testers",
+                  "completed": false,
+                  "order": 4
+                }
+              ],
+              "notes": "Offer beta testers a free lifetime or heavily discounted tier as incentive — this also gives you a committed group for testimonials at public launch. Prioritize testers from multiple NJ districts to stress-test parser variation coverage early.",
+              "tags": [
+                "beta",
+                "research",
+                "growth"
+              ],
+              "color": "#f59e0b",
+              "dueDate": "2026-11-15",
+              "id": "GiSlmp_4G0xPE10xp6KRK",
+              "boardId": "kMXs4LdIaMNA8w6ZeU0kE",
+              "columnId": "XbG4bGqMs75wToJFcdie0",
+              "order": 8,
+              "createdAt": "2026-10-25T01:07:41.839Z",
+              "updatedAt": "2026-10-25T01:07:41.839Z"
+            },
+            {
+              "title": "Integrate Stripe and Launch Paid Tier",
+              "priority": "low",
+              "description": "Implement Stripe billing to gate premium features behind a monthly subscription, with a free tier that provides basic alerts and a paid tier that unlocks SMS backup, calendar sync, and the missed-job log.",
+              "checklist": [
+                {
+                  "id": "cl-1792890461843-0",
+                  "text": "Create Stripe products and price objects for free and paid monthly tiers",
+                  "completed": false,
+                  "order": 0
+                },
+                {
+                  "id": "cl-1792890461843-1",
+                  "text": "Integrate Stripe Checkout and Customer Portal using Firebase Extensions or a custom Railway endpoint",
+                  "completed": false,
+                  "order": 1
+                },
+                {
+                  "id": "cl-1792890461843-2",
+                  "text": "Store subscription status in Firestore and gate premium features in the React app using role-based checks",
+                  "completed": false,
+                  "order": 2
+                },
+                {
+                  "id": "cl-1792890461843-3",
+                  "text": "Set up Stripe webhooks to handle subscription created, updated, and canceled events",
+                  "completed": false,
+                  "order": 3
+                },
+                {
+                  "id": "cl-1792890461843-4",
+                  "text": "Add upgrade prompts at natural friction points in the free tier UI (e.g. when SMS backup would have fired)",
+                  "completed": false,
+                  "order": 4
+                }
+              ],
+              "notes": "Use Stripe's test mode extensively before going live — webhook handling for subscription lifecycle events has many edge cases. Consider a 14-day free trial of the paid tier for all new signups to reduce friction and increase conversion. Pricing suggestion based on comp: $7-9/month given the clear ROI for subs who accept even one additional job per month.",
+              "tags": [
+                "stripe",
+                "billing",
+                "growth"
+              ],
+              "color": "#22c55e",
+              "dueDate": "2026-11-22",
+              "id": "zj1xAXUZDDG1KaQcWikAz",
+              "boardId": "kMXs4LdIaMNA8w6ZeU0kE",
+              "columnId": "XbG4bGqMs75wToJFcdie0",
+              "order": 9,
+              "createdAt": "2026-10-25T01:07:41.843Z",
+              "updatedAt": "2026-10-25T01:07:41.843Z"
+            }
+          ]
+        },
+        {
+          "id": "QukK9khnWFXuqqRpse8R8",
+          "title": "In Progress",
+          "order": 1,
+          "boardId": "kMXs4LdIaMNA8w6ZeU0kE",
+          "cards": []
+        },
+        {
+          "id": "dPrUDnUHXQ-2rKlmXThtU",
+          "title": "In Review",
+          "order": 2,
+          "boardId": "kMXs4LdIaMNA8w6ZeU0kE",
+          "cards": []
+        },
+        {
+          "id": "jkayGCa__TeZZ-KTYqglN",
+          "title": "Testing",
+          "order": 3,
+          "boardId": "kMXs4LdIaMNA8w6ZeU0kE",
+          "cards": []
+        },
+        {
+          "id": "DAGLFsm16ERRxhrHKUDh4",
+          "title": "Done",
+          "order": 4,
+          "boardId": "kMXs4LdIaMNA8w6ZeU0kE",
+          "cards": []
+        },
+        {
+          "id": "k-zqBvelwh1UGZfHAUCgB",
+          "title": "Descoped",
+          "order": 5,
+          "boardId": "kMXs4LdIaMNA8w6ZeU0kE",
+          "cards": []
+        }
+      ],
+      "sharedWith": []
+    }
+  ]
+}
