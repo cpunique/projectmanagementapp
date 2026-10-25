@@ -1,0 +1,279 @@
+{
+ "case": "startHours",
+ "style": "development",
+ "input": "Build a simple website with a contact form for my plumbing business. Start on 2026-11-02 and I can only work 5 hours a week.",
+ "localDate": "2026-10-24",
+ "response": {
+  "tasks": [
+   {
+    "title": "Read me first: assumptions and gaps",
+    "priority": "high",
+    "description": "This plan is a starting point and may still have gaps. Read the items below before relying on it.\nThe dates are suggestions meant to keep momentum. Moving one is normal, and overdue cards simply show in red.\nPacing used: 5 hours a week, starting Mon 2 Nov, as you described.",
+    "checklist": [
+     "Assumption, verify: Netlify's free tier is sufficient for this site's traffic and form submissions How to check: Check the current free tier limits on the Netlify pricing page at netlify.com/pricing before going live",
+     "Assumption, verify: The business already has a domain name, or is willing to buy one How to check: Check with the owner; a domain typically costs a small annual fee through registrars like Namecheap or Google Domains",
+     "Assumption, verify: Form submissions only need to arrive by email; no CRM or database integration is needed How to check: Confirm with the business owner what happens after someone fills in the form",
+     "Assumption, verify: No online booking, payments, or login features are needed How to check: Confirm with the business owner before building",
+     "On \"Set up hosting account and connect domain\": Assumption, verify: confirm Netlify's free plan limits are enough at netlify.com/pricing",
+     "On \"Check legal basics for the website\": Check with a professional whether a privacy policy is required for your contact form in your jurisdiction",
+     "For any price, rate or rule above: check the vendor or official source directly, or ask a professional for anything legal or financial."
+    ],
+    "notes": "NOT MENTIONED IN YOUR DESCRIPTION (often matters):\n- What pages are needed beyond a home page and contact page (e.g. services list, about, service area)?\n- What photos, logo, or brand colors should the site use?\n- Is a privacy policy required for the contact form in your jurisdiction?\n- Should form submissions go to a specific email address, and which one?\n\nTHINGS THIS PLAN CANNOT KNOW:\n- Current Netlify free tier form submission limits (check netlify.com/pricing)\n- Domain name cost and availability (depends on registrar and chosen name)\n- Local legal requirements for a business website contact form (check with a professional)\n\nPOSSIBLE CONFLICTS TO CHECK:\n- \"Set up hosting account and connect domain\" rests on an unchecked assumption but its first step is not a check.",
+    "tags": [
+     "planning"
+    ],
+    "color": "#ffffff",
+    "dueDate": "2026-11-02"
+   },
+   {
+    "title": "Decisions needed: choices only you can make",
+    "priority": "high",
+    "description": "These choices were not in your description, so they are yours to make. Each has a recommended default: accept it and move on, or swap it for your own.",
+    "checklist": [
+     "Which pages should the site include? Options: Home only / Home, Services, Contact / Home, Services, About, Contact. Recommended default: Home, Services, Contact.",
+     "Will you buy a custom domain name or use the free Netlify subdomain to start? Options: Custom domain (small annual cost) / Free Netlify subdomain (e.g. yoursite.netlify.app). Recommended default: Custom domain for a professional look.",
+     "Recommended default for frontend: HTML, CSS, JavaScript. Why: Simplest option for a static informational site; no framework needed",
+     "Recommended default for hosting: Netlify. Why: Free tier covers simple static sites, deploys from a folder with no server setup",
+     "Recommended default for contact form: Netlify Forms. Why: Built into Netlify hosting, no backend code needed for a simple contact form"
+    ],
+    "notes": "",
+    "tags": [
+     "decisions"
+    ],
+    "color": "#ef4444",
+    "dueDate": "2026-11-02"
+   },
+   {
+    "title": "Set up hosting account and connect domain",
+    "priority": "high",
+    "description": "Create a free Netlify account and point your domain name to it so the site has a home on the web.\nWhy this matters: Nothing else can go live without a place to host it.",
+    "checklist": [
+     "Create a free account at netlify.com",
+     "Decide whether to use a custom domain or a free Netlify subdomain (see the open decision)",
+     "If using a custom domain, buy it from a registrar and follow Netlify's instructions to point it to your site",
+     "Assumption, verify: confirm Netlify's free plan limits are enough at netlify.com/pricing"
+    ],
+    "notes": "DNS propagation: after you point a domain to Netlify, it can take up to 48 hours before the address works everywhere in the world. Static site: a site made of plain files (no database or server code) — Netlify hosts these for free.",
+    "tags": [
+     "hosting",
+     "setup"
+    ],
+    "color": "#ef4444",
+    "dueDate": "2026-11-02"
+   },
+   {
+    "title": "Gather content and assets",
+    "priority": "high",
+    "description": "Collect all the text, photos, logo, and contact details the site will need before writing any code.\nWhy this matters: Building without real content wastes time because the layout will change when real content goes in.",
+    "checklist": [
+     "Write a short description of the business and the services offered",
+     "Collect the phone number, email address, and service area to display on the site",
+     "Gather the logo file and any photos (even a smartphone photo of the work or team is fine)",
+     "Note the brand colors, or choose two or three colors you like",
+     "Decide which pages to include (see the open decision)"
+    ],
+    "notes": "",
+    "tags": [
+     "content",
+     "setup"
+    ],
+    "color": "#ef4444",
+    "dueDate": "2026-11-03"
+   },
+   {
+    "title": "Build the site pages",
+    "priority": "high",
+    "description": "Depends on: Gather content and assets\nCreate the HTML and CSS files for each page using the content gathered in the earlier card.\nWhy this matters: This is the core of the website.",
+    "checklist": [
+     "Ask an AI coding assistant to generate a simple HTML template with a header, navigation links, main content area, and footer",
+     "Create one HTML file per page (e.g. index.html, services.html, contact.html)",
+     "Add the business name, services, phone number, and service area to the relevant pages",
+     "Add the logo and any photos",
+     "Write a CSS file to apply the chosen colors and make the layout look clean on both desktop and mobile"
+    ],
+    "notes": "HTML: the language that defines what is on a web page. CSS: the language that controls how the page looks. A beginner can ask an AI coding assistant like ChatGPT or GitHub Copilot to write these files and explain each part.",
+    "tags": [
+     "frontend",
+     "content"
+    ],
+    "color": "#ef4444",
+    "dueDate": "2026-11-09"
+   },
+   {
+    "title": "Add and test the contact form",
+    "priority": "high",
+    "description": "Depends on: Build the site pages\nAdd a contact form to the contact page using Netlify Forms so visitors can send a message without the site needing any server code.\nWhy this matters: The contact form is the main way visitors will reach the business.",
+    "checklist": [
+     "Ask an AI coding assistant to add a Netlify Forms-compatible HTML form to contact.html with fields for name, phone, email, and message",
+     "Set the form attribute data-netlify=\"true\" so Netlify handles submissions automatically",
+     "Configure Netlify to email form submissions to the business email address (done in the Netlify dashboard under Forms)",
+     "Deploy the site to Netlify and submit a test message to confirm the email arrives",
+     "Check the spam folder if the test email does not appear"
+    ],
+    "notes": "Netlify Forms: a feature built into Netlify hosting that collects form submissions and emails them to you, with no extra code or accounts needed. data-netlify attribute: a special label in the HTML that tells Netlify to watch that form.",
+    "tags": [
+     "frontend",
+     "forms"
+    ],
+    "color": "#ef4444",
+    "dueDate": "2026-11-11"
+   },
+   {
+    "title": "Check legal basics for the website",
+    "priority": "high",
+    "description": "Depends on: Add and test the contact form\nMake sure the site covers the minimum legal items for a business website that collects contact details.\nWhy this matters: Collecting names and emails through a form may require a privacy notice depending on your location.",
+    "checklist": [
+     "Check with a professional whether a privacy policy is required for your contact form in your jurisdiction",
+     "If required, add a short privacy policy page explaining what data is collected and how it is used",
+     "Add a link to the privacy policy near the contact form"
+    ],
+    "notes": "",
+    "tags": [
+     "legal",
+     "forms"
+    ],
+    "color": "#ef4444",
+    "dueDate": "2026-11-12"
+   },
+   {
+    "title": "Decision: Review the site before going live",
+    "priority": "high",
+    "description": "Depends on: Add and test the contact form; Check legal basics for the website\nCheck the site end-to-end on a real device before announcing it to customers.\nWhy this matters: Catching problems now is easier than fixing them after customers have seen the site.",
+    "checklist": [
+     "Open every page on a phone and on a desktop and confirm the layout looks correct on both",
+     "Click every navigation link and confirm it goes to the right page",
+     "Submit the contact form and confirm the email arrives in the business inbox",
+     "Check that the phone number, email, and address are correct on every page",
+     "Confirm the domain is working and shows a padlock (HTTPS) in the browser"
+    ],
+    "notes": "HTTPS: the secure version of web traffic; Netlify enables this automatically for all hosted sites.",
+    "tags": [
+     "decision-gate",
+     "testing",
+     "launch"
+    ],
+    "color": "#ef4444",
+    "dueDate": "2026-11-13"
+   },
+   {
+    "title": "Launch and share the site",
+    "priority": "medium",
+    "description": "Depends on: Decision: Review the site before going live\nMake the site public and let customers know it exists.\nWhy this matters: The site only helps the business if customers can find it.",
+    "checklist": [
+     "Confirm the live URL is the final domain (not a temporary Netlify subdomain) if a custom domain was chosen",
+     "Add the website URL to any business cards, social profiles, or Google Business Profile listing",
+     "Share the URL with a few trusted contacts and ask them to test the contact form"
+    ],
+    "notes": "",
+    "tags": [
+     "launch"
+    ],
+    "color": "#f59e0b",
+    "dueDate": "2026-11-16"
+   }
+  ],
+  "structure": [
+   {
+    "key": "T1",
+    "title": "Set up hosting account and connect domain",
+    "kind": "work",
+    "priority": "high",
+    "dependsOn": [],
+    "effortHours": 1,
+    "waitDays": 0,
+    "dueDate": "2026-11-02"
+   },
+   {
+    "key": "T2",
+    "title": "Gather content and assets",
+    "kind": "work",
+    "priority": "high",
+    "dependsOn": [],
+    "effortHours": 1,
+    "waitDays": 0,
+    "dueDate": "2026-11-03"
+   },
+   {
+    "key": "T3",
+    "title": "Build the site pages",
+    "kind": "work",
+    "priority": "high",
+    "dependsOn": [
+     "T2"
+    ],
+    "effortHours": 4,
+    "waitDays": 0,
+    "dueDate": "2026-11-09"
+   },
+   {
+    "key": "T4",
+    "title": "Add and test the contact form",
+    "kind": "work",
+    "priority": "high",
+    "dependsOn": [
+     "T3"
+    ],
+    "effortHours": 2,
+    "waitDays": 0,
+    "dueDate": "2026-11-11"
+   },
+   {
+    "key": "T5",
+    "title": "Check legal basics for the website",
+    "kind": "work",
+    "priority": "high",
+    "dependsOn": [
+     "T4"
+    ],
+    "effortHours": 1,
+    "waitDays": 0,
+    "dueDate": "2026-11-12"
+   },
+   {
+    "key": "T6",
+    "title": "Decision: Review the site before going live",
+    "kind": "decision-gate",
+    "priority": "high",
+    "dependsOn": [
+     "T4",
+     "T5"
+    ],
+    "effortHours": 1,
+    "waitDays": 0,
+    "dueDate": "2026-11-13"
+   },
+   {
+    "key": "T7",
+    "title": "Launch and share the site",
+    "kind": "work",
+    "priority": "medium",
+    "dependsOn": [
+     "T6"
+    ],
+    "effortHours": 1,
+    "waitDays": 0,
+    "dueDate": "2026-11-16"
+   }
+  ],
+  "summary": {
+   "firstWorkingDay": "2026-11-02",
+   "endDate": "2026-11-16",
+   "hoursPerWeek": 5,
+   "hoursPerWeekAssumed": false,
+   "deadline": null,
+   "deadlineMet": null,
+   "overrunBusinessDays": null,
+   "wouldHaveToGive": [],
+   "fitsAfterDeferring": null,
+   "specificsLabeled": 0,
+   "flags": [
+    {
+     "type": "verify-first",
+     "taskKey": "T1",
+     "message": "\"Set up hosting account and connect domain\" rests on an unchecked assumption but its first step is not a check."
+    }
+   ],
+   "warnings": []
+  }
+ }
+}

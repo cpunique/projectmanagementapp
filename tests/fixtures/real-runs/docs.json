@@ -1,0 +1,337 @@
+{
+ "case": "docs",
+ "style": "documentation",
+ "input": "Write an onboarding guide for new volunteers at our community food bank.",
+ "localDate": "2026-10-24",
+ "response": {
+  "tasks": [
+   {
+    "title": "Read me first: assumptions and gaps",
+    "priority": "high",
+    "description": "This plan is a starting point and may still have gaps. Read the items below before relying on it.\nThe dates are suggestions meant to keep momentum. Moving one is normal, and overdue cards simply show in red.\nPacing assumed: about 10 hours a week, starting Mon 26 Oct (you did not say how much time you have). If you add your hours per week or a start date to the description and generate again, the dates will follow.",
+    "checklist": [
+     "Assumption, verify: At least one experienced staff member or long-serving volunteer can be interviewed for content How to check: Ask the food bank coordinator who is available and willing to give their time",
+     "Assumption, verify: The guide will be reviewed and approved by someone with authority at the food bank before it is used How to check: Confirm with the food bank coordinator who has sign-off authority",
+     "Assumption, verify: The guide needs to meet basic accessibility requirements (readable font, sufficient contrast, plain language) How to check: Ask the food bank coordinator whether any volunteers have known accessibility needs, and check your local accessibility guidelines",
+     "Assumption, verify: Any health, safety, or food-handling rules in the guide are current and accurate for your location How to check: Verify with the food bank coordinator and check with the relevant official source (local health authority or food safety regulator)",
+     "For any price, rate or rule above: check the vendor or official source directly, or ask a professional for anything legal or financial."
+    ],
+    "notes": "NOT MENTIONED IN YOUR DESCRIPTION (often matters):\n- Who owns and updates the guide after it is published, and how often\n- Whether the guide needs to exist in languages other than English\n- Whether volunteers will receive the guide digitally, on paper, or both\n- Whether the food bank has existing policies, procedures, or forms that must be referenced or included\n- Whether there is a formal volunteer induction session that the guide accompanies, or whether the guide works on its own\n\nTHINGS THIS PLAN CANNOT KNOW:\n- Current food safety or health regulations that apply to food bank volunteers in your specific location\n- Any mandatory training or certification required before volunteers can handle food in your area",
+    "tags": [
+     "planning"
+    ],
+    "color": "#ffffff",
+    "dueDate": "2026-10-26"
+   },
+   {
+    "title": "Decisions needed: choices only you can make",
+    "priority": "high",
+    "description": "These choices were not in your description, so they are yours to make. Each has a recommended default: accept it and move on, or swap it for your own.",
+    "checklist": [
+     "Who is the primary audience within new volunteers: general adult volunteers, youth volunteers, or both? Options: General adult volunteers only / Youth volunteers only / Both, with separate sections. Recommended default: General adult volunteers only, and add a youth section later if needed.",
+     "Where will the guide live so volunteers can access it? Options: Printed copies handed out on arrival / Shared online link (e.g. Google Drive) / Both print and online. Recommended default: Both print and online for maximum reach.",
+     "How will volunteers give feedback on the guide after using it? Options: Short paper feedback form / Online survey link / Verbal feedback to a coordinator / No formal feedback mechanism. Recommended default: Short paper feedback form attached to the guide.",
+     "Recommended default for authoring: Word processor (e.g. Google Docs or Microsoft Word). Why: Easy for non-technical teams to edit, comment on, and share"
+    ],
+    "notes": "",
+    "tags": [
+     "decisions"
+    ],
+    "color": "#ef4444",
+    "dueDate": "2026-10-26"
+   },
+   {
+    "title": "Gather decisions and existing materials",
+    "priority": "high",
+    "description": "Collect answers to the open decisions and any existing food bank materials (policies, rotas, forms) before writing begins. This prevents rework.\nWhy this matters: Writing cannot be scoped or started accurately without knowing the audience, format, and what already exists.",
+    "checklist": [
+     "Confirm the intended audience (adult volunteers, youth, or both)",
+     "Confirm how and where the guide will be distributed",
+     "Collect any existing volunteer policies, safety rules, or intake forms",
+     "Ask who will review and approve the final guide",
+     "Confirm who will own and update the guide going forward",
+     "Note whether a translation into another language is needed"
+    ],
+    "notes": "Keep a simple log of what you collect so the reviewer can check sources later.",
+    "tags": [
+     "planning",
+     "content"
+    ],
+    "color": "#ef4444",
+    "dueDate": "2026-10-26"
+   },
+   {
+    "title": "Schedule and conduct subject-matter interviews",
+    "priority": "high",
+    "description": "Depends on: Gather decisions and existing materials\nBook time with at least one experienced staff member or long-serving volunteer to gather the real-world details that make the guide accurate and useful.\nWhy this matters: First-hand knowledge fills gaps that no document can provide.",
+    "checklist": [
+     "Identify one or two people with deep knowledge of volunteer operations",
+     "Send interview requests and agree on a time",
+     "Prepare a list of questions covering daily tasks, safety rules, common mistakes, and who to ask for help",
+     "Conduct the interview and take notes or record with permission"
+    ],
+    "notes": "The wait time reflects scheduling back-and-forth. Keep the interview to about 30 to 45 minutes to respect the interviewee's time.",
+    "tags": [
+     "content",
+     "planning"
+    ],
+    "color": "#ef4444",
+    "dueDate": "2026-11-02"
+   },
+   {
+    "title": "Define the guide's structure and scope",
+    "priority": "high",
+    "description": "Depends on: Gather decisions and existing materials; Schedule and conduct subject-matter interviews\nAgree on the sections the guide will contain and what each one covers before any writing starts.\nWhy this matters: A clear outline keeps the writing focused and makes review easier.",
+    "checklist": [
+     "List all topics that must be covered (welcome, site rules, food safety, shift logistics, who to contact, emergency procedures)",
+     "Confirm which health or food-handling rules must appear, and mark them for verification with the official source",
+     "Agree on the rough length and reading level (aim for plain, simple language)",
+     "Get informal sign-off on the outline from the person who will approve the final guide"
+    ],
+    "notes": "Plain language means short sentences and everyday words. Avoid jargon; if a term must appear, define it the first time it is used.",
+    "tags": [
+     "planning",
+     "content"
+    ],
+    "color": "#ef4444",
+    "dueDate": "2026-11-02"
+   },
+   {
+    "title": "Write the first draft of the guide",
+    "priority": "high",
+    "description": "Depends on: Define the guide's structure and scope\nWrite all sections agreed in the outline, using the interview notes and existing materials as your main sources.\nWhy this matters: A complete draft gives reviewers something concrete to respond to.",
+    "checklist": [
+     "Write a short welcome section explaining the food bank's mission and the volunteer's role",
+     "Write practical sections: what to wear, when to arrive, where to go, what to do on a shift",
+     "Write a section on food safety and hygiene rules, flagging any that must be verified with the official local source",
+     "Write a contacts and escalation section (who to ask for help, who to call in an emergency)",
+     "Add a feedback mechanism in whichever format was decided",
+     "Use plain language throughout; define any necessary jargon in a short glossary or inline"
+    ],
+    "notes": "Do not state specific regulatory rules as fact. Instead, write what the food bank requires and note where the rule comes from, so the reviewer can verify it.",
+    "tags": [
+     "content",
+     "writing"
+    ],
+    "color": "#ef4444",
+    "dueDate": "2026-11-05"
+   },
+   {
+    "title": "Internal review and accuracy check",
+    "priority": "high",
+    "description": "Depends on: Write the first draft of the guide\nShare the draft with the designated reviewer and the subject-matter expert to catch errors, gaps, and anything legally or operationally sensitive.\nWhy this matters: Errors in safety or procedural information can cause real harm to volunteers or clients.",
+    "checklist": [
+     "Send the draft to the designated approver and at least one experienced volunteer or staff member",
+     "Ask reviewers to flag anything factually wrong, missing, or unclear",
+     "Verify any food safety or health rules mentioned in the draft with the relevant official source or a qualified person",
+     "Collect all comments and resolve or consciously defer each one"
+    ],
+    "notes": "Any rule about health, safety, or food handling should be confirmed with the official source (local health authority or food safety regulator), not left to the writer's judgement.",
+    "tags": [
+     "review",
+     "content"
+    ],
+    "color": "#ef4444",
+    "dueDate": "2026-11-09"
+   },
+   {
+    "title": "Decision: approve the guide for publication",
+    "priority": "high",
+    "description": "Depends on: Internal review and accuracy check\nThe designated approver decides whether the guide is ready to publish or needs another round of revision.\nWhy this matters: Publishing an inaccurate or incomplete guide is worse than publishing nothing.",
+    "checklist": [
+     "All factual errors and reviewer comments have been resolved or formally deferred",
+     "Safety and food-handling information has been confirmed with the official source",
+     "The guide covers every section in the agreed outline",
+     "The language is plain and accessible to someone with no prior food bank experience",
+     "The approver signs off in writing (an email is sufficient)"
+    ],
+    "notes": "If the guide does not pass this gate, return to the drafting or review card, address the outstanding issues, and re-submit.",
+    "tags": [
+     "decision-gate",
+     "review",
+     "planning"
+    ],
+    "color": "#ef4444",
+    "dueDate": "2026-11-10"
+   },
+   {
+    "title": "Format and produce the final guide",
+    "priority": "medium",
+    "description": "Depends on: Decision: approve the guide for publication\nApply consistent formatting, check accessibility, and produce the guide in whatever format or formats were decided for distribution.\nWhy this matters: A well-formatted guide is easier to read and looks credible to new volunteers.",
+    "checklist": [
+     "Apply consistent headings, font sizes, and spacing throughout",
+     "Check that text contrast and font size are readable (especially for any printed version)",
+     "Add page numbers and a version number with the date",
+     "Export or print in the agreed distribution format (PDF, print, or both)",
+     "Name the file clearly so it is easy to find and identify later"
+    ],
+    "notes": "Version numbering (e.g. v1.0, October 2026) makes it easy to know whether a volunteer has the current copy.",
+    "tags": [
+     "formatting",
+     "publishing"
+    ],
+    "color": "#f59e0b",
+    "dueDate": "2026-11-11"
+   },
+   {
+    "title": "Distribute the guide and brief the team",
+    "priority": "medium",
+    "description": "Depends on: Format and produce the final guide\nMake the guide available to all new volunteers and let existing staff and volunteers know it exists and where to find it.\nWhy this matters: A guide nobody knows about or can find does not help anyone.",
+    "checklist": [
+     "Upload to the agreed online location and confirm the link works",
+     "Print copies if a printed version was agreed and store them where new volunteers arrive",
+     "Tell all current staff and regular volunteers that the guide exists and where to find it",
+     "Confirm who is responsible for handing the guide to new volunteers on their first day"
+    ],
+    "notes": "",
+    "tags": [
+     "publishing",
+     "onboarding"
+    ],
+    "color": "#f59e0b",
+    "dueDate": "2026-11-12"
+   },
+   {
+    "title": "Set up a review schedule and feedback loop",
+    "priority": "low",
+    "description": "Depends on: Distribute the guide and brief the team\nAgree how often the guide will be reviewed and who collects feedback from volunteers who have used it.\nWhy this matters: An outdated guide can mislead volunteers; a feedback loop keeps it accurate.",
+    "checklist": [
+     "Record the name of the person responsible for keeping the guide current",
+     "Agree a review interval (for example, every six months or whenever procedures change)",
+     "Set a reminder for the first scheduled review",
+     "Confirm how volunteer feedback (from the feedback mechanism in the guide) will be collected and acted on"
+    ],
+    "notes": "",
+    "tags": [
+     "planning",
+     "onboarding"
+    ],
+    "color": "#22c55e",
+    "dueDate": "2026-11-13"
+   }
+  ],
+  "structure": [
+   {
+    "key": "T1",
+    "title": "Gather decisions and existing materials",
+    "kind": "work",
+    "priority": "high",
+    "dependsOn": [],
+    "effortHours": 2,
+    "waitDays": 0,
+    "dueDate": "2026-10-26"
+   },
+   {
+    "key": "T2",
+    "title": "Schedule and conduct subject-matter interviews",
+    "kind": "external-wait",
+    "priority": "high",
+    "dependsOn": [
+     "T1"
+    ],
+    "effortHours": 3,
+    "waitDays": 5,
+    "dueDate": "2026-11-02"
+   },
+   {
+    "key": "T3",
+    "title": "Define the guide's structure and scope",
+    "kind": "work",
+    "priority": "high",
+    "dependsOn": [
+     "T1",
+     "T2"
+    ],
+    "effortHours": 2,
+    "waitDays": 0,
+    "dueDate": "2026-11-02"
+   },
+   {
+    "key": "T4",
+    "title": "Write the first draft of the guide",
+    "kind": "work",
+    "priority": "high",
+    "dependsOn": [
+     "T3"
+    ],
+    "effortHours": 6,
+    "waitDays": 0,
+    "dueDate": "2026-11-05"
+   },
+   {
+    "key": "T5",
+    "title": "Internal review and accuracy check",
+    "kind": "work",
+    "priority": "high",
+    "dependsOn": [
+     "T4"
+    ],
+    "effortHours": 3,
+    "waitDays": 0,
+    "dueDate": "2026-11-09"
+   },
+   {
+    "key": "T6",
+    "title": "Decision: approve the guide for publication",
+    "kind": "decision-gate",
+    "priority": "high",
+    "dependsOn": [
+     "T5"
+    ],
+    "effortHours": 1,
+    "waitDays": 0,
+    "dueDate": "2026-11-10"
+   },
+   {
+    "key": "T7",
+    "title": "Format and produce the final guide",
+    "kind": "work",
+    "priority": "medium",
+    "dependsOn": [
+     "T6"
+    ],
+    "effortHours": 3,
+    "waitDays": 0,
+    "dueDate": "2026-11-11"
+   },
+   {
+    "key": "T8",
+    "title": "Distribute the guide and brief the team",
+    "kind": "work",
+    "priority": "medium",
+    "dependsOn": [
+     "T7"
+    ],
+    "effortHours": 2,
+    "waitDays": 0,
+    "dueDate": "2026-11-12"
+   },
+   {
+    "key": "T9",
+    "title": "Set up a review schedule and feedback loop",
+    "kind": "work",
+    "priority": "low",
+    "dependsOn": [
+     "T8"
+    ],
+    "effortHours": 1,
+    "waitDays": 0,
+    "dueDate": "2026-11-13"
+   }
+  ],
+  "summary": {
+   "firstWorkingDay": "2026-10-26",
+   "endDate": "2026-11-13",
+   "hoursPerWeek": 10,
+   "hoursPerWeekAssumed": true,
+   "deadline": null,
+   "deadlineMet": null,
+   "overrunBusinessDays": null,
+   "wouldHaveToGive": [],
+   "fitsAfterDeferring": null,
+   "specificsLabeled": 0,
+   "flags": [],
+   "warnings": []
+  }
+ }
+}

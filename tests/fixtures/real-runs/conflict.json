@@ -1,0 +1,497 @@
+{
+ "case": "conflict",
+ "style": "development",
+ "input": "Build a mobile app for my bakery that works fully offline, always shows live inventory from the shop server, ships in one week, and has every feature a big chain app has.",
+ "localDate": "2026-10-24",
+ "response": {
+  "tasks": [
+   {
+    "title": "Read me first: assumptions and gaps",
+    "priority": "high",
+    "description": "This plan is a starting point and may still have gaps. Read the items below before relying on it.\nThe dates are suggestions meant to keep momentum. Moving one is normal, and overdue cards simply show in red.\nPacing assumed: about 10 hours a week, starting Mon 26 Oct (you did not say how much time you have). If you add your hours per week or a start date to the description and generate again, the dates will follow.\nDeadline Sat 31 Oct: NOT met at 10 hours a week. The last card is due Fri 27 Nov, about 19 working days late. The dates below are honest, not squeezed. To hit it, these would have to be deferred or dropped: \"Register developer accounts and start store submission\", \"Decision: Ship week-one release or extend scope\", \"Build and test a release candidate\", \"Add privacy policy and legal basics\", \"Set up error monitoring\", \"Add authentication if decided\", \"Build core inventory UI screens\", \"Build inventory sync layer\", \"Build local database schema and offline storage\". Or add more hours a week.",
+    "checklist": [
+     "Assumption, verify: The shop server already exists and exposes some form of API (REST or similar) that the app can call to read inventory How to check: Check your shop server documentation or ask your point-of-sale vendor what API endpoints are available",
+     "Assumption, verify: The app will be published on the Apple App Store and Google Play Store How to check: Confirm which platforms your customers use; App Store review alone typically takes 1-3 days and may exceed the one-week deadline",
+     "Assumption, verify: Offline-first means the app shows the last-synced inventory snapshot when offline, not a guaranteed real-time feed How to check: Confirm with yourself or stakeholders what behavior is acceptable when the device has no connection",
+     "Assumption, verify: A developer (or AI coding assistant) is available full-time to meet the one-week window How to check: Estimate your own available hours for the week and compare with the effort totals in this plan",
+     "Assumption, verify: No existing mobile codebase exists; this is a fresh project How to check: Check whether any prior app or prototype exists that could be reused",
+     "On \"Verify shop server API capability\": If neither is available, assumption: verify that the shop server vendor can enable API access.",
+     "On \"Set up error monitoring\": Choose an error monitoring service compatible with Expo (Assumption, verify: confirm a free tier exists for small apps by checking the vendor's current pricing page)",
+     "On \"Add privacy policy and legal basics\": Check with a professional for any regulatory requirements specific to your location and type of app.",
+     "On \"Add privacy policy and legal basics\": Check with a professional whether local food retail laws require any specific disclosures in the app",
+     "On \"Register developer accounts and start store submission\": Register for an Apple Developer account and a Google Play Developer account if not already done (Assumption, verify: confirm current registration fees on the official de…",
+     "For any price, rate or rule above: check the vendor or official source directly, or ask a professional for anything legal or financial."
+    ],
+    "notes": "NOT MENTIONED IN YOUR DESCRIPTION (often matters):\n- Which specific features the app needs (the description only says 'every feature a big chain app has', which is undefined and likely unachievable in one week)\n- Who the app's users are: bakery staff, customers, or both\n- Authentication: does the app require login, and if so by whom\n- Whether the shop server API requires an API key, OAuth, or other credentials\n- How inventory conflicts are resolved when edits are made offline and the server has also changed\n\nTHINGS THIS PLAN CANNOT KNOW:\n- Current App Store and Google Play review times and policies\n- What API the specific shop server exposes (this varies by vendor)\n- Current Expo and WatermelonDB pricing and free-tier limits\n- Local laws or regulations that may apply to a customer-facing food retail app (for example allergen disclosure requirements)\n\nPOSSIBLE CONFLICTS TO CHECK:\n- \"Set up error monitoring\" rests on an unchecked assumption but its first step is not a check.",
+    "tags": [
+     "planning"
+    ],
+    "color": "#ffffff",
+    "dueDate": "2026-10-26"
+   },
+   {
+    "title": "Decisions needed: choices only you can make",
+    "priority": "high",
+    "description": "These choices were not in your description, so they are yours to make. Each has a recommended default: accept it and move on, or swap it for your own.",
+    "checklist": [
+     "Who uses this app: bakery staff managing inventory, customers ordering or browsing, or both? Options: Staff only / Customers only / Both staff and customers with separate views. Recommended default: Staff only for v1, to keep scope achievable in one week.",
+     "What does 'fully offline' mean in practice when inventory cannot be live? Options: Show last-synced snapshot with a clear 'last updated' timestamp / Block inventory view entirely when offline / Allow offline edits that sync when reconnected. Recommended default: Show last-synced snapshot with a clear timestamp, and allow offline edits that sync on reconnect.",
+     "Which features are in scope for the first release given the one-week constraint? Options: Inventory view and sync only / Inventory plus ordering / Full feature parity with a large chain app. Recommended default: Inventory view and sync only for week one; additional features in later sprints.",
+     "Will the app be distributed through the App Store and Google Play, or through a private/internal channel? Options: Public App Store and Google Play (review time risk) / TestFlight and internal track only (faster) / Side-loaded APK for Android only (no review). Recommended default: TestFlight and internal track for week one to avoid review delays.",
+     "Does the app need user login and accounts? Options: No login required / Simple PIN or password / Full account system with email/password. Recommended default: Simple PIN for staff-only v1.",
+     "Recommended default for mobile: React Native (Expo). Why: single codebase for iOS and Android, large beginner-friendly ecosystem, works well with offline-first libraries",
+     "Recommended default for local storage / offline sync: WatermelonDB. Why: designed for offline-first React Native apps with background sync",
+     "Recommended default for backend / shop server integration: REST or existing shop server API. Why: connect to whatever the shop server already exposes rather than rebuilding it",
+     "Recommended default for push notifications: Expo Notifications. Why: built into Expo, handles both platforms"
+    ],
+    "notes": "",
+    "tags": [
+     "decisions"
+    ],
+    "color": "#ef4444",
+    "dueDate": "2026-10-26"
+   },
+   {
+    "title": "Decision: Resolve conflicting requirements before building",
+    "priority": "high",
+    "description": "The stated goals conflict in two ways: a fully offline app cannot show live inventory, and one week cannot deliver every feature a large chain app has. Resolve both before writing any code.\nWhy this matters: Building without resolving these means rework or a product nobody can use.",
+    "checklist": [
+     "Decide what offline inventory display means (last-synced snapshot, offline edits, or something else)",
+     "Write down the exact feature list for week one (not 'everything a chain app has')",
+     "Decide who uses the app and whether login is needed",
+     "Confirm distribution channel (public stores vs internal) and check review timelines",
+     "Record all decisions in a shared note so the whole team builds the same thing"
+    ],
+    "notes": "Offline-first: the device stores a copy of data locally and syncs with the server when a connection is available. This card must be finished before any other card starts.",
+    "tags": [
+     "decision-gate",
+     "planning",
+     "offline"
+    ],
+    "color": "#ef4444",
+    "dueDate": "2026-10-26"
+   },
+   {
+    "title": "Verify shop server API capability",
+    "priority": "high",
+    "description": "Depends on: Decision: Resolve conflicting requirements before building\nConfirm exactly what the shop server exposes before building the sync layer around it.\nWhy this matters: If the server has no API, the entire sync plan must change.",
+    "checklist": [
+     "Verify the shop server exposes an API (check docs or ask the vendor)",
+     "List the available inventory endpoints and what data they return",
+     "Check authentication method required (API key, username/password, OAuth, or none)",
+     "Confirm whether the server supports push/webhook or only polling",
+     "Document the base URL, auth method, and key fields (item name, quantity, price) in a shared note"
+    ],
+    "notes": "Polling: the app asks the server for new data on a schedule. Webhook: the server pushes updates to the app automatically. If neither is available, assumption: verify that the shop server vendor can enable API access.",
+    "tags": [
+     "backend",
+     "integration"
+    ],
+    "color": "#ef4444",
+    "dueDate": "2026-10-29"
+   },
+   {
+    "title": "Set up development environment and project",
+    "priority": "high",
+    "description": "Depends on: Decision: Resolve conflicting requirements before building\nCreate the Expo React Native project and configure the tools every other card depends on.\nWhy this matters: Nothing else can be built without a working project scaffold.",
+    "checklist": [
+     "Install Node.js and the Expo CLI on the development machine",
+     "Run 'npx create-expo-app bakery-app' to create the project",
+     "Install WatermelonDB and configure it for React Native",
+     "Set up a Git repository and push the initial project",
+     "Confirm the app opens on a real device or emulator"
+    ],
+    "notes": "Expo CLI: a command-line tool that creates and manages React Native projects. Emulator: a program that mimics a phone on your computer.",
+    "tags": [
+     "setup",
+     "mobile"
+    ],
+    "color": "#ef4444",
+    "dueDate": "2026-10-30"
+   },
+   {
+    "title": "Register developer accounts and start store submission",
+    "priority": "medium",
+    "description": "Depends on: Decision: Resolve conflicting requirements before building\nCreate Apple Developer and Google Play accounts and begin the submission process as early as possible given review times.\nWhy this matters: Store review can take days and will blow the one-week deadline if started late.",
+    "checklist": [
+     "Check current Apple App Store and Google Play review times on their official developer pages",
+     "Register for an Apple Developer account and a Google Play Developer account if not already done (Assumption, verify: confirm current registration fees on the official developer portals)",
+     "Prepare store listing assets: app name, short description, screenshots",
+     "Submit the app to TestFlight (Apple) and the internal test track (Google) as soon as a working build exists"
+    ],
+    "notes": "TestFlight: Apple's platform for distributing test builds to users without going through the full App Store review. If the one-week deadline is firm, internal/test distribution is safer than waiting for public store review.",
+    "tags": [
+     "distribution",
+     "setup"
+    ],
+    "color": "#f59e0b",
+    "dueDate": "2026-10-30"
+   },
+   {
+    "title": "Build local database schema and offline storage",
+    "priority": "high",
+    "description": "Depends on: Set up development environment and project\nDefine the on-device database tables that store inventory data so the app works without a connection.\nWhy this matters: The offline inventory view and sync both depend on a working local database.",
+    "checklist": [
+     "Define a WatermelonDB schema with at least an items table (name, quantity, price, last_synced_at)",
+     "Add a sync_metadata table to track the last successful sync time",
+     "Write a migration file so schema changes can be applied without data loss",
+     "Seed the database with a few sample items to support testing",
+     "Confirm data persists after the app is closed and reopened"
+    ],
+    "notes": "Schema: the structure (columns and types) of your database tables. Migration: a script that updates the database structure without deleting existing data.",
+    "tags": [
+     "offline",
+     "data"
+    ],
+    "color": "#ef4444",
+    "dueDate": "2026-11-04"
+   },
+   {
+    "title": "Build inventory sync layer",
+    "priority": "high",
+    "description": "Depends on: Verify shop server API capability; Build local database schema and offline storage\nWrite the code that fetches inventory from the shop server and writes it to the local database, and that pushes any offline edits back when a connection is restored.\nWhy this matters: This is the bridge between the shop server and the offline-capable app.",
+    "checklist": [
+     "Write a sync function that calls the shop server API and upserts items into the local database",
+     "Record last_synced_at after each successful sync",
+     "Implement a network listener that triggers sync automatically when the device comes back online",
+     "If offline edits are in scope (per earlier decision), queue local changes and push them on reconnect",
+     "Handle API errors gracefully and surface a clear message to the user",
+     "Test sync with the device in airplane mode, then reconnecting"
+    ],
+    "notes": "Upsert: insert a record if it does not exist, or update it if it does. Network listener: code that watches for the device's connection status to change.",
+    "tags": [
+     "offline",
+     "backend"
+    ],
+    "color": "#ef4444",
+    "dueDate": "2026-11-11"
+   },
+   {
+    "title": "Build core inventory UI screens",
+    "priority": "high",
+    "description": "Depends on: Build local database schema and offline storage\nCreate the screens that display inventory items from the local database and show sync status to the user.\nWhy this matters: This is the primary value the app delivers in week one.",
+    "checklist": [
+     "Build an inventory list screen that reads from the local database",
+     "Show item name, quantity, and price per row",
+     "Display a 'Last synced: [time]' label prominently so the user knows the data age",
+     "Show an 'Offline' banner when the device has no connection",
+     "Add a manual refresh button that triggers a sync when online",
+     "Confirm the screen loads from local data with no network connection"
+    ],
+    "notes": "",
+    "tags": [
+     "mobile"
+    ],
+    "color": "#ef4444",
+    "dueDate": "2026-11-17"
+   },
+   {
+    "title": "Add authentication if decided",
+    "priority": "high",
+    "description": "Depends on: Decision: Resolve conflicting requirements before building; Set up development environment and project\nImplement whichever login method was chosen in the decisions card: none, PIN, or full accounts.\nWhy this matters: Prevents unauthorized access to inventory data.",
+    "checklist": [
+     "Implement the authentication method chosen in the earlier decision (skip this card if no login is needed)",
+     "Gate the inventory screens behind the login flow",
+     "Store credentials securely using Expo SecureStore, not plain text",
+     "Test that closing and reopening the app does not bypass the login"
+    ],
+    "notes": "SecureStore: a device-level encrypted storage area provided by Expo for sensitive values like passwords or tokens.",
+    "tags": [
+     "security",
+     "mobile"
+    ],
+    "color": "#ef4444",
+    "dueDate": "2026-11-19"
+   },
+   {
+    "title": "Set up error monitoring",
+    "priority": "high",
+    "description": "Depends on: Set up development environment and project\nAdd basic crash and error logging so problems in production are visible without waiting for user reports.\nWhy this matters: Silent crashes make a small app look untrustworthy and are hard to debug later.",
+    "checklist": [
+     "Choose an error monitoring service compatible with Expo (Assumption, verify: confirm a free tier exists for small apps by checking the vendor's current pricing page)",
+     "Install and configure the SDK in the project",
+     "Confirm a test error appears in the monitoring dashboard"
+    ],
+    "notes": "SDK: a small code library the monitoring service provides to send error reports from your app.",
+    "tags": [
+     "monitoring",
+     "setup"
+    ],
+    "color": "#ef4444",
+    "dueDate": "2026-11-20"
+   },
+   {
+    "title": "Add privacy policy and legal basics",
+    "priority": "high",
+    "description": "Depends on: Decision: Resolve conflicting requirements before building\nCreate a minimal privacy policy and terms covering what data the app collects and stores.\nWhy this matters: App stores require a privacy policy, and food retail apps may have additional disclosure requirements.",
+    "checklist": [
+     "List exactly what data the app collects (inventory snapshots, login credentials if any)",
+     "Check with a professional whether local food retail laws require any specific disclosures in the app",
+     "Draft a plain-language privacy policy and host it at a public URL",
+     "Add a link to the privacy policy in the app's settings or about screen"
+    ],
+    "notes": "Check with a professional for any regulatory requirements specific to your location and type of app.",
+    "tags": [
+     "legal",
+     "setup"
+    ],
+    "color": "#ef4444",
+    "dueDate": "2026-11-23"
+   },
+   {
+    "title": "Build and test a release candidate",
+    "priority": "high",
+    "description": "Depends on: Build inventory sync layer; Build core inventory UI screens; Add authentication if decided; Set up error monitoring; Add privacy policy and legal basics\nCreate a production build, run it on real devices, and fix any blockers before distribution.\nWhy this matters: A build that works in development may behave differently when packaged for release.",
+    "checklist": [
+     "Run 'eas build' (Expo's cloud build service) to create a production APK and IPA",
+     "Install the build on at least one real Android device and one real iOS device",
+     "Test the full offline flow: open the app with no connection and confirm inventory is shown from local storage",
+     "Test the sync flow: go offline, make a change if offline edits are in scope, reconnect, confirm sync",
+     "Fix any crash or data loss bugs before distributing"
+    ],
+    "notes": "APK: the installable file format for Android apps. IPA: the installable file format for iOS apps. EAS: Expo Application Services, Expo's cloud build tool.",
+    "tags": [
+     "distribution"
+    ],
+    "color": "#ef4444",
+    "dueDate": "2026-11-26"
+   },
+   {
+    "title": "Decision: Ship week-one release or extend scope",
+    "priority": "high",
+    "description": "Depends on: Build and test a release candidate\nReview what was built against what was decided in the first card and decide whether to ship or delay.\nWhy this matters: Shipping incomplete or broken software damages trust more than a short delay.",
+    "checklist": [
+     "Confirm offline inventory display works on real devices",
+     "Confirm sync from shop server works when online",
+     "Confirm no data loss bugs are open",
+     "Confirm the agreed feature list from the first card is fully working",
+     "If all checks pass, distribute via TestFlight and internal track; otherwise record what is missing and set a new date"
+    ],
+    "notes": "",
+    "tags": [
+     "decision-gate",
+     "planning",
+     "distribution"
+    ],
+    "color": "#ef4444",
+    "dueDate": "2026-11-27"
+   }
+  ],
+  "structure": [
+   {
+    "key": "T1",
+    "title": "Decision: Resolve conflicting requirements before building",
+    "kind": "decision-gate",
+    "priority": "high",
+    "dependsOn": [],
+    "effortHours": 2,
+    "waitDays": 0,
+    "dueDate": "2026-10-26"
+   },
+   {
+    "key": "T2",
+    "title": "Verify shop server API capability",
+    "kind": "work",
+    "priority": "high",
+    "dependsOn": [
+     "T1"
+    ],
+    "effortHours": 3,
+    "waitDays": 0,
+    "dueDate": "2026-10-29"
+   },
+   {
+    "key": "T3",
+    "title": "Set up development environment and project",
+    "kind": "work",
+    "priority": "high",
+    "dependsOn": [
+     "T1"
+    ],
+    "effortHours": 3,
+    "waitDays": 0,
+    "dueDate": "2026-10-30"
+   },
+   {
+    "key": "T4",
+    "title": "Build local database schema and offline storage",
+    "kind": "work",
+    "priority": "high",
+    "dependsOn": [
+     "T3"
+    ],
+    "effortHours": 5,
+    "waitDays": 0,
+    "dueDate": "2026-11-04"
+   },
+   {
+    "key": "T5",
+    "title": "Build inventory sync layer",
+    "kind": "work",
+    "priority": "high",
+    "dependsOn": [
+     "T2",
+     "T4"
+    ],
+    "effortHours": 10,
+    "waitDays": 0,
+    "dueDate": "2026-11-11"
+   },
+   {
+    "key": "T6",
+    "title": "Build core inventory UI screens",
+    "kind": "work",
+    "priority": "high",
+    "dependsOn": [
+     "T4"
+    ],
+    "effortHours": 8,
+    "waitDays": 0,
+    "dueDate": "2026-11-17"
+   },
+   {
+    "key": "T7",
+    "title": "Add authentication if decided",
+    "kind": "work",
+    "priority": "high",
+    "dependsOn": [
+     "T1",
+     "T3"
+    ],
+    "effortHours": 4,
+    "waitDays": 0,
+    "dueDate": "2026-11-19"
+   },
+   {
+    "key": "T8",
+    "title": "Set up error monitoring",
+    "kind": "work",
+    "priority": "high",
+    "dependsOn": [
+     "T3"
+    ],
+    "effortHours": 2,
+    "waitDays": 0,
+    "dueDate": "2026-11-20"
+   },
+   {
+    "key": "T9",
+    "title": "Add privacy policy and legal basics",
+    "kind": "work",
+    "priority": "high",
+    "dependsOn": [
+     "T1"
+    ],
+    "effortHours": 2,
+    "waitDays": 0,
+    "dueDate": "2026-11-23"
+   },
+   {
+    "key": "T10",
+    "title": "Register developer accounts and start store submission",
+    "kind": "external-wait",
+    "priority": "medium",
+    "dependsOn": [
+     "T1"
+    ],
+    "effortHours": 2,
+    "waitDays": 3,
+    "dueDate": "2026-10-30"
+   },
+   {
+    "key": "T11",
+    "title": "Build and test a release candidate",
+    "kind": "work",
+    "priority": "high",
+    "dependsOn": [
+     "T5",
+     "T6",
+     "T7",
+     "T8",
+     "T9"
+    ],
+    "effortHours": 6,
+    "waitDays": 0,
+    "dueDate": "2026-11-26"
+   },
+   {
+    "key": "T12",
+    "title": "Decision: Ship week-one release or extend scope",
+    "kind": "decision-gate",
+    "priority": "high",
+    "dependsOn": [
+     "T11"
+    ],
+    "effortHours": 1,
+    "waitDays": 0,
+    "dueDate": "2026-11-27"
+   }
+  ],
+  "summary": {
+   "firstWorkingDay": "2026-10-26",
+   "endDate": "2026-11-27",
+   "hoursPerWeek": 10,
+   "hoursPerWeekAssumed": true,
+   "deadline": "2026-10-31",
+   "deadlineMet": false,
+   "overrunBusinessDays": 19,
+   "wouldHaveToGive": [
+    {
+     "taskKey": "T10",
+     "title": "Register developer accounts and start store submission",
+     "hours": 2
+    },
+    {
+     "taskKey": "T12",
+     "title": "Decision: Ship week-one release or extend scope",
+     "hours": 1
+    },
+    {
+     "taskKey": "T11",
+     "title": "Build and test a release candidate",
+     "hours": 6
+    },
+    {
+     "taskKey": "T9",
+     "title": "Add privacy policy and legal basics",
+     "hours": 2
+    },
+    {
+     "taskKey": "T8",
+     "title": "Set up error monitoring",
+     "hours": 2
+    },
+    {
+     "taskKey": "T7",
+     "title": "Add authentication if decided",
+     "hours": 4
+    },
+    {
+     "taskKey": "T6",
+     "title": "Build core inventory UI screens",
+     "hours": 8
+    },
+    {
+     "taskKey": "T5",
+     "title": "Build inventory sync layer",
+     "hours": 10
+    },
+    {
+     "taskKey": "T4",
+     "title": "Build local database schema and offline storage",
+     "hours": 5
+    }
+   ],
+   "fitsAfterDeferring": true,
+   "specificsLabeled": 0,
+   "flags": [
+    {
+     "type": "verify-first",
+     "taskKey": "T8",
+     "message": "\"Set up error monitoring\" rests on an unchecked assumption but its first step is not a check."
+    }
+   ],
+   "warnings": []
+  }
+ }
+}

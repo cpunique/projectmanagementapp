@@ -1,0 +1,347 @@
+{
+ "case": "tight",
+ "style": "development",
+ "input": "Build a booking website with online payments for my yoga studio. It must be live by 2026-11-06. I can work 5 hours a week.",
+ "localDate": "2026-10-24",
+ "response": {
+  "tasks": [
+   {
+    "title": "Read me first: assumptions and gaps",
+    "priority": "high",
+    "description": "This plan is a starting point and may still have gaps. Read the items below before relying on it.\nThe dates are suggestions meant to keep momentum. Moving one is normal, and overdue cards simply show in red.\nPacing used: 5 hours a week, starting Mon 26 Oct, as you described.\nDeadline Fri 6 Nov: NOT met at 5 hours a week. The last card is due Tue 10 Nov, about 2 working days late. The dates below are honest, not squeezed. To hit it, these would have to be deferred or dropped: \"Publish site and share booking link with clients\", \"Decision: approve site for launch by 2026-11-06\". Or add more hours a week.",
+    "checklist": [
+     "Assumption, verify: A no-code booking platform (such as Acuity Scheduling or Squarespace) can be set up and made live within roughly two weeks at 5 hours/week How to check: Check each platform's setup guide and estimate the steps against your available time before committing",
+     "Assumption, verify: Stripe (or the platform's built-in payment processor) can be connected and approved in time for the deadline How to check: Create a Stripe account now and check their current approval timeline in the Stripe dashboard or support docs",
+     "Assumption, verify: A domain name is either already owned or can be registered and propagated before the deadline How to check: Check your current domain registrar or register one immediately; DNS propagation can take up to 48 hours",
+     "Assumption, verify: The studio's class schedule, pricing, and any cancellation policy are already decided How to check: Confirm these details before starting content setup, as they are needed on the booking platform",
+     "Assumption, verify: No special business registration or payment processing licence is required beyond standard merchant terms How to check: Check with a professional or your local business authority, and read the payment processor's merchant terms of service",
+     "On \"Add privacy policy and booking terms\": Collecting payments and personal data requires these in most places; check with a professional.",
+     "On \"Add privacy policy and booking terms\": Many booking platforms offer a template policy; check with a professional before relying on it as-is for your jurisdiction.",
+     "On \"Add privacy policy and booking terms\": Check with a professional what a privacy policy must say for your location and the data you collect",
+     "For any price, rate or rule above: check the vendor or official source directly, or ask a professional for anything legal or financial."
+    ],
+    "notes": "NOT MENTIONED IN YOUR DESCRIPTION (often matters):\n- No mention of how many class types or instructors need to be listed\n- No mention of whether existing clients need to be imported or notified\n- No mention of a logo, brand colours, or other visual assets\n- No mention of whether a privacy policy or terms of service is already drafted\n\nTHINGS THIS PLAN CANNOT KNOW:\n- Current subscription pricing for booking platforms\n- Current Stripe transaction fee rates and payout schedules\n- Current domain registration costs and availability\n- Whether the chosen platform's free tier (if any) supports payments",
+    "tags": [
+     "planning"
+    ],
+    "color": "#ffffff",
+    "dueDate": "2026-10-26"
+   },
+   {
+    "title": "Decisions needed: choices only you can make",
+    "priority": "high",
+    "description": "These choices were not in your description, so they are yours to make. Each has a recommended default: accept it and move on, or swap it for your own.",
+    "checklist": [
+     "Which booking platform will you use? Options: Acuity Scheduling / Squarespace with scheduling add-on / Mindbody / Another specialist yoga/fitness platform. Recommended default: Acuity Scheduling — straightforward setup, strong payment integration, widely used for fitness studios.",
+     "Which payment processor will you connect? Options: Stripe / PayPal / Square / Platform's built-in processor. Recommended default: Stripe, unless the chosen platform bundles its own processor at no extra cost.",
+     "Will you use an existing domain or register a new one? Options: Use an existing domain / Register a new domain. Recommended default: Register a new one immediately if you do not already have one, to allow time for DNS propagation.",
+     "Recommended default for booking platform: Acuity Scheduling or Squarespace (with built-in booking). Why: No-code platforms with built-in scheduling and payment support minimise build time, critical given the 5 hours/week constraint",
+     "Recommended default for payments: Stripe (via the chosen booking platform's integration). Why: Stripe is widely supported by booking platforms and straightforward to connect"
+    ],
+    "notes": "",
+    "tags": [
+     "decisions"
+    ],
+    "color": "#ef4444",
+    "dueDate": "2026-10-26"
+   },
+   {
+    "title": "Choose platform and create accounts",
+    "priority": "high",
+    "description": "Decide on the booking platform and payment processor, create accounts for both, and confirm they work together.\nWhy this matters: Every other task depends on this choice being made and the account being ready.",
+    "checklist": [
+     "Verify that your chosen booking platform supports online payments via Stripe or a built-in processor",
+     "Create an account on the chosen booking platform",
+     "Create a Stripe account (or confirm the built-in processor is available in your country)",
+     "Note the subscription plan you will use and its cost"
+    ],
+    "notes": "No-code platform: a service where you configure a site through a visual interface rather than writing code. Resolve the platform and payment processor decisions before starting this card.",
+    "tags": [
+     "setup",
+     "payments"
+    ],
+    "color": "#ef4444",
+    "dueDate": "2026-10-26"
+   },
+   {
+    "title": "Register and verify payment processor account",
+    "priority": "high",
+    "description": "Depends on: Choose platform and create accounts\nSubmit any required business or identity verification to the payment processor so payouts are enabled before launch.\nWhy this matters: Payment processors can take days to verify accounts; starting early prevents last-minute blocking.",
+    "checklist": [
+     "Submit all required business and identity details to the payment processor",
+     "Upload any requested documents (ID, bank details)",
+     "Confirm the account is approved and payouts are enabled before the launch date"
+    ],
+    "notes": "Approval times vary by processor and country. Check with your payment processor's support for the current expected wait.",
+    "tags": [
+     "payments",
+     "external-wait"
+    ],
+    "color": "#ef4444",
+    "dueDate": "2026-10-30"
+   },
+   {
+    "title": "Secure domain and point it to the platform",
+    "priority": "high",
+    "description": "Depends on: Choose platform and create accounts\nRegister a domain name (if not already owned) and connect it to the booking platform.\nWhy this matters: The site needs a live domain before it can be shared with clients.",
+    "checklist": [
+     "Register a domain name or confirm your existing domain is available to use",
+     "Follow the platform's instructions to connect the domain (add DNS records as directed)",
+     "Confirm the domain resolves to the platform after propagation"
+    ],
+    "notes": "DNS propagation: the delay (up to 48 hours) before a newly configured domain works everywhere on the internet. Start this as early as possible.",
+    "tags": [
+     "setup",
+     "infrastructure"
+    ],
+    "color": "#ef4444",
+    "dueDate": "2026-10-30"
+   },
+   {
+    "title": "Set up classes, schedule, and pricing",
+    "priority": "high",
+    "description": "Depends on: Choose platform and create accounts\nEnter all class types, times, instructor names, and prices into the booking platform.\nWhy this matters: Clients cannot book or pay until the schedule and prices are configured.",
+    "checklist": [
+     "List every class type you offer and its duration",
+     "Enter the recurring weekly schedule for each class",
+     "Set the price for each class or pass type",
+     "Configure your cancellation or refund policy within the platform"
+    ],
+    "notes": "Have your schedule and pricing decided before starting this card. If these are still being decided, note them in decisionsNeeded.",
+    "tags": [
+     "content",
+     "setup"
+    ],
+    "color": "#ef4444",
+    "dueDate": "2026-10-30"
+   },
+   {
+    "title": "Connect payment processor and test a booking",
+    "priority": "high",
+    "description": "Depends on: Register and verify payment processor account; Set up classes, schedule, and pricing\nLink your payment processor to the booking platform and complete an end-to-end test booking with a real or test payment.\nWhy this matters: Confirms money can actually be collected before you go live.",
+    "checklist": [
+     "Connect Stripe (or chosen processor) to the booking platform using the platform's integration settings",
+     "Place a test booking using the platform's test-payment mode",
+     "Confirm the booking confirmation email is sent to the customer",
+     "Confirm the payment appears in the processor dashboard"
+    ],
+    "notes": "Test-payment mode: a sandbox environment where no real money moves. Switch to live mode only when you are satisfied everything works.",
+    "tags": [
+     "payments",
+     "testing"
+    ],
+    "color": "#ef4444",
+    "dueDate": "2026-11-02"
+   },
+   {
+    "title": "Build and style the public-facing site pages",
+    "priority": "high",
+    "description": "Depends on: Choose platform and create accounts\nAdd a home page, about section, class schedule, and booking call-to-action using the platform's page editor.\nWhy this matters: Clients need enough context to feel confident booking.",
+    "checklist": [
+     "Add your studio name, a short description, and contact details to the home page",
+     "Upload a logo or header image if you have one",
+     "Add a visible link or button that takes visitors to the booking page",
+     "Preview the site on both desktop and a mobile screen before launch"
+    ],
+    "notes": "Keep the design simple given the time constraint. The platform's default theme is sufficient for launch.",
+    "tags": [
+     "content",
+     "design"
+    ],
+    "color": "#ef4444",
+    "dueDate": "2026-11-05"
+   },
+   {
+    "title": "Add privacy policy and booking terms",
+    "priority": "high",
+    "description": "Depends on: Choose platform and create accounts\nPublish a basic privacy policy and any booking or cancellation terms on the site.\nWhy this matters: Collecting payments and personal data requires these in most places; check with a professional.",
+    "checklist": [
+     "Check with a professional what a privacy policy must say for your location and the data you collect",
+     "Add a privacy policy page to the site",
+     "Add your cancellation and refund terms where clients see them before booking"
+    ],
+    "notes": "Many booking platforms offer a template policy; check with a professional before relying on it as-is for your jurisdiction.",
+    "tags": [
+     "legal",
+     "content"
+    ],
+    "color": "#ef4444",
+    "dueDate": "2026-11-06"
+   },
+   {
+    "title": "Decision: approve site for launch by 2026-11-06",
+    "priority": "high",
+    "description": "Depends on: Secure domain and point it to the platform; Connect payment processor and test a booking; Build and style the public-facing site pages; Add privacy policy and booking terms\nFinal go or no-go check against the deadline and minimum requirements before switching the site to public.\nWhy this matters: Prevents launching with a broken booking flow or missing payment approval.",
+    "checklist": [
+     "Domain is live and resolves correctly",
+     "Payment processor account is verified and live mode is enabled",
+     "At least one class is bookable end-to-end with a real payment",
+     "Privacy policy and booking terms are published",
+     "Site looks acceptable on mobile",
+     "You are ready to accept real client bookings"
+    ],
+    "notes": "If any item fails, resolve it before switching to live. The go-live deadline is 2026-11-06.",
+    "tags": [
+     "launch",
+     "decision-gate"
+    ],
+    "color": "#ef4444",
+    "dueDate": "2026-11-09"
+   },
+   {
+    "title": "Publish site and share booking link with clients",
+    "priority": "high",
+    "description": "Depends on: Decision: approve site for launch by 2026-11-06\nSwitch the site to public, disable test-payment mode, and send the booking link to existing and prospective clients.\nWhy this matters: The site only creates value once real clients can book and pay.",
+    "checklist": [
+     "Switch the payment processor from test mode to live mode",
+     "Set the site or booking page to publicly accessible",
+     "Send the booking link to your existing client list or social media",
+     "Place a test real booking yourself to confirm the full flow works in production"
+    ],
+    "notes": "Production: the live, public version of the site (as opposed to the test environment).",
+    "tags": [
+     "launch"
+    ],
+    "color": "#ef4444",
+    "dueDate": "2026-11-10"
+   }
+  ],
+  "structure": [
+   {
+    "key": "T1",
+    "title": "Choose platform and create accounts",
+    "kind": "work",
+    "priority": "high",
+    "dependsOn": [],
+    "effortHours": 1,
+    "waitDays": 0,
+    "dueDate": "2026-10-26"
+   },
+   {
+    "key": "T2",
+    "title": "Register and verify payment processor account",
+    "kind": "external-wait",
+    "priority": "high",
+    "dependsOn": [
+     "T1"
+    ],
+    "effortHours": 1,
+    "waitDays": 3,
+    "dueDate": "2026-10-30"
+   },
+   {
+    "key": "T3",
+    "title": "Secure domain and point it to the platform",
+    "kind": "work",
+    "priority": "high",
+    "dependsOn": [
+     "T1"
+    ],
+    "effortHours": 1,
+    "waitDays": 2,
+    "dueDate": "2026-10-30"
+   },
+   {
+    "key": "T4",
+    "title": "Set up classes, schedule, and pricing",
+    "kind": "work",
+    "priority": "high",
+    "dependsOn": [
+     "T1"
+    ],
+    "effortHours": 2,
+    "waitDays": 0,
+    "dueDate": "2026-10-30"
+   },
+   {
+    "key": "T5",
+    "title": "Connect payment processor and test a booking",
+    "kind": "work",
+    "priority": "high",
+    "dependsOn": [
+     "T2",
+     "T4"
+    ],
+    "effortHours": 1,
+    "waitDays": 0,
+    "dueDate": "2026-11-02"
+   },
+   {
+    "key": "T6",
+    "title": "Build and style the public-facing site pages",
+    "kind": "work",
+    "priority": "high",
+    "dependsOn": [
+     "T1"
+    ],
+    "effortHours": 3,
+    "waitDays": 0,
+    "dueDate": "2026-11-05"
+   },
+   {
+    "key": "T7",
+    "title": "Add privacy policy and booking terms",
+    "kind": "work",
+    "priority": "high",
+    "dependsOn": [
+     "T1"
+    ],
+    "effortHours": 1,
+    "waitDays": 0,
+    "dueDate": "2026-11-06"
+   },
+   {
+    "key": "T8",
+    "title": "Decision: approve site for launch by 2026-11-06",
+    "kind": "decision-gate",
+    "priority": "high",
+    "dependsOn": [
+     "T3",
+     "T5",
+     "T6",
+     "T7"
+    ],
+    "effortHours": 1,
+    "waitDays": 0,
+    "dueDate": "2026-11-09"
+   },
+   {
+    "key": "T9",
+    "title": "Publish site and share booking link with clients",
+    "kind": "work",
+    "priority": "high",
+    "dependsOn": [
+     "T8"
+    ],
+    "effortHours": 1,
+    "waitDays": 0,
+    "dueDate": "2026-11-10"
+   }
+  ],
+  "summary": {
+   "firstWorkingDay": "2026-10-26",
+   "endDate": "2026-11-10",
+   "hoursPerWeek": 5,
+   "hoursPerWeekAssumed": false,
+   "deadline": "2026-11-06",
+   "deadlineMet": false,
+   "overrunBusinessDays": 2,
+   "wouldHaveToGive": [
+    {
+     "taskKey": "T9",
+     "title": "Publish site and share booking link with clients",
+     "hours": 1
+    },
+    {
+     "taskKey": "T8",
+     "title": "Decision: approve site for launch by 2026-11-06",
+     "hours": 1
+    }
+   ],
+   "fitsAfterDeferring": true,
+   "specificsLabeled": 0,
+   "flags": [],
+   "warnings": []
+  }
+ }
+}

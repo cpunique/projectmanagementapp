@@ -1,0 +1,850 @@
+{
+ "case": "expert",
+ "style": "development",
+ "input": "Build a PWA that alerts New Jersey substitute teachers to Frontline jobs faster and smarter. Subs forward Frontline emails to a private address; a parser extracts job details, matches preferences, and sends push alerts (SMS backup) with a one-tap link to Frontline. Sticky features: feed health check, 20-day limit and credential tracker, missed-job log, calendar sync. Stack: React/Vite, Firebase, Node on Railway, Stripe. Plan: timing test, parser, private beta, paid tier.",
+ "localDate": "2026-10-24",
+ "response": {
+  "tasks": [
+   {
+    "title": "Read me first: assumptions and gaps",
+    "priority": "high",
+    "description": "This plan is a starting point and may still have gaps. Read the items below before relying on it.\nThe dates are suggestions meant to keep momentum. Moving one is normal, and overdue cards simply show in red.\nPacing assumed: about 10 hours a week, starting Mon 26 Oct (you did not say how much time you have). If you add your hours per week or a start date to the description and generate again, the dates will follow.",
+    "checklist": [
+     "Assumption, verify: Mailgun's free or low-cost inbound routing tier is sufficient for private beta volume. How to check: Check Mailgun's current pricing page for inbound email limits before signing up.",
+     "Assumption, verify: Frontline's job notification emails have a consistent enough format (fields, layout) to be parsed reliably with a regex or structured extractor. How to check: Collect at least 10 real Frontline job emails from willing subs and inspect them before building the…",
+     "Assumption, verify: Forwarding Frontline emails to a third-party service does not violate Frontline's terms of service. How to check: Read Frontline's current Terms of Service (frontlineeducation.com) and, if unclear, contact their support team in writing.",
+     "Assumption, verify: Firebase Cloud Messaging (FCM) can deliver push notifications to a PWA on the devices NJ substitute teachers commonly use. How to check: Check Firebase FCM documentation for current PWA/browser push support, especially on iOS Safari, which has historically ha…",
+     "Assumption, verify: Twilio can send SMS to all major US carriers used by the target users without special registration for A2P 10DLC. How to check: Check Twilio's current A2P 10DLC requirements for application-to-person SMS in the US; registration may be required before sending…",
+     "Assumption, verify: Google Calendar OAuth consent can be obtained without going through Google's full app verification process during beta. How to check: Check Google's OAuth verification policy; unverified apps can have a limited number of test users before full review is requi…",
+     "Assumption, verify: Railway's Node.js hosting can handle inbound webhook POST requests from Mailgun reliably and with low latency. How to check: Run a latency test in T1 (timing test phase) and check Railway's uptime SLA on their current pricing page.",
+     "Assumption, verify: Stripe's standard fees and checkout flow are acceptable for the paid tier. How to check: Review Stripe's current fee schedule on stripe.com/pricing and confirm it fits the intended subscription price.",
+     "On \"Validate: Frontline email forwarding is permitted and parse…\": Assumption, verify: Frontline's ToS does not prohibit automated forwarding or parsing of their notification emails.",
+     "On \"Validate: Frontline email forwarding is permitted and parse…\": Assumption, verify: Check frontlineeducation.com or contact their support.",
+     "On \"Build user authentication and profile storage\": Assumption, verify: On sign-up, generate a unique forwarding email address for the user (e.g., userid@in.yourapp.com) and save it to their Firestore profile",
+     "On \"Build SMS backup notification via Twilio\": Assumption, verify: check Twilio's current A2P 10DLC registration requirements for US application-to-person SMS; registration may be required before sending at scale. Ch…",
+     "On \"Start Twilio A2P 10DLC brand and campaign registration\": Assumption, verify: typical A2P 10DLC approval time is several weeks, but check Twilio's current documentation for the latest timeline and fees.",
+     "On \"Build the 20-day limit and credential tracker\": Assumption, verify: confirm the exact rule and whether it varies by district or credential type with the NJ Department of Education or a professional familiar with NJ su…",
+     "On \"Build Google Calendar sync for accepted jobs\": Assumption, verify: check Google's OAuth verification policy at developers.google.com to confirm how many test users an unverified app can have before full review is req…",
+     "On \"Write privacy policy and terms of service\": Check with a professional: consult a lawyer familiar with US privacy law (and NJ-specific rules if applicable) about what disclosures are required",
+     "On \"Set up production deployment and domain\": Assumption, verify: Configure the Mailgun inbound domain as a subdomain (e.g., in.yourapp.com) and update DNS records",
+     "On \"Set up Firestore backups\": Assumption, verify: check current Google Cloud Storage pricing for the expected data volume before setting a retention period.",
+     "For any price, rate or rule above: check the vendor or official source directly, or ask a professional for anything legal or financial."
+    ],
+    "notes": "NOT MENTIONED IN YOUR DESCRIPTION (often matters):\n- No mention of a privacy policy or terms of service for the app itself, which are needed before collecting user emails and job data\n- No data retention policy stated: how long are parsed emails and job records kept?\n- No mention of how users are onboarded to the private beta (invite code, waitlist, direct link?)\n- No mention of how the app handles school districts that are not in NJ or jobs from non-Frontline systems\n- No error alerting or monitoring strategy mentioned for the Node backend\n- No mention of how users will unsubscribe or delete their account and data (required for most privacy laws)\n\nTHINGS THIS PLAN CANNOT KNOW:\n- Current Mailgun inbound email pricing and free-tier limits\n- Current Twilio SMS pricing per message and A2P 10DLC registration requirements and fees\n- Current Firebase free-tier (Spark plan) limits for Firestore reads/writes and FCM messages\n- Current Railway pricing for always-on Node services\n- Current Stripe transaction fees\n- Current Google OAuth app verification requirements and timeline\n- New Jersey-specific regulations about collecting or processing teacher employment data\n\nPOSSIBLE CONFLICTS TO CHECK:\n- \"Build user authentication and profile storage\" rests on an unchecked assumption but its first step is not a check.\n- \"Build the 20-day limit and credential tracker\" rests on an unchecked assumption but its first step is not a check.\n- \"Set up production deployment and domain\" rests on an unchecked assumption but its first step is not a check.\n- \"Set up Firestore backups\" rests on an unchecked assumption but its first step is not a check.",
+    "tags": [
+     "planning"
+    ],
+    "color": "#ffffff",
+    "dueDate": "2026-10-26"
+   },
+   {
+    "title": "Decisions needed: choices only you can make",
+    "priority": "high",
+    "description": "These choices were not in your description, so they are yours to make. Each has a recommended default: accept it and move on, or swap it for your own.",
+    "checklist": [
+     "What is the monthly price for the paid tier? Options: Free with a one-time fee / Monthly subscription (amount TBD) / Freemium with a paid add-on tier. Recommended default: Monthly subscription; aligns with Stripe's recurring billing and gives predictable revenue.",
+     "What features are free versus paid? Options: Push alerts free, SMS and calendar sync paid / All features free in beta then paywalled / Core alerts free, advanced filters and credential tracker paid. Recommended default: Core push alerts free, SMS backup and calendar sync paid; keeps the hook free and monetizes power features.",
+     "Which private email domain will receive forwarded Frontline emails? Options: A subdomain of the app's own domain (e.g., in.yourapp.com) / A dedicated mailgun.org subdomain. Recommended default: A subdomain of the app's own domain for a more professional appearance.",
+     "Recommended default for email-inbound: Mailgun inbound routing (recommended for Railway Node backend). Why: Mailgun parses inbound email and posts it as JSON to a webhook your Node server handles; straightforward to set up with Railway.",
+     "Recommended default for sms-backup: Twilio SMS. Why: Industry-standard SMS API with broad US carrier support; integrates simply with Node.",
+     "Recommended default for calendar-sync: Google Calendar API. Why: Most likely calendar used by teachers; has a well-documented OAuth flow."
+    ],
+    "notes": "",
+    "tags": [
+     "decisions"
+    ],
+    "color": "#ef4444",
+    "dueDate": "2026-10-26"
+   },
+   {
+    "title": "Set up accounts and infrastructure for all third-party services",
+    "priority": "high",
+    "description": "Create and configure accounts for Firebase, Railway, Mailgun, Twilio, Stripe, and Google Cloud before any code is written. This prevents billing or quota surprises mid-build.\nWhy this matters: Every other card depends on at least one of these services being active and configured.",
+    "checklist": [
+     "Create a Firebase project; enable Firestore, Authentication, and Cloud Messaging",
+     "Create a Railway account and provision a Node.js service",
+     "Create a Mailgun account; verify a sending/receiving domain or subdomain",
+     "Create a Twilio account; get a US phone number for SMS",
+     "Create a Stripe account in test mode",
+     "Enable the Google Calendar API in Google Cloud Console and create OAuth credentials",
+     "Store all API keys in Railway environment variables, never in code"
+    ],
+    "notes": "Environment variables: named configuration values kept outside your code so secrets are not accidentally shared. Verify current free-tier limits for Firebase and Mailgun before committing to a plan.",
+    "tags": [
+     "infrastructure",
+     "setup"
+    ],
+    "color": "#ef4444",
+    "dueDate": "2026-10-27"
+   },
+   {
+    "title": "Collect real Frontline job emails for parser development",
+    "priority": "high",
+    "description": "Gather at least 10 real Frontline job notification emails from willing substitute teachers before writing any parsing code. Variety matters: different districts, job types, and edge cases.\nWhy this matters: The parser is the core of the product; building it without real samples risks shipping something that fails in production.",
+    "checklist": [
+     "Ask 3 to 5 NJ subs to forward sample Frontline job emails to you personally",
+     "Collect at least 10 emails covering different school districts and job types",
+     "Note any variation in field names, date formats, or layout between samples",
+     "Document the consistent fields you can rely on (job ID, date, school, role, pay rate if present)"
+    ],
+    "notes": "Do not build the parser until you have these samples. Variations in email format are the single biggest risk to the parser's reliability.",
+    "tags": [
+     "parsing"
+    ],
+    "color": "#ef4444",
+    "dueDate": "2026-11-02"
+   },
+   {
+    "title": "Validate: Frontline email forwarding is permitted and parseable",
+    "priority": "high",
+    "description": "Depends on: Collect real Frontline job emails for parser development\nBefore writing production code, confirm that Frontline's terms allow email forwarding to third-party services, and confirm the email format is consistent enough to parse reliably.\nWhy this matters: If forwarding is prohibited or the format is too variable, the core product architecture must change.",
+    "checklist": [
+     "Read Frontline Education's current Terms of Service for any restriction on forwarding or automated processing of their emails",
+     "If the ToS is ambiguous, send a written question to Frontline support and save the response",
+     "Review the collected email samples: can you reliably extract job date, school name, role, and a direct Frontline job link from all of them?",
+     "Write a simple test script that extracts those fields from each sample and record the success rate",
+     "Go or no-go: proceed only if forwarding is permitted and extraction succeeds on at least 90 percent of samples"
+    ],
+    "notes": "Assumption, verify: Frontline's ToS does not prohibit automated forwarding or parsing of their notification emails. Assumption, verify: Check frontlineeducation.com or contact their support.",
+    "tags": [
+     "validation",
+     "parsing",
+     "legal"
+    ],
+    "color": "#ef4444",
+    "dueDate": "2026-11-04"
+   },
+   {
+    "title": "Decision: proceed with email-forwarding architecture",
+    "priority": "high",
+    "description": "Depends on: Validate: Frontline email forwarding is permitted and parseable\nStop and decide whether to continue building based on the legal and technical findings from T3.\nWhy this matters: Continuing past this point without a clear go means building on a foundation that may have to be torn down.",
+    "checklist": [
+     "Frontline ToS review is complete and forwarding is not prohibited",
+     "Parser test script achieves at least 90 percent field extraction on real samples",
+     "You are comfortable with any remaining legal ambiguity (or have written confirmation from Frontline)"
+    ],
+    "notes": "If the go criteria are not met, revisit the architecture before proceeding. Do not skip this gate.",
+    "tags": [
+     "decision-gate",
+     "legal",
+     "parsing"
+    ],
+    "color": "#ef4444",
+    "dueDate": "2026-11-16"
+   },
+   {
+    "title": "Run end-to-end timing test: email arrival to notification delivery",
+    "priority": "high",
+    "description": "Depends on: Set up accounts and infrastructure for all third-party services; Decision: proceed with email-forwarding architecture\nMeasure the actual time from when a Frontline email lands in a forwarding inbox to when a push notification is received on a test device. This validates whether the architecture is fast enough to be useful.\nWhy this matters: If notification latency is too high, subs will still miss jobs and the product has no advantage over standard email.",
+    "checklist": [
+     "Set up Mailgun inbound routing to POST to a minimal Node endpoint on Railway",
+     "Write a stub Node handler that logs receipt timestamp and immediately fires a Firebase Cloud Messaging push to a test device",
+     "Forward a test email and record the time from send to push notification receipt on a real phone",
+     "Repeat 5 times at different times of day and calculate average and worst-case latency",
+     "Document results and decide if latency is acceptable for the use case"
+    ],
+    "notes": "PWA push: a web app installed on a phone's home screen can receive notifications like a native app, but browser and OS settings can affect delivery speed. This test is the timing test phase from the description.",
+    "tags": [
+     "infrastructure",
+     "notifications"
+    ],
+    "color": "#ef4444",
+    "dueDate": "2026-11-19"
+   },
+   {
+    "title": "Decision: timing is fast enough to proceed",
+    "priority": "high",
+    "description": "Depends on: Run end-to-end timing test: email arrival to notification delivery\nReview the timing test results and decide whether the end-to-end latency is low enough to give subs a real advantage over standard Frontline email.\nWhy this matters: A slow pipeline means the product does not solve the core problem.",
+    "checklist": [
+     "Average latency from email forwarding to push notification is acceptable (you decide the threshold)",
+     "Worst-case latency is not so high that a sub would regularly miss jobs",
+     "No Railway or Mailgun rate limits were hit during the test"
+    ],
+    "notes": "If latency is too high, investigate whether Mailgun polling frequency, Railway cold starts, or FCM delivery delays are the bottleneck before redesigning.",
+    "tags": [
+     "decision-gate",
+     "notifications"
+    ],
+    "color": "#ef4444",
+    "dueDate": "2026-11-20"
+   },
+   {
+    "title": "Build the inbound email parser",
+    "priority": "high",
+    "description": "Depends on: Decision: proceed with email-forwarding architecture; Decision: timing is fast enough to proceed\nWrite a Node module that receives a parsed email from Mailgun's webhook, extracts job fields, and stores a structured job record in Firestore. Use the real email samples from T2.\nWhy this matters: This is the engine of the product; nothing else works without reliable job data.",
+    "checklist": [
+     "Write a Mailgun webhook handler in Node that validates the request signature before processing",
+     "Extract job date, school name, district, role, and Frontline job link from the email body",
+     "Handle both plain-text and HTML email bodies (Frontline may send either)",
+     "Write a structured job object to a Firestore jobs collection with a timestamp",
+     "Write unit tests covering each email sample from T2, including edge cases",
+     "Log parsing failures to a separate Firestore collection for later review"
+    ],
+    "notes": "Webhook signature validation: Mailgun signs each inbound POST so you can confirm it really came from Mailgun and not a bad actor. Always validate before processing. Unit tests: small automated checks that confirm each piece of the parser works correctly.",
+    "tags": [
+     "parsing",
+     "backend"
+    ],
+    "color": "#ef4444",
+    "dueDate": "2026-11-26"
+   },
+   {
+    "title": "Build user authentication and profile storage",
+    "priority": "high",
+    "description": "Depends on: Set up accounts and infrastructure for all third-party services\nSet up Firebase Authentication for email/password sign-in and create a Firestore user profile document that stores preferences and the user's unique forwarding address.\nWhy this matters: Every personalized feature (preference matching, credential tracker, calendar sync) depends on knowing who the user is.",
+    "checklist": [
+     "Enable Email/Password provider in Firebase Auth console",
+     "Assumption, verify: On sign-up, generate a unique forwarding email address for the user (e.g., userid@in.yourapp.com) and save it to their Firestore profile",
+     "Store user preferences in the profile document: preferred districts, job types, days available",
+     "Write Firestore security rules so users can only read and write their own profile",
+     "Test sign-up, sign-in, and sign-out flows"
+    ],
+    "notes": "Firestore security rules: configuration that runs on Firebase's servers to ensure one user cannot read another user's data. These must be written carefully; the default rules are either too open or too closed.",
+    "tags": [
+     "backend",
+     "setup"
+    ],
+    "color": "#ef4444",
+    "dueDate": "2026-11-03"
+   },
+   {
+    "title": "Build preference matching and push notification dispatch",
+    "priority": "high",
+    "description": "Depends on: Build the inbound email parser; Build user authentication and profile storage\nAfter a job is parsed and stored, match it against all users whose forwarding address received the email, check their preferences, and send a Firebase Cloud Messaging push notification with a one-tap Frontline link.\nWhy this matters: This is the core value delivery step: the right alert to the right sub at the right time.",
+    "checklist": [
+     "Look up the user by their unique forwarding address when a job email arrives",
+     "Compare job fields against the user's stored preferences (district, role, day of week)",
+     "If the job matches, send an FCM push notification containing the job summary and a direct Frontline job URL",
+     "Store the FCM device token on the user profile when they first grant notification permission in the PWA",
+     "Handle the case where a user has multiple devices (send to all stored tokens)",
+     "Log each notification sent with timestamp to support the missed-job log feature"
+    ],
+    "notes": "FCM device token: a unique identifier Firebase gives each browser or device that has granted push permission. It must be saved to Firestore so your backend can address that specific device.",
+    "tags": [
+     "notifications",
+     "backend"
+    ],
+    "color": "#ef4444",
+    "dueDate": "2026-12-02"
+   },
+   {
+    "title": "Build SMS backup notification via Twilio",
+    "priority": "medium",
+    "description": "Depends on: Build preference matching and push notification dispatch\nIf a push notification cannot be confirmed delivered (or as a user-opted-in backup), send an SMS via Twilio with the job summary and Frontline link.\nWhy this matters: Push notifications can be blocked by OS settings; SMS ensures subs do not miss urgent jobs.",
+    "checklist": [
+     "Assumption, verify: check Twilio's current A2P 10DLC registration requirements for US application-to-person SMS; registration may be required before sending at scale. Check twilio.com/docs/sms/a2p-10dlc.",
+     "Add a phone number field and SMS-opt-in toggle to the user profile",
+     "Integrate Twilio SDK into the Node backend",
+     "Send an SMS only when the user has opted in and a push was not confirmed or as their selected preference",
+     "Keep SMS message under 160 characters to avoid multi-part message fees",
+     "Test delivery to at least two different US carriers"
+    ],
+    "notes": "A2P 10DLC: a US carrier requirement for businesses sending SMS at scale. It requires registering your brand and message campaign with carriers, which takes time and has a fee. Start this registration early if you plan to send to more than a handful of users.",
+    "tags": [
+     "notifications",
+     "backend"
+    ],
+    "color": "#f59e0b",
+    "dueDate": "2026-12-24"
+   },
+   {
+    "title": "Start Twilio A2P 10DLC brand and campaign registration",
+    "priority": "medium",
+    "description": "Depends on: Set up accounts and infrastructure for all third-party services\nInitiate the A2P 10DLC registration process with Twilio as early as possible, since carrier approval can take weeks. This runs in parallel with other build work.\nWhy this matters: Without registration, SMS may be filtered or blocked by carriers before you reach beta users.",
+    "checklist": [
+     "Log into Twilio console and navigate to the Messaging section",
+     "Register your business brand under A2P 10DLC",
+     "Create a messaging campaign describing the use case (job alerts for substitute teachers)",
+     "Submit and wait for carrier approval"
+    ],
+    "notes": "Assumption, verify: typical A2P 10DLC approval time is several weeks, but check Twilio's current documentation for the latest timeline and fees. Do not rely on SMS for beta until approved.",
+    "tags": [
+     "setup"
+    ],
+    "color": "#f59e0b",
+    "dueDate": "2026-11-18"
+   },
+   {
+    "title": "Build the feed health check feature",
+    "priority": "high",
+    "description": "Depends on: Build the inbound email parser; Build user authentication and profile storage\nTrack whether each user's email forwarding is working by monitoring the time since the last email was received. Alert the user if no email has arrived within an expected window.\nWhy this matters: If a sub's forwarding breaks silently, they will miss jobs and blame the app.",
+    "checklist": [
+     "Record the timestamp of the last received email for each user in their Firestore profile",
+     "Run a scheduled Node job (cron) every morning that checks each user's last-received timestamp",
+     "If no email has been received in a configurable window (e.g., 2 school days), send the user a push or email alert saying their feed may be broken",
+     "Show a feed status indicator (healthy or warning) on the user's dashboard in the PWA"
+    ],
+    "notes": "Cron job: a task that runs automatically on a schedule, like a timer. Railway supports scheduled jobs natively.",
+    "tags": [
+     "backend",
+     "reliability",
+     "notifications"
+    ],
+    "color": "#ef4444",
+    "dueDate": "2026-12-04"
+   },
+   {
+    "title": "Build the missed-job log",
+    "priority": "medium",
+    "description": "Depends on: Build preference matching and push notification dispatch\nShow each user a list of jobs that matched their preferences, noting whether they were notified and whether the job is still open or has been filled.\nWhy this matters: Subs can learn which job types they are missing and adjust their preferences; it also builds trust in the system.",
+    "checklist": [
+     "Query the Firestore jobs and notification-log collections to build a per-user job history list",
+     "Display each job with: date, school, role, time notified, and whether the sub tapped the link",
+     "Mark jobs as filled if a subsequent email or signal indicates they are no longer available (or flag as unknown if unsure)",
+     "Add a filter so the user can view only missed jobs, only accepted jobs, or all"
+    ],
+    "notes": "Whether a job is filled may not be determinable from email alone. Show unknown rather than making up a status if the information is not available.",
+    "tags": [
+     "frontend",
+     "backend"
+    ],
+    "color": "#f59e0b",
+    "dueDate": "2026-12-28"
+   },
+   {
+    "title": "Build the 20-day limit and credential tracker",
+    "priority": "medium",
+    "description": "Depends on: Build user authentication and profile storage; Build the missed-job log\nTrack how many days each substitute has worked toward the NJ 20-day teaching limit (the threshold at which a substitute may need a different credential in some NJ districts) and surface a warning as they approach it.\nWhy this matters: Exceeding the credential limit can have professional consequences for subs; surfacing this proactively is a sticky feature.",
+    "checklist": [
+     "Add a field to the user profile for accepted/worked days per school year",
+     "Allow the user to manually confirm which jobs they actually worked (do not auto-assume all accepted jobs were worked)",
+     "Display a counter and a progress bar toward the 20-day threshold",
+     "Send a push notification warning when the user reaches 15 days and again at 19 days",
+     "Add a notes field for the user's credential type and expiry date",
+     "Reset the counter at the start of each NJ school year (prompt the user to confirm)"
+    ],
+    "notes": "The 20-day limit is a NJ-specific rule. Assumption, verify: confirm the exact rule and whether it varies by district or credential type with the NJ Department of Education or a professional familiar with NJ substitute regulations. Do not present the counter as legal or regulatory advice in the UI.",
+    "tags": [
+     "frontend",
+     "backend",
+     "compliance"
+    ],
+    "color": "#f59e0b",
+    "dueDate": "2026-12-31"
+   },
+   {
+    "title": "Build Google Calendar sync for accepted jobs",
+    "priority": "medium",
+    "description": "Depends on: Build user authentication and profile storage; Build the missed-job log\nLet users connect their Google Calendar and automatically add confirmed job shifts as calendar events.\nWhy this matters: Calendar sync reduces scheduling conflicts and keeps subs organized without manual entry.",
+    "checklist": [
+     "Assumption, verify: check Google's OAuth verification policy at developers.google.com to confirm how many test users an unverified app can have before full review is required.",
+     "Implement Google OAuth 2.0 login flow in the PWA to request Calendar write permission",
+     "Store the OAuth refresh token securely in the user's Firestore profile (encrypt at rest)",
+     "When a user marks a job as accepted, use the Google Calendar API to create an event with job details",
+     "Handle token refresh automatically when the access token expires",
+     "Allow users to disconnect their Google Calendar from the settings page"
+    ],
+    "notes": "OAuth refresh token: a long-lived credential that lets your backend create calendar events on the user's behalf without them logging in each time. Treat it like a password: encrypt it before storing.",
+    "tags": [
+     "backend",
+     "frontend"
+    ],
+    "color": "#f59e0b",
+    "dueDate": "2027-01-05"
+   },
+   {
+    "title": "Build the React PWA shell and core UI screens",
+    "priority": "high",
+    "description": "Depends on: Build user authentication and profile storage\nBuild the installable PWA with screens for: dashboard, job feed/log, preferences, credential tracker, and settings. Make it installable on Android and iOS home screens.\nWhy this matters: The UI is what users interact with daily; it must be fast, simple, and work offline for basic viewing.",
+    "checklist": [
+     "Scaffold the Vite + React project and configure a service worker for PWA installability",
+     "Build a bottom-nav layout with: Dashboard, Job Log, Preferences, Tracker, Settings",
+     "Dashboard: show feed health status, recent matched jobs, and a notification permission prompt",
+     "Preferences screen: let users set preferred districts, roles, and available days",
+     "Credential tracker screen: show 20-day counter and credential notes (see T14)",
+     "Settings screen: forwarding address display, SMS opt-in toggle, Google Calendar connect button, account deletion",
+     "Test install-to-home-screen flow on Android Chrome and iOS Safari",
+     "Make the job log and dashboard usable offline using cached Firestore data"
+    ],
+    "notes": "Service worker: a background script that makes a web app installable and able to load offline. Vite has plugins that generate this automatically. iOS Safari has historically had PWA push notification limitations; verify current support during T5.",
+    "tags": [
+     "frontend"
+    ],
+    "color": "#ef4444",
+    "dueDate": "2026-11-16"
+   },
+   {
+    "title": "Write privacy policy and terms of service",
+    "priority": "high",
+    "description": "Create a privacy policy and terms of service for the app before any real users are onboarded. These documents must explain what data is collected, how long it is kept, and how users can delete their data.\nWhy this matters: Collecting user emails, job data, and calendar tokens without a privacy policy may violate US privacy laws and app store or payment processor requirements.",
+    "checklist": [
+     "Check with a professional: consult a lawyer familiar with US privacy law (and NJ-specific rules if applicable) about what disclosures are required",
+     "Draft a privacy policy stating: what data is collected, why, how long it is kept, and how users can request deletion",
+     "Draft terms of service stating: what the app does, what it does not do (it is not legal or employment advice), and the refund policy for paid tiers",
+     "Add links to both documents on the sign-up screen and in the app's Settings"
+    ],
+    "notes": "Data retention is listed as a gap in this plan because the description did not specify it. Decide and document a specific retention period (for example, job records deleted after 90 days) before launch.",
+    "tags": [
+     "legal",
+     "compliance",
+     "setup"
+    ],
+    "color": "#ef4444",
+    "dueDate": "2026-12-07"
+   },
+   {
+    "title": "Set up and onboard private beta users",
+    "priority": "high",
+    "description": "Depends on: Build the inbound email parser; Build preference matching and push notification dispatch; Build the feed health check feature; Build the React PWA shell and core UI screens; Write privacy policy and terms of service\nDefine how beta users are invited, provide them with their unique forwarding address, and guide them through setting up email forwarding from their Frontline inbox.\nWhy this matters: The private beta is where real-world parsing and notification reliability are validated before charging anyone.",
+    "checklist": [
+     "Decide the beta invite method (invite code, direct link, or manual account creation)",
+     "Write a short onboarding guide: how to set up Frontline email forwarding to their unique address, and how to install the PWA",
+     "Onboard the first small group of beta users (number is your decision)",
+     "Set up a simple feedback channel (email or a chat group) for beta users to report issues"
+    ],
+    "notes": "Keep the beta group small enough that you can personally support each user. Expand only after the parser and notification pipeline are stable.",
+    "tags": [
+     "beta",
+     "setup"
+    ],
+    "color": "#ef4444",
+    "dueDate": "2026-12-09"
+   },
+   {
+    "title": "Set up error monitoring and backend alerts",
+    "priority": "high",
+    "description": "Depends on: Build the inbound email parser; Build preference matching and push notification dispatch\nAdd error logging and alerting to the Node backend so parsing failures, notification errors, and crashes are visible without waiting for a user to complain.\nWhy this matters: Silent failures in the parser or notification pipeline will cause subs to miss jobs, the core failure mode of the product.",
+    "checklist": [
+     "Integrate a structured logger (e.g., pino) into the Node backend",
+     "Send error-level log events to Railway's log drain or an external service so you are alerted on critical failures",
+     "Create a Firestore collection for parsing errors with enough context to reproduce and fix each one",
+     "Set up a simple daily summary: how many emails received, parsed, matched, notified"
+    ],
+    "notes": "Pino: a fast, lightweight logging library for Node. Railway exposes logs natively; you can also forward them to a free tier of a logging service like Logtail.",
+    "tags": [
+     "backend",
+     "reliability"
+    ],
+    "color": "#ef4444",
+    "dueDate": "2026-12-11"
+   },
+   {
+    "title": "Run beta feedback cycle and fix parser edge cases",
+    "priority": "high",
+    "description": "Depends on: Set up and onboard private beta users; Set up error monitoring and backend alerts\nCollect structured feedback from beta users over at least two weeks of real use, fix parsing failures, and improve notification relevance before opening paid tier sign-ups.\nWhy this matters: Real Frontline emails from different districts will reveal edge cases no test data could predict.",
+    "checklist": [
+     "Review the Firestore parsing error log daily and fix each distinct failure pattern",
+     "Ask beta users weekly: did you receive alerts for all jobs you should have? Did you get any false alerts?",
+     "Measure the notification-to-tap rate to see if alerts are relevant and actionable",
+     "Fix any notification delivery failures surfaced by the feed health check",
+     "Document known limitations that cannot be fixed before paid tier launch"
+    ],
+    "notes": "",
+    "tags": [
+     "beta",
+     "parsing",
+     "reliability"
+    ],
+    "color": "#ef4444",
+    "dueDate": "2027-01-01"
+   },
+   {
+    "title": "Decision: beta is stable enough to launch paid tier",
+    "priority": "high",
+    "description": "Depends on: Run beta feedback cycle and fix parser edge cases\nReview beta metrics and decide whether the core pipeline is reliable enough to charge users.\nWhy this matters: Charging for an unreliable product destroys trust faster than staying in beta.",
+    "checklist": [
+     "Parser is successfully extracting job data from at least 90 percent of received emails",
+     "No known critical bugs that cause missed notifications for matched jobs",
+     "Beta users have reported a net-positive experience overall",
+     "Privacy policy and terms of service are published",
+     "Twilio A2P 10DLC registration is approved (or SMS is deferred to a later release)"
+    ],
+    "notes": "",
+    "tags": [
+     "decision-gate",
+     "beta"
+    ],
+    "color": "#ef4444",
+    "dueDate": "2027-01-06"
+   },
+   {
+    "title": "Build Stripe subscription and paid tier access control",
+    "priority": "medium",
+    "description": "Depends on: Decision: beta is stable enough to launch paid tier\nIntegrate Stripe Checkout for recurring subscriptions and gate paid features (SMS backup, calendar sync) behind a subscription check in both the frontend and backend.\nWhy this matters: This is how the product generates revenue and sustains development.",
+    "checklist": [
+     "Create a Stripe product and price object for the monthly subscription (price is your decision)",
+     "Add a Stripe Checkout flow to the PWA settings screen",
+     "Use a Stripe webhook to update the user's Firestore profile with their subscription status when payment is confirmed or cancelled",
+     "Gate SMS backup and Google Calendar sync features behind a subscription check in both the PWA and the Node backend",
+     "Add a billing management link (Stripe customer portal) to the settings screen so users can cancel or update their card",
+     "Test the full subscribe, use, cancel, and resubscribe flow in Stripe test mode"
+    ],
+    "notes": "Stripe webhook: Stripe sends a POST request to your backend whenever a payment event happens (success, failure, cancellation). Always verify the webhook signature before trusting it.",
+    "tags": [
+     "backend",
+     "frontend"
+    ],
+    "color": "#f59e0b",
+    "dueDate": "2027-01-12"
+   },
+   {
+    "title": "Set up production deployment and domain",
+    "priority": "high",
+    "description": "Depends on: Build the React PWA shell and core UI screens\nDeploy the React PWA to a production host, point a custom domain at it, and confirm the Railway backend is running in a production environment with proper environment variables.\nWhy this matters: Users need a stable, professional URL to install the PWA and trust the product.",
+    "checklist": [
+     "Register a domain for the app if not already owned",
+     "Deploy the Vite build output to a static host (Firebase Hosting is a natural fit given the stack)",
+     "Configure DNS to point the domain at the static host and set up HTTPS",
+     "Assumption, verify: Configure the Mailgun inbound domain as a subdomain (e.g., in.yourapp.com) and update DNS records",
+     "Confirm Railway production service uses production Firebase credentials and Stripe live keys (not test keys)"
+    ],
+    "notes": "Use Stripe live keys only after the paid tier is ready to charge real users. Keep test keys in a separate Railway environment for development.",
+    "tags": [
+     "infrastructure",
+     "setup"
+    ],
+    "color": "#ef4444",
+    "dueDate": "2026-12-22"
+   },
+   {
+    "title": "Set up Firestore backups",
+    "priority": "medium",
+    "description": "Depends on: Set up accounts and infrastructure for all third-party services\nEnable automated Firestore exports so user data, job records, and subscription status are not permanently lost if a misconfiguration or deletion occurs.\nWhy this matters: User data (credential tracking, job history) has real value to users; losing it would be a serious trust failure.",
+    "checklist": [
+     "Enable Firestore managed export to a Google Cloud Storage bucket on a daily schedule",
+     "Verify a test restore from the export to confirm it works",
+     "Set a retention policy on the backup bucket (e.g., keep 30 days of backups)"
+    ],
+    "notes": "Assumption, verify: check current Google Cloud Storage pricing for the expected data volume before setting a retention period.",
+    "tags": [
+     "infrastructure",
+     "reliability",
+     "setup"
+    ],
+    "color": "#f59e0b",
+    "dueDate": "2027-01-13"
+   }
+  ],
+  "structure": [
+   {
+    "key": "T1",
+    "title": "Set up accounts and infrastructure for all third-party services",
+    "kind": "work",
+    "priority": "high",
+    "dependsOn": [],
+    "effortHours": 3,
+    "waitDays": 0,
+    "dueDate": "2026-10-27"
+   },
+   {
+    "key": "T2",
+    "title": "Collect real Frontline job emails for parser development",
+    "kind": "work",
+    "priority": "high",
+    "dependsOn": [],
+    "effortHours": 2,
+    "waitDays": 3,
+    "dueDate": "2026-11-02"
+   },
+   {
+    "key": "T3",
+    "title": "Validate: Frontline email forwarding is permitted and parseable",
+    "kind": "validation",
+    "priority": "high",
+    "dependsOn": [
+     "T2"
+    ],
+    "effortHours": 2,
+    "waitDays": 0,
+    "dueDate": "2026-11-04"
+   },
+   {
+    "key": "T4",
+    "title": "Decision: proceed with email-forwarding architecture",
+    "kind": "decision-gate",
+    "priority": "high",
+    "dependsOn": [
+     "T3"
+    ],
+    "effortHours": 1,
+    "waitDays": 0,
+    "dueDate": "2026-11-16"
+   },
+   {
+    "key": "T5",
+    "title": "Run end-to-end timing test: email arrival to notification delivery",
+    "kind": "work",
+    "priority": "high",
+    "dependsOn": [
+     "T1",
+     "T4"
+    ],
+    "effortHours": 6,
+    "waitDays": 0,
+    "dueDate": "2026-11-19"
+   },
+   {
+    "key": "T6",
+    "title": "Decision: timing is fast enough to proceed",
+    "kind": "decision-gate",
+    "priority": "high",
+    "dependsOn": [
+     "T5"
+    ],
+    "effortHours": 1,
+    "waitDays": 0,
+    "dueDate": "2026-11-20"
+   },
+   {
+    "key": "T7",
+    "title": "Build the inbound email parser",
+    "kind": "work",
+    "priority": "high",
+    "dependsOn": [
+     "T4",
+     "T6"
+    ],
+    "effortHours": 8,
+    "waitDays": 0,
+    "dueDate": "2026-11-26"
+   },
+   {
+    "key": "T8",
+    "title": "Build user authentication and profile storage",
+    "kind": "work",
+    "priority": "high",
+    "dependsOn": [
+     "T1"
+    ],
+    "effortHours": 6,
+    "waitDays": 0,
+    "dueDate": "2026-11-03"
+   },
+   {
+    "key": "T9",
+    "title": "Build preference matching and push notification dispatch",
+    "kind": "work",
+    "priority": "high",
+    "dependsOn": [
+     "T7",
+     "T8"
+    ],
+    "effortHours": 8,
+    "waitDays": 0,
+    "dueDate": "2026-12-02"
+   },
+   {
+    "key": "T10",
+    "title": "Build SMS backup notification via Twilio",
+    "kind": "work",
+    "priority": "medium",
+    "dependsOn": [
+     "T9"
+    ],
+    "effortHours": 4,
+    "waitDays": 0,
+    "dueDate": "2026-12-24"
+   },
+   {
+    "key": "T11",
+    "title": "Start Twilio A2P 10DLC brand and campaign registration",
+    "kind": "external-wait",
+    "priority": "medium",
+    "dependsOn": [
+     "T1"
+    ],
+    "effortHours": 2,
+    "waitDays": 21,
+    "dueDate": "2026-11-18"
+   },
+   {
+    "key": "T12",
+    "title": "Build the feed health check feature",
+    "kind": "work",
+    "priority": "high",
+    "dependsOn": [
+     "T7",
+     "T8"
+    ],
+    "effortHours": 4,
+    "waitDays": 0,
+    "dueDate": "2026-12-04"
+   },
+   {
+    "key": "T13",
+    "title": "Build the missed-job log",
+    "kind": "work",
+    "priority": "medium",
+    "dependsOn": [
+     "T9"
+    ],
+    "effortHours": 4,
+    "waitDays": 0,
+    "dueDate": "2026-12-28"
+   },
+   {
+    "key": "T14",
+    "title": "Build the 20-day limit and credential tracker",
+    "kind": "work",
+    "priority": "medium",
+    "dependsOn": [
+     "T8",
+     "T13"
+    ],
+    "effortHours": 6,
+    "waitDays": 0,
+    "dueDate": "2026-12-31"
+   },
+   {
+    "key": "T15",
+    "title": "Build Google Calendar sync for accepted jobs",
+    "kind": "work",
+    "priority": "medium",
+    "dependsOn": [
+     "T8",
+     "T13"
+    ],
+    "effortHours": 7,
+    "waitDays": 0,
+    "dueDate": "2027-01-05"
+   },
+   {
+    "key": "T16",
+    "title": "Build the React PWA shell and core UI screens",
+    "kind": "work",
+    "priority": "high",
+    "dependsOn": [
+     "T8"
+    ],
+    "effortHours": 16,
+    "waitDays": 0,
+    "dueDate": "2026-11-16"
+   },
+   {
+    "key": "T17",
+    "title": "Write privacy policy and terms of service",
+    "kind": "work",
+    "priority": "high",
+    "dependsOn": [],
+    "effortHours": 3,
+    "waitDays": 0,
+    "dueDate": "2026-12-07"
+   },
+   {
+    "key": "T18",
+    "title": "Set up and onboard private beta users",
+    "kind": "work",
+    "priority": "high",
+    "dependsOn": [
+     "T7",
+     "T9",
+     "T12",
+     "T16",
+     "T17"
+    ],
+    "effortHours": 4,
+    "waitDays": 0,
+    "dueDate": "2026-12-09"
+   },
+   {
+    "key": "T19",
+    "title": "Set up error monitoring and backend alerts",
+    "kind": "work",
+    "priority": "high",
+    "dependsOn": [
+     "T7",
+     "T9"
+    ],
+    "effortHours": 3,
+    "waitDays": 0,
+    "dueDate": "2026-12-11"
+   },
+   {
+    "key": "T20",
+    "title": "Run beta feedback cycle and fix parser edge cases",
+    "kind": "work",
+    "priority": "high",
+    "dependsOn": [
+     "T18",
+     "T19"
+    ],
+    "effortHours": 10,
+    "waitDays": 14,
+    "dueDate": "2027-01-01"
+   },
+   {
+    "key": "T21",
+    "title": "Decision: beta is stable enough to launch paid tier",
+    "kind": "decision-gate",
+    "priority": "high",
+    "dependsOn": [
+     "T20"
+    ],
+    "effortHours": 1,
+    "waitDays": 0,
+    "dueDate": "2027-01-06"
+   },
+   {
+    "key": "T22",
+    "title": "Build Stripe subscription and paid tier access control",
+    "kind": "work",
+    "priority": "medium",
+    "dependsOn": [
+     "T21"
+    ],
+    "effortHours": 8,
+    "waitDays": 0,
+    "dueDate": "2027-01-12"
+   },
+   {
+    "key": "T23",
+    "title": "Set up production deployment and domain",
+    "kind": "work",
+    "priority": "high",
+    "dependsOn": [
+     "T16"
+    ],
+    "effortHours": 4,
+    "waitDays": 0,
+    "dueDate": "2026-12-22"
+   },
+   {
+    "key": "T24",
+    "title": "Set up Firestore backups",
+    "kind": "work",
+    "priority": "medium",
+    "dependsOn": [
+     "T1"
+    ],
+    "effortHours": 2,
+    "waitDays": 0,
+    "dueDate": "2027-01-13"
+   }
+  ],
+  "summary": {
+   "firstWorkingDay": "2026-10-26",
+   "endDate": "2027-01-13",
+   "hoursPerWeek": 10,
+   "hoursPerWeekAssumed": true,
+   "deadline": null,
+   "deadlineMet": null,
+   "overrunBusinessDays": null,
+   "wouldHaveToGive": [],
+   "fitsAfterDeferring": null,
+   "specificsLabeled": 3,
+   "flags": [
+    {
+     "type": "verify-first",
+     "taskKey": "T8",
+     "message": "\"Build user authentication and profile storage\" rests on an unchecked assumption but its first step is not a check."
+    },
+    {
+     "type": "verify-first",
+     "taskKey": "T14",
+     "message": "\"Build the 20-day limit and credential tracker\" rests on an unchecked assumption but its first step is not a check."
+    },
+    {
+     "type": "verify-first",
+     "taskKey": "T23",
+     "message": "\"Set up production deployment and domain\" rests on an unchecked assumption but its first step is not a check."
+    },
+    {
+     "type": "verify-first",
+     "taskKey": "T24",
+     "message": "\"Set up Firestore backups\" rests on an unchecked assumption but its first step is not a check."
+    }
+   ],
+   "warnings": []
+  }
+ }
+}

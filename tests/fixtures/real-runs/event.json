@@ -1,0 +1,547 @@
+{
+ "case": "event",
+ "style": "event-planning",
+ "input": "Plan a 60-person retirement party for my colleague in March at a venue to be chosen.",
+ "localDate": "2026-10-24",
+ "response": {
+  "tasks": [
+   {
+    "title": "Read me first: assumptions and gaps",
+    "priority": "high",
+    "description": "This plan is a starting point and may still have gaps. Read the items below before relying on it.\nThe dates are suggestions meant to keep momentum. Moving one is normal, and overdue cards simply show in red.\nPacing assumed: about 10 hours a week, starting Mon 26 Oct (you did not say how much time you have). If you add your hours per week or a start date to the description and generate again, the dates will follow.",
+    "checklist": [
+     "Assumption, verify: The party is in March 2027, giving roughly four to five months to plan. How to check: Confirm the target month and year with whoever is organizing.",
+     "Assumption, verify: A budget has not been set; costs will depend on venue, catering, and extras chosen. How to check: Agree on a total budget with the organizing group or whoever is funding the event before any bookings.",
+     "Assumption, verify: Venues suitable for 60 people in March typically book out two to four months in advance. How to check: Call two or three local venues and ask for their typical lead time for a Saturday in March.",
+     "Assumption, verify: The colleague being honored does not already know about the party (or does, if it is not a surprise). How to check: Clarify with the organizer whether this is a surprise party, as it affects invitation wording and RSVP handling.",
+     "Assumption, verify: At least one co-organizer or point of contact exists to help coordinate. How to check: Confirm who else is involved before dividing tasks.",
+     "On \"Check permits and insurance\": If separate event insurance is recommended, check with a professional or insurance broker for options.",
+     "For any price, rate or rule above: check the vendor or official source directly, or ask a professional for anything legal or financial."
+    ],
+    "notes": "NOT MENTIONED IN YOUR DESCRIPTION (often matters):\n- No budget figure or funding source mentioned.\n- No preferred date within March given.\n- No indication of dietary requirements or accessibility needs for guests.\n- No preference stated for venue style (restaurant private room, event hall, outdoor space, etc.).\n- No mention of whether speeches, a slideshow, gifts, or other program elements are wanted.\n\nTHINGS THIS PLAN CANNOT KNOW:\n- Current venue hire rates in the chosen location.\n- Catering costs per head at the time of booking.\n- Whether local permits or insurance are required for a private event of this size at the chosen venue.\n- Specific accessibility requirements of the guest of honor or attendees.\n\nPOSSIBLE CONFLICTS TO CHECK:\n- \"Research and shortlist venues\" repeats the \"headcount\" target (60 people) instead of referring to the card that defines it.\n- \"Visit shortlisted venues\" repeats the \"headcount\" target (60 people) instead of referring to the card that defines it.\n- \"Check permits and insurance\" repeats the \"headcount\" target (60 people) instead of referring to the card that defines it.",
+    "tags": [
+     "planning"
+    ],
+    "color": "#ffffff",
+    "dueDate": "2026-10-26"
+   },
+   {
+    "title": "Decisions needed: choices only you can make",
+    "priority": "high",
+    "description": "These choices were not in your description, so they are yours to make. Each has a recommended default: accept it and move on, or swap it for your own.",
+    "checklist": [
+     "What is the total budget for the party? Options: Set a fixed per-head amount and multiply by 60 / Set an overall cap and work backwards / Collect contributions from colleagues first, then plan to that figure. Recommended default: Set an overall cap first so venue and vendor searches are realistic from the start..",
+     "What is the exact date in March? Options: A Saturday evening for maximum attendance / A Friday evening / A weekday lunch if colleagues are all office-based. Recommended default: A Saturday evening to maximise attendance..",
+     "Is this a surprise party? Options: Yes, the colleague does not know / No, the colleague is involved in planning. Recommended default: No default; this is entirely the organizer's call and affects every communication..",
+     "What venue style fits the occasion? Options: Restaurant private dining room / Dedicated event or function hall / Hotel ballroom or suite / Outdoor or marquee space. Recommended default: Restaurant private dining room for ease of built-in catering and atmosphere..",
+     "Which program elements should be included? Options: Speeches and open mic / Photo slideshow or video tribute / Formal sit-down dinner / Buffet and mingling only / Gift collection or charity donation. Recommended default: At minimum a short speech and a slideshow; decide on dinner format based on budget.."
+    ],
+    "notes": "",
+    "tags": [
+     "decisions"
+    ],
+    "color": "#ef4444",
+    "dueDate": "2026-10-26"
+   },
+   {
+    "title": "Decision: Confirm budget, date, and party style",
+    "priority": "high",
+    "description": "Agree on the key parameters before any bookings or communications go out. Nothing else can be confirmed without these.\nWhy this matters: Budget, date, and style determine which venues and vendors are realistic.",
+    "checklist": [
+     "Agree on a total budget or funding method with all contributors.",
+     "Choose a specific date in March 2027.",
+     "Decide on surprise versus open party.",
+     "Decide on venue style and formality level.",
+     "Decide which program elements to include."
+    ],
+    "notes": "These five decisions are listed in decisionsNeeded with options. Do not start venue search until budget and date are fixed.",
+    "tags": [
+     "decision-gate",
+     "planning",
+     "budget"
+    ],
+    "color": "#ef4444",
+    "dueDate": "2026-10-26"
+   },
+   {
+    "title": "Define guest list and accessibility needs",
+    "priority": "high",
+    "description": "Depends on: Decision: Confirm budget, date, and party style\nBuild the full guest list of 60 people and note any dietary, mobility, or other accessibility requirements. This is the headcount definition card.\nWhy this matters: Venues and caterers need confirmed numbers and accessibility details to give accurate quotes.",
+    "checklist": [
+     "List all 60 expected guests by name and contact detail.",
+     "Note any dietary requirements (vegetarian, vegan, allergies, halal, kosher, etc.).",
+     "Note any mobility or hearing or other accessibility needs.",
+     "Confirm whether plus-ones or children are included in the 60."
+    ],
+    "notes": "Headcount: the target is 60 people. Keep the list in a shared document so co-organizers can edit it.",
+    "tags": [
+     "planning",
+     "guests"
+    ],
+    "color": "#ef4444",
+    "dueDate": "2026-10-27"
+   },
+   {
+    "title": "Research and shortlist venues",
+    "priority": "high",
+    "description": "Depends on: Decision: Confirm budget, date, and party style; Define guest list and accessibility needs\nFind three to five venues that can host 60 people on the chosen date and meet budget and accessibility requirements.\nWhy this matters: Venues book up quickly; starting early gives the best choice.",
+    "checklist": [
+     "Search for venues matching the chosen style and capacity for 60.",
+     "Check each venue's accessibility (step-free access, hearing loop, parking, etc.).",
+     "Confirm each venue is available on the chosen date.",
+     "Verify what the venue includes (tables, chairs, AV equipment, catering or outside caterer allowed).",
+     "Check whether the venue requires event insurance or has its own cover.",
+     "Note hire fee and minimum spend for each shortlisted venue."
+    ],
+    "notes": "Venue hire: the fee to use the space, sometimes waived if a minimum food and drink spend is met. AV: audio-visual equipment such as a microphone and screen for a slideshow.",
+    "tags": [
+     "venue",
+     "planning"
+    ],
+    "color": "#ef4444",
+    "dueDate": "2026-10-30"
+   },
+   {
+    "title": "Visit shortlisted venues",
+    "priority": "high",
+    "description": "Depends on: Research and shortlist venues\nVisit the top two or three venues in person to check layout, ambience, and suitability before committing.\nWhy this matters: Photos can mislead; a visit confirms the space works for 60 people and the planned program.",
+    "checklist": [
+     "Book viewing appointments with each shortlisted venue.",
+     "Check room layout options for 60 (seated dinner, standing, or mixed).",
+     "Confirm noise restrictions or curfew times.",
+     "Ask about parking and public transport nearby.",
+     "Photograph the space for anyone who could not attend."
+    ],
+    "notes": "Curfew: the latest time events must end, set by the venue or a local noise permit.",
+    "tags": [
+     "venue"
+    ],
+    "color": "#ef4444",
+    "dueDate": "2026-11-03"
+   },
+   {
+    "title": "Decision: Choose and book the venue",
+    "priority": "high",
+    "description": "Depends on: Visit shortlisted venues\nCompare the visited venues against budget and requirements, then commit to one.\nWhy this matters: Securing the venue is the single biggest dependency for everything else.",
+    "checklist": [
+     "Venue fits 60 people comfortably in the chosen layout.",
+     "Hire cost and any minimum spend are within budget.",
+     "Accessibility needs for known guests are met.",
+     "Date and end time are confirmed as available.",
+     "Contract terms (deposit, cancellation policy) are acceptable."
+    ],
+    "notes": "Deposit: a payment made upfront to reserve the venue, usually non-refundable if you cancel. Read the cancellation policy before signing.",
+    "tags": [
+     "decision-gate",
+     "venue",
+     "budget"
+    ],
+    "color": "#ef4444",
+    "dueDate": "2026-11-04"
+   },
+   {
+    "title": "Book the venue and pay deposit",
+    "priority": "high",
+    "description": "Depends on: Decision: Choose and book the venue\nSign the venue contract and pay the deposit to secure the date.\nWhy this matters: Nothing else can be confirmed until the venue is locked in.",
+    "checklist": [
+     "Sign the venue hire contract.",
+     "Pay the deposit and keep the receipt.",
+     "Get written confirmation of the date, room, and end time.",
+     "Note the deadline for the final headcount and any balance payment."
+    ],
+    "notes": "",
+    "tags": [
+     "venue",
+     "budget"
+    ],
+    "color": "#ef4444",
+    "dueDate": "2026-11-04"
+   },
+   {
+    "title": "Arrange catering",
+    "priority": "high",
+    "description": "Depends on: Book the venue and pay deposit; Define guest list and accessibility needs\nConfirm food and drink arrangements, either through the venue or an external caterer if allowed.\nWhy this matters: Catering is usually the largest cost and needs lead time to plan menus and quantities.",
+    "checklist": [
+     "Check whether the venue provides catering or allows an outside caterer.",
+     "Request menus and quotes that cover all dietary requirements noted in the guest list card.",
+     "Decide on format (sit-down meal, buffet, canapés, or drinks reception) if not already settled.",
+     "Confirm drinks options and whether a bar tab, cash bar, or set drinks package is used.",
+     "Agree on final menu and sign catering contract or confirm with venue.",
+     "Note the deadline for final numbers."
+    ],
+    "notes": "Canapés: small single-bite food items, typical at standing receptions. Bar tab: the organizer pays for all drinks up to a limit; cash bar means guests pay for their own.",
+    "tags": [
+     "catering",
+     "budget"
+    ],
+    "color": "#ef4444",
+    "dueDate": "2026-11-06"
+   },
+   {
+    "title": "Send invitations and collect RSVPs",
+    "priority": "high",
+    "description": "Depends on: Book the venue and pay deposit; Define guest list and accessibility needs\nInvite all 60 guests and track responses so final numbers can be given to the venue and caterer.\nWhy this matters: Confirmed numbers are required before final catering and seating can be arranged.",
+    "checklist": [
+     "Decide on invitation format (digital, printed card, or both).",
+     "Include date, time, venue address, dress code if any, and RSVP deadline.",
+     "If surprise party, word invitations carefully so the guest of honor is not accidentally told.",
+     "Send invitations at least six to eight weeks before the event.",
+     "Chase non-respondents one week before the RSVP deadline.",
+     "Record final confirmed attendance and pass to venue and caterer."
+    ],
+    "notes": "RSVP deadline: set this at least two weeks before the party so you have time to give final numbers to the caterer. RSVP is from the French meaning please reply.",
+    "tags": [
+     "invitations",
+     "guests"
+    ],
+    "color": "#ef4444",
+    "dueDate": "2026-11-10"
+   },
+   {
+    "title": "Plan the program and arrange any AV or entertainment",
+    "priority": "high",
+    "description": "Depends on: Decision: Choose and book the venue\nDraft a running order for the event and book any equipment or performers needed for speeches, a slideshow, or other elements.\nWhy this matters: A clear program keeps the event flowing and ensures technical needs are met in time.",
+    "checklist": [
+     "Draft a timed running order (arrival, welcome, food, speeches, etc.).",
+     "Confirm which program elements will be included based on earlier decisions.",
+     "If a slideshow is planned, assign someone to collect photos and build it.",
+     "Check whether the venue has a screen and projector or microphone; if not, hire them.",
+     "Confirm any speaker order and brief them on time limits.",
+     "If music is wanted, decide on a playlist, DJ, or live musician and book accordingly."
+    ],
+    "notes": "Running order: a timed list of what happens when, shared with venue staff on the day. AV hire lead times vary; book at least four weeks out.",
+    "tags": [
+     "program",
+     "planning"
+    ],
+    "color": "#ef4444",
+    "dueDate": "2026-11-13"
+   },
+   {
+    "title": "Check permits and insurance",
+    "priority": "medium",
+    "description": "Depends on: Book the venue and pay deposit\nConfirm whether a private event for 60 people at the chosen venue requires any permit or separate event insurance.\nWhy this matters: Missing a required permit or lacking insurance could result in the event being shut down or a claim being unpaid.",
+    "checklist": [
+     "Ask the venue whether their own insurance covers a private party of this size.",
+     "Ask the venue whether any entertainment license or noise permit is needed.",
+     "If separate event insurance is recommended, check with a professional or insurance broker for options.",
+     "File any required applications well before the event date."
+    ],
+    "notes": "Event insurance: a policy that covers cancellation costs, accidents, or damage at the event. The venue can usually advise on what is legally required in your area.",
+    "tags": [
+     "compliance",
+     "planning"
+    ],
+    "color": "#f59e0b",
+    "dueDate": "2026-11-16"
+   },
+   {
+    "title": "Prepare a contingency plan",
+    "priority": "medium",
+    "description": "Depends on: Book the venue and pay deposit; Arrange catering\nIdentify the most likely things that could go wrong and have a simple backup for each.\nWhy this matters: Small problems become big ones without a plan; knowing your backup reduces stress on the day.",
+    "checklist": [
+     "Note what happens if a key supplier cancels close to the date (backup caterer or venue contact).",
+     "Decide the minimum acceptable attendance number and what to do if far fewer guests come.",
+     "Have a contact number for the venue manager on the day.",
+     "Keep a small emergency kit at the venue (stain remover, spare name cards, phone charger, etc.).",
+     "Know the venue's process if the event needs to end early."
+    ],
+    "notes": "",
+    "tags": [
+     "planning",
+     "logistics"
+    ],
+    "color": "#f59e0b",
+    "dueDate": "2026-11-17"
+   },
+   {
+    "title": "Arrange decorations and any printed materials",
+    "priority": "low",
+    "description": "Depends on: Book the venue and pay deposit\nOrder or make decorations, name cards, menus, or a guest book to mark the occasion.\nWhy this matters: Personal touches make the event feel special and often need ordering weeks in advance.",
+    "checklist": [
+     "Decide on a decoration theme or color scheme.",
+     "Check what the venue permits (candles, confetti, fixing things to walls, etc.).",
+     "Order or make decorations with enough lead time for delivery.",
+     "Arrange printed materials (menus, name cards, guest book) if wanted."
+    ],
+    "notes": "Check venue rules on decorations before ordering anything; some venues prohibit open flames or glitter.",
+    "tags": [
+     "decor",
+     "planning"
+    ],
+    "color": "#22c55e",
+    "dueDate": "2026-11-19"
+   },
+   {
+    "title": "Wait for RSVPs to come in",
+    "priority": "high",
+    "description": "Depends on: Send invitations and collect RSVPs\nAllow time for guests to respond after invitations are sent.\nWhy this matters: Final headcount cannot be confirmed until the RSVP window closes.",
+    "checklist": [
+     "Monitor responses as they arrive and update the guest list.",
+     "Send a reminder to non-respondents midway through the window."
+    ],
+    "notes": "waitDays is approximate; set your actual RSVP deadline to fall at least two weeks before the party date.",
+    "tags": [
+     "guests",
+     "invitations"
+    ],
+    "color": "#ef4444",
+    "dueDate": "2026-12-09"
+   },
+   {
+    "title": "Confirm final numbers and logistics with all suppliers",
+    "priority": "high",
+    "description": "Depends on: Wait for RSVPs to come in; Arrange catering; Plan the program and arrange any AV or entertainment\nAfter RSVPs close, give final headcount to the venue and caterer and confirm all day-of logistics.\nWhy this matters: Suppliers need confirmed numbers to prepare the right amount of food, seating, and staff.",
+    "checklist": [
+     "Give final confirmed headcount to venue and caterer.",
+     "Confirm arrival time for setup and when guests are expected.",
+     "Confirm AV setup time with the venue or hire company.",
+     "Share the running order with venue staff.",
+     "Pay any outstanding balance due before the event."
+    ],
+    "notes": "",
+    "tags": [
+     "logistics",
+     "catering"
+    ],
+    "color": "#ef4444",
+    "dueDate": "2026-12-09"
+   },
+   {
+    "title": "Create a day-of schedule and assign roles",
+    "priority": "medium",
+    "description": "Depends on: Confirm final numbers and logistics with all suppliers\nPrepare a detailed timeline for the day itself and make sure each helper knows their responsibilities.\nWhy this matters: Clear roles on the day prevent confusion and let the organizer enjoy the event.",
+    "checklist": [
+     "Write a minute-by-minute schedule from setup through to end of event.",
+     "Assign a person to greet guests at the door.",
+     "Assign someone to coordinate with venue staff on the day.",
+     "If surprise party, assign someone to bring the guest of honor at the right moment.",
+     "Share the schedule with all helpers the day before."
+    ],
+    "notes": "",
+    "tags": [
+     "logistics",
+     "program"
+    ],
+    "color": "#f59e0b",
+    "dueDate": "2026-12-10"
+   }
+  ],
+  "structure": [
+   {
+    "key": "T1",
+    "title": "Decision: Confirm budget, date, and party style",
+    "kind": "decision-gate",
+    "priority": "high",
+    "dependsOn": [],
+    "effortHours": 2,
+    "waitDays": 0,
+    "dueDate": "2026-10-26"
+   },
+   {
+    "key": "T2",
+    "title": "Define guest list and accessibility needs",
+    "kind": "work",
+    "priority": "high",
+    "dependsOn": [
+     "T1"
+    ],
+    "effortHours": 2,
+    "waitDays": 0,
+    "dueDate": "2026-10-27"
+   },
+   {
+    "key": "T3",
+    "title": "Research and shortlist venues",
+    "kind": "work",
+    "priority": "high",
+    "dependsOn": [
+     "T1",
+     "T2"
+    ],
+    "effortHours": 5,
+    "waitDays": 0,
+    "dueDate": "2026-10-30"
+   },
+   {
+    "key": "T4",
+    "title": "Visit shortlisted venues",
+    "kind": "work",
+    "priority": "high",
+    "dependsOn": [
+     "T3"
+    ],
+    "effortHours": 4,
+    "waitDays": 0,
+    "dueDate": "2026-11-03"
+   },
+   {
+    "key": "T5",
+    "title": "Decision: Choose and book the venue",
+    "kind": "decision-gate",
+    "priority": "high",
+    "dependsOn": [
+     "T4"
+    ],
+    "effortHours": 1,
+    "waitDays": 0,
+    "dueDate": "2026-11-04"
+   },
+   {
+    "key": "T6",
+    "title": "Book the venue and pay deposit",
+    "kind": "work",
+    "priority": "high",
+    "dependsOn": [
+     "T5"
+    ],
+    "effortHours": 1,
+    "waitDays": 0,
+    "dueDate": "2026-11-04"
+   },
+   {
+    "key": "T7",
+    "title": "Arrange catering",
+    "kind": "work",
+    "priority": "high",
+    "dependsOn": [
+     "T6",
+     "T2"
+    ],
+    "effortHours": 4,
+    "waitDays": 0,
+    "dueDate": "2026-11-06"
+   },
+   {
+    "key": "T8",
+    "title": "Send invitations and collect RSVPs",
+    "kind": "work",
+    "priority": "high",
+    "dependsOn": [
+     "T6",
+     "T2"
+    ],
+    "effortHours": 4,
+    "waitDays": 0,
+    "dueDate": "2026-11-10"
+   },
+   {
+    "key": "T9",
+    "title": "Wait for RSVPs to come in",
+    "kind": "external-wait",
+    "priority": "high",
+    "dependsOn": [
+     "T8"
+    ],
+    "effortHours": 1,
+    "waitDays": 28,
+    "dueDate": "2026-12-09"
+   },
+   {
+    "key": "T10",
+    "title": "Plan the program and arrange any AV or entertainment",
+    "kind": "work",
+    "priority": "high",
+    "dependsOn": [
+     "T5"
+    ],
+    "effortHours": 5,
+    "waitDays": 0,
+    "dueDate": "2026-11-13"
+   },
+   {
+    "key": "T11",
+    "title": "Arrange decorations and any printed materials",
+    "kind": "work",
+    "priority": "low",
+    "dependsOn": [
+     "T6"
+    ],
+    "effortHours": 3,
+    "waitDays": 0,
+    "dueDate": "2026-11-19"
+   },
+   {
+    "key": "T12",
+    "title": "Check permits and insurance",
+    "kind": "work",
+    "priority": "medium",
+    "dependsOn": [
+     "T6"
+    ],
+    "effortHours": 2,
+    "waitDays": 0,
+    "dueDate": "2026-11-16"
+   },
+   {
+    "key": "T13",
+    "title": "Confirm final numbers and logistics with all suppliers",
+    "kind": "work",
+    "priority": "high",
+    "dependsOn": [
+     "T9",
+     "T7",
+     "T10"
+    ],
+    "effortHours": 2,
+    "waitDays": 0,
+    "dueDate": "2026-12-09"
+   },
+   {
+    "key": "T14",
+    "title": "Create a day-of schedule and assign roles",
+    "kind": "work",
+    "priority": "medium",
+    "dependsOn": [
+     "T13"
+    ],
+    "effortHours": 2,
+    "waitDays": 0,
+    "dueDate": "2026-12-10"
+   },
+   {
+    "key": "T15",
+    "title": "Prepare a contingency plan",
+    "kind": "work",
+    "priority": "medium",
+    "dependsOn": [
+     "T6",
+     "T7"
+    ],
+    "effortHours": 2,
+    "waitDays": 0,
+    "dueDate": "2026-11-17"
+   }
+  ],
+  "summary": {
+   "firstWorkingDay": "2026-10-26",
+   "endDate": "2026-12-10",
+   "hoursPerWeek": 10,
+   "hoursPerWeekAssumed": true,
+   "deadline": null,
+   "deadlineMet": null,
+   "overrunBusinessDays": null,
+   "wouldHaveToGive": [],
+   "fitsAfterDeferring": null,
+   "specificsLabeled": 0,
+   "flags": [
+    {
+     "type": "target-redefined",
+     "taskKey": "T3",
+     "message": "\"Research and shortlist venues\" repeats the \"headcount\" target (60 people) instead of referring to the card that defines it."
+    },
+    {
+     "type": "target-redefined",
+     "taskKey": "T4",
+     "message": "\"Visit shortlisted venues\" repeats the \"headcount\" target (60 people) instead of referring to the card that defines it."
+    },
+    {
+     "type": "target-redefined",
+     "taskKey": "T12",
+     "message": "\"Check permits and insurance\" repeats the \"headcount\" target (60 people) instead of referring to the card that defines it."
+    }
+   ],
+   "warnings": []
+  }
+ }
+}

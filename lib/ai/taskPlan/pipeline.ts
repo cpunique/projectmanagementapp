@@ -1,4 +1,5 @@
-import { checkPlan, labelUnverifiedSpecifics } from './checks';
+import { insertCapabilityVerifySteps } from './capabilities';
+import { checkPlan, labelUnverifiedSpecifics, type PlanFlag } from './checks';
 import { composeCards } from './compose';
 import type { Interpretation } from './orchestrate';
 import { parsePlanReply } from './parse';
@@ -20,8 +21,16 @@ export function interpretPlanReply(rawText: string, ctx: PipelineContext): Inter
   const parsed = parsePlanReply(rawText);
   if (!parsed.ok) return parsed;
 
-  const { plan, findings } = labelUnverifiedSpecifics(parsed.plan, ctx.inputText);
-  const flags = checkPlan(plan, ctx.inputText);
+  const { plan: labeled, findings } = labelUnverifiedSpecifics(parsed.plan, ctx.inputText);
+  const { plan, findings: capabilityFindings } = insertCapabilityVerifySteps(labeled, ctx.inputText);
+  const flags: PlanFlag[] = [
+    ...capabilityFindings.map((f) => ({
+      type: 'unverified-capability' as const,
+      taskKey: f.taskKey,
+      message: `"${f.title}" relies on ${f.party}'s ${f.capability} that nobody has verified; a Verify first step was added.`,
+    })),
+    ...checkPlan(plan, ctx.inputText),
+  ];
 
   const localDate = YMD.test(ctx.localDate) ? ctx.localDate : new Date().toISOString().slice(0, 10);
   const stated = plan.facts.schedule.startDate;
@@ -33,7 +42,7 @@ export function interpretPlanReply(rawText: string, ctx: PipelineContext): Inter
     deadline: plan.facts.schedule.deadline,
   });
 
-  const cards = composeCards({ plan, schedule, findings, flags, warnings: parsed.warnings });
+  const cards = composeCards({ plan, schedule, findings, capabilityFindings, flags, warnings: parsed.warnings });
 
   return {
     ok: true,
@@ -51,6 +60,7 @@ export function interpretPlanReply(rawText: string, ctx: PipelineContext): Inter
         wouldHaveToGive: schedule.wouldHaveToGive ?? [],
         fitsAfterDeferring: schedule.fitsAfterDeferring ?? null,
         specificsLabeled: findings.filter((f) => f.autoLabeled).length,
+        capabilityVerifyStepsAdded: capabilityFindings.length,
         flags,
         warnings: parsed.warnings,
       },

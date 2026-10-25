@@ -1,0 +1,419 @@
+{
+ "case": "research",
+ "style": "research",
+ "input": "Find out whether electric school buses are cost-effective for a mid-sized rural school district.",
+ "localDate": "2026-10-25",
+ "response": {
+  "tasks": [
+   {
+    "title": "Read me first: assumptions and gaps",
+    "priority": "high",
+    "description": "This plan is a starting point and may still have gaps. Read the items below before relying on it.\nThe dates are suggestions meant to keep momentum. Moving one is normal, and overdue cards simply show in red.\nPacing assumed: about 10 hours a week, starting Mon 26 Oct (you did not say how much time you have). If you add your hours per week or a start date to the description and generate again, the dates will follow.",
+    "checklist": [
+     "Assumption, verify: The district has at least one person with time to conduct or coordinate this research How to check: Confirm with district leadership who will lead the effort and roughly how many hours per week they can commit",
+     "Assumption, verify: Federal and state incentive programs for electric school buses exist and may apply to this district How to check: Check the EPA Clean School Bus program website and your state's department of education or energy office for current program availability, eligib…",
+     "Assumption, verify: The district's routes and infrastructure are not already disqualifying (e.g. extreme range requirements or no grid access at bus depots) How to check: Review route length records and check with the district's facilities manager about electrical capacity at th…",
+     "Assumption, verify: Vendor quotes and total cost of ownership figures are available for buses suitable for rural routes How to check: Contact two or three electric school bus manufacturers or their regional dealers and request quotes for rural-duty vehicles",
+     "Assumption, verify: Published cost-of-ownership studies exist that are recent enough to be useful How to check: Search databases like ERIC, Google Scholar, and reports from the National Renewable Energy Laboratory (NREL) and American School Bus Council for studies dated within t…",
+     "On \"Request vendor quotes for electric buses\": Assumption, verify: electric bus models rated for the range your longest routes require are commercially available.",
+     "On \"Research available grants and incentives\": Check with a professional or the program office about any local regulation or rule that could affect eligibility",
+     "On \"Build a cost comparison model\": A structured model makes the comparison transparent and lets the audience test different assumptions.",
+     "On \"Interview peer rural districts with electric buses\": Check with a professional about any data handling or consent requirements if interview notes will be shared publicly or with the board in written form.",
+     "For any price, rate or rule above: check the vendor or official source directly, or ask a professional for anything legal or financial."
+    ],
+    "notes": "NOT MENTIONED IN YOUR DESCRIPTION (often matters):\n- The district's current bus fleet size, age, and replacement schedule are not stated and will affect the comparison\n- The district's electricity rate and diesel fuel cost are not known and are central to the cost calculation\n- Whether the district's depot has sufficient electrical capacity for charging is not addressed\n- The district's typical route distances are not stated, which affects range feasibility\n- Who will make the final decision and what format they need the findings in is not specified\n\nTHINGS THIS PLAN CANNOT KNOW:\n- Current federal and state incentive amounts and whether this district qualifies\n- Current diesel and electricity prices in the district's region\n- Current purchase prices for electric school buses suited to rural routes\n- Whether relevant grant programs are open, oversubscribed, or closed at the time of application\n- Local regulations or union rules that may affect bus procurement or driver requirements\n\nPOSSIBLE CONFLICTS TO CHECK:\n- \"Build a cost comparison model\" rests on an unchecked assumption but its first step is not a check.",
+    "tags": [
+     "planning"
+    ],
+    "color": "#ffffff",
+    "dueDate": "2026-10-26"
+   },
+   {
+    "title": "Decisions needed: choices only you can make",
+    "priority": "high",
+    "description": "These choices were not in your description, so they are yours to make. Each has a recommended default: accept it and move on, or swap it for your own.",
+    "checklist": [
+     "Who is the intended audience for the final findings, and what format do they need? Options: Written report for the school board / Internal memo for the superintendent / Presentation slides. Recommended default: Written report for the school board, since a capital decision of this size typically requires board approval.",
+     "What time horizon should the cost comparison use? Options: 5 years / 10 years / 15 years (typical bus lifespan). Recommended default: 10 to 15 years, since electric buses have higher upfront costs that take time to offset.",
+     "Should the research include talking to other rural districts that have already made this switch? Options: Yes, conduct peer interviews / No, rely on published data only. Recommended default: Yes, peer interviews add practical detail that published studies often lack.",
+     "Recommended default for document and data management: spreadsheet (e.g. Excel or Google Sheets) plus a shared folder for source documents. Why: simple, widely available, no special software needed for this scale of research"
+    ],
+    "notes": "",
+    "tags": [
+     "decisions"
+    ],
+    "color": "#ef4444",
+    "dueDate": "2026-10-26"
+   },
+   {
+    "title": "Define the research question and success criteria",
+    "priority": "high",
+    "description": "Pin down exactly what the district needs to know and what a useful answer looks like before any research begins.\nWhy this matters: A vague question produces unfocused research that does not lead to a decision.",
+    "checklist": [
+     "Write a one-paragraph statement of the specific question the district needs answered",
+     "List the decisions that will follow from the answer (e.g. whether to apply for grants, whether to pilot one bus)",
+     "Agree on the cost comparison time horizon (see decisionsNeeded)",
+     "Identify who the audience is and what format they need (see decisionsNeeded)",
+     "Record all constraints: fleet size, route lengths, depot situation, budget ceiling if any"
+    ],
+    "notes": "This card's outputs become the scope document that keeps all later research on track. Keep it to one page.",
+    "tags": [
+     "planning",
+     "research"
+    ],
+    "color": "#ef4444",
+    "dueDate": "2026-10-27"
+   },
+   {
+    "title": "Gather district-specific operational data",
+    "priority": "high",
+    "description": "Depends on: Define the research question and success criteria\nCollect the district's own numbers on routes, fuel use, maintenance costs, and depot electrical capacity.\nWhy this matters: National averages will not substitute for local data when calculating actual costs.",
+    "checklist": [
+     "Pull route records: number of routes, daily miles per route, longest single route",
+     "Pull last two to three years of diesel fuel purchase records (volume and cost)",
+     "Pull last two to three years of bus maintenance cost records by vehicle",
+     "Ask facilities manager about electrical service capacity at the bus depot",
+     "Note the age and expected replacement dates of current diesel buses",
+     "Record the district's electricity rate (cost per kilowatt-hour) from a recent utility bill"
+    ],
+    "notes": "Term: kilowatt-hour (kWh) is the unit used to measure electricity consumption, the way gallons measure diesel. You will need this number to estimate charging costs.",
+    "tags": [
+     "data-collection",
+     "operations"
+    ],
+    "color": "#ef4444",
+    "dueDate": "2026-11-03"
+   },
+   {
+    "title": "Research available grants and incentives",
+    "priority": "high",
+    "description": "Depends on: Define the research question and success criteria\nDetermine which federal and state incentive programs this district could apply to and what amounts they offer.\nWhy this matters: Incentives can substantially change the net cost; omitting them would skew the comparison.",
+    "checklist": [
+     "Check the EPA Clean School Bus program website for current eligibility rules and funding amounts",
+     "Check your state's department of education and department of energy websites for state-level programs",
+     "Note application deadlines and whether programs are currently open",
+     "Check with a professional or the program office about any local regulation or rule that could affect eligibility",
+     "Record maximum possible incentive per bus and realistic likelihood of receiving it"
+    ],
+    "notes": "Do not treat incentive amounts as guaranteed. Programs can be oversubscribed or closed. The cost model should show scenarios with and without incentives.",
+    "tags": [
+     "funding",
+     "external"
+    ],
+    "color": "#ef4444",
+    "dueDate": "2026-11-05"
+   },
+   {
+    "title": "Identify and screen published sources",
+    "priority": "high",
+    "description": "Depends on: Define the research question and success criteria\nFind credible, recent studies and reports on electric school bus cost-effectiveness, then assess each source for bias and relevance to rural districts.\nWhy this matters: Using biased or inapplicable sources would make the final finding unreliable.",
+    "checklist": [
+     "Search NREL, ERIC, EPA, and Google Scholar for electric school bus cost studies from the last three years",
+     "Note who funded each study and whether that creates a conflict of interest",
+     "Check whether each study's district profile (size, geography, climate) is comparable to yours",
+     "Discard or flag studies based only on urban or large-district data",
+     "Record each kept source in a shared tracking document with a one-line summary and a bias note",
+     "Note any figures (prices, incentive amounts, savings estimates) that need independent verification"
+    ],
+    "notes": "Term: NREL is the National Renewable Energy Laboratory, a U.S. government research center that publishes vehicle cost studies. ERIC is an education research database. Neither requires a subscription to search.",
+    "tags": [
+     "research",
+     "sources"
+    ],
+    "color": "#ef4444",
+    "dueDate": "2026-11-06"
+   },
+   {
+    "title": "Interview peer rural districts with electric buses",
+    "priority": "medium",
+    "description": "Depends on: Define the research question and success criteria\nTalk to one or two rural districts that have already adopted electric school buses to gather practical experience not found in published studies.\nWhy this matters: Real operators surface problems and benefits that vendor materials and studies often miss.",
+    "checklist": [
+     "Verify whether peer interviews will be conducted (see decisionsNeeded)",
+     "Find candidate districts through state school board associations or EPA Clean School Bus program contacts",
+     "Prepare five to eight questions covering range adequacy, charging reliability, maintenance experience, and actual savings versus projections",
+     "Conduct interviews and take notes; get written consent if you plan to quote anyone by name",
+     "Summarize findings and note where peer experience confirms or contradicts published sources"
+    ],
+    "notes": "Check with a professional about any data handling or consent requirements if interview notes will be shared publicly or with the board in written form.",
+    "tags": [
+     "research",
+     "interviews"
+    ],
+    "color": "#f59e0b",
+    "dueDate": "2026-11-10"
+   },
+   {
+    "title": "Request vendor quotes for electric buses",
+    "priority": "high",
+    "description": "Depends on: Define the research question and success criteria\nContact manufacturers or dealers to get purchase price, charging equipment cost, and warranty terms for electric buses suited to rural routes.\nWhy this matters: Sticker price and infrastructure cost are the largest unknowns in the cost model.",
+    "checklist": [
+     "Identify two or three electric school bus manufacturers with rural-route models (verify this category exists by checking manufacturer websites)",
+     "Send a quote request specifying route length requirements, fleet size, and depot charging needs",
+     "Ask for total cost of ownership estimates, not just purchase price",
+     "Ask for warranty terms and what maintenance the district would handle versus the vendor",
+     "Log all responses in the shared tracking document"
+    ],
+    "notes": "Assumption, verify: electric bus models rated for the range your longest routes require are commercially available. Check manufacturer spec sheets before sending quote requests.",
+    "tags": [
+     "data-collection",
+     "external"
+    ],
+    "color": "#ef4444",
+    "dueDate": "2026-11-11"
+   },
+   {
+    "title": "Build a cost comparison model",
+    "priority": "high",
+    "description": "Depends on: Gather district-specific operational data; Identify and screen published sources; Request vendor quotes for electric buses; Research available grants and incentives\nCreate a spreadsheet that compares total cost of ownership for electric versus diesel buses over the agreed time horizon, using the district's own data and vendor quotes.\nWhy this matters: A structured model makes the comparison transparent and lets the audience test different assumptions.",
+    "checklist": [
+     "Set up columns for purchase price, charging or fueling infrastructure, fuel or electricity cost per year, maintenance per year, and incentives",
+     "Use the district's actual fuel cost and electricity rate from the earlier data-gathering card",
+     "Build in the time horizon agreed in the research question card",
+     "Create at least three scenarios: no incentives, partial incentives, full incentives",
+     "Add a sensitivity row showing how the result changes if fuel prices rise or fall by a notable amount",
+     "Label every input cell with its source so the model can be checked"
+    ],
+    "notes": "Term: total cost of ownership (TCO) adds up every cost over the vehicle's life, not just the purchase price. It is the standard way to compare options with different upfront and running costs.",
+    "tags": [
+     "analysis",
+     "data-collection"
+    ],
+    "color": "#ef4444",
+    "dueDate": "2026-11-16"
+   },
+   {
+    "title": "Validate the cost model against at least one external check",
+    "priority": "medium",
+    "description": "Depends on: Build a cost comparison model\nHave someone outside the research process review the spreadsheet inputs and logic before drawing conclusions.\nWhy this matters: A model error at this stage would invalidate the final recommendation.",
+    "checklist": [
+     "Ask a district business manager or an outside accountant to review the model's inputs and formulas",
+     "Compare your TCO result for diesel buses to the district's actual recorded costs as a sanity check",
+     "Correct any errors found and note what changed"
+    ],
+    "notes": "",
+    "tags": [
+     "analysis",
+     "validation"
+    ],
+    "color": "#f59e0b",
+    "dueDate": "2026-11-17"
+   },
+   {
+    "title": "Synthesize findings and document limitations",
+    "priority": "medium",
+    "description": "Depends on: Build a cost comparison model; Interview peer rural districts with electric buses; Validate the cost model against at least one external check; Identify and screen published sources\nCombine the cost model, source review, and peer interviews into a single written summary that honestly states what the evidence supports and where uncertainty remains.\nWhy this matters: Decision-makers need to know both the finding and how much to trust it.",
+    "checklist": [
+     "Write a one-page summary of the cost comparison result under each incentive scenario",
+     "List the top three factors that most affect whether electric buses are cost-effective for this district",
+     "Note which inputs are uncertain and how sensitive the conclusion is to them",
+     "State explicitly what the research does not cover (e.g. environmental benefits, driver training, community opinion)",
+     "Note any finding that should be verified with a legal, regulatory, or financial professional before acting"
+    ],
+    "notes": "Do not overstate confidence. If the data does not clearly favor one option, say so and explain why.",
+    "tags": [
+     "synthesis",
+     "research"
+    ],
+    "color": "#f59e0b",
+    "dueDate": "2026-11-20"
+   },
+   {
+    "title": "Decision: Is the evidence strong enough to make a recommendation?",
+    "priority": "medium",
+    "description": "Depends on: Synthesize findings and document limitations\nReview the synthesized findings and decide whether the research is complete and reliable enough to present a recommendation to decision-makers.\nWhy this matters: Presenting an incomplete or shaky finding as a recommendation could lead to a costly mistake.",
+    "checklist": [
+     "Confirm that vendor quotes were received from at least two sources",
+     "Confirm that the district's own cost data is in the model, not national averages alone",
+     "Confirm that incentive scenarios are clearly labeled and not treated as guaranteed",
+     "Confirm that key limitations are documented in the synthesis",
+     "Decide: proceed to presentation, or go back to fill a specific gap identified above"
+    ],
+    "notes": "",
+    "tags": [
+     "decision-gate",
+     "planning",
+     "validation"
+    ],
+    "color": "#f59e0b",
+    "dueDate": "2026-11-23"
+   },
+   {
+    "title": "Prepare and deliver findings to decision-makers",
+    "priority": "medium",
+    "description": "Depends on: Decision: Is the evidence strong enough to make a recommendation?\nFormat the synthesis into the output format the audience needs and present it clearly.\nWhy this matters: Good research only helps if it reaches the people who will act on it in a form they can understand.",
+    "checklist": [
+     "Produce the output in the format agreed in the research question card (report, memo, or slides)",
+     "Include the cost model as an appendix or linked file so the audience can examine the inputs",
+     "State the recommendation, or clearly explain why no firm recommendation can be made",
+     "List next steps if the district decides to proceed (e.g. grant application, pilot bus, infrastructure assessment)",
+     "Offer to answer questions and note any follow-up research that would reduce remaining uncertainty"
+    ],
+    "notes": "",
+    "tags": [
+     "synthesis",
+     "planning"
+    ],
+    "color": "#f59e0b",
+    "dueDate": "2026-11-25"
+   }
+  ],
+  "structure": [
+   {
+    "key": "T1",
+    "title": "Define the research question and success criteria",
+    "kind": "work",
+    "priority": "high",
+    "dependsOn": [],
+    "effortHours": 3,
+    "waitDays": 0,
+    "dueDate": "2026-10-27"
+   },
+   {
+    "key": "T2",
+    "title": "Gather district-specific operational data",
+    "kind": "work",
+    "priority": "high",
+    "dependsOn": [
+     "T1"
+    ],
+    "effortHours": 6,
+    "waitDays": 0,
+    "dueDate": "2026-11-03"
+   },
+   {
+    "key": "T3",
+    "title": "Identify and screen published sources",
+    "kind": "work",
+    "priority": "high",
+    "dependsOn": [
+     "T1"
+    ],
+    "effortHours": 5,
+    "waitDays": 0,
+    "dueDate": "2026-11-06"
+   },
+   {
+    "key": "T4",
+    "title": "Request vendor quotes for electric buses",
+    "kind": "external-wait",
+    "priority": "high",
+    "dependsOn": [
+     "T1"
+    ],
+    "effortHours": 2,
+    "waitDays": 14,
+    "dueDate": "2026-11-11"
+   },
+   {
+    "key": "T5",
+    "title": "Research available grants and incentives",
+    "kind": "external-wait",
+    "priority": "high",
+    "dependsOn": [
+     "T1"
+    ],
+    "effortHours": 3,
+    "waitDays": 7,
+    "dueDate": "2026-11-05"
+   },
+   {
+    "key": "T6",
+    "title": "Build a cost comparison model",
+    "kind": "work",
+    "priority": "high",
+    "dependsOn": [
+     "T2",
+     "T3",
+     "T4",
+     "T5"
+    ],
+    "effortHours": 8,
+    "waitDays": 0,
+    "dueDate": "2026-11-16"
+   },
+   {
+    "key": "T7",
+    "title": "Interview peer rural districts with electric buses",
+    "kind": "work",
+    "priority": "medium",
+    "dependsOn": [
+     "T1"
+    ],
+    "effortHours": 5,
+    "waitDays": 0,
+    "dueDate": "2026-11-10"
+   },
+   {
+    "key": "T8",
+    "title": "Validate the cost model against at least one external check",
+    "kind": "validation",
+    "priority": "medium",
+    "dependsOn": [
+     "T6"
+    ],
+    "effortHours": 2,
+    "waitDays": 0,
+    "dueDate": "2026-11-17"
+   },
+   {
+    "key": "T9",
+    "title": "Synthesize findings and document limitations",
+    "kind": "work",
+    "priority": "medium",
+    "dependsOn": [
+     "T6",
+     "T7",
+     "T8",
+     "T3"
+    ],
+    "effortHours": 6,
+    "waitDays": 0,
+    "dueDate": "2026-11-20"
+   },
+   {
+    "key": "T10",
+    "title": "Decision: Is the evidence strong enough to make a recommendation?",
+    "kind": "decision-gate",
+    "priority": "medium",
+    "dependsOn": [
+     "T9"
+    ],
+    "effortHours": 1,
+    "waitDays": 0,
+    "dueDate": "2026-11-23"
+   },
+   {
+    "key": "T11",
+    "title": "Prepare and deliver findings to decision-makers",
+    "kind": "work",
+    "priority": "medium",
+    "dependsOn": [
+     "T10"
+    ],
+    "effortHours": 5,
+    "waitDays": 0,
+    "dueDate": "2026-11-25"
+   }
+  ],
+  "summary": {
+   "firstWorkingDay": "2026-10-26",
+   "endDate": "2026-11-25",
+   "hoursPerWeek": 10,
+   "hoursPerWeekAssumed": true,
+   "deadline": null,
+   "deadlineMet": null,
+   "overrunBusinessDays": null,
+   "wouldHaveToGive": [],
+   "fitsAfterDeferring": null,
+   "specificsLabeled": 0,
+   "flags": [
+    {
+     "type": "verify-first",
+     "taskKey": "T6",
+     "message": "\"Build a cost comparison model\" rests on an unchecked assumption but its first step is not a check."
+    }
+   ],
+   "warnings": []
+  }
+ }
+}

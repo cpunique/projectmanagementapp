@@ -1,3 +1,4 @@
+import { capabilityLabel, type CapabilityFinding } from './capabilities';
 import { hasLabel, type PlanFlag, type SpecificFinding } from './checks';
 import type { ScheduleResult } from './schedule';
 import type { GeneratedCard, Plan, PlanTask, Priority } from './types';
@@ -86,6 +87,8 @@ export interface ComposeInput {
   plan: Plan;
   schedule: ScheduleResult;
   findings: SpecificFinding[];
+  // Cards that relied on an outside platform's link/API/export and got a "Verify first" step.
+  capabilityFindings?: CapabilityFinding[];
   flags: PlanFlag[];
   warnings: string[];
 }
@@ -106,6 +109,11 @@ export function composeReadMeCard(input: ComposeInput): GeneratedCard {
   for (const a of plan.assumptions) {
     const how = a.howToVerify ? ` How to check: ${a.howToVerify}` : '';
     checklist.push(trim(`${a.text}${how}`, 260).replace(/^(?!Assumption)/, 'Assumption, verify: '));
+  }
+  for (const f of input.capabilityFindings ?? []) {
+    checklist.push(
+      `On "${trim(f.title, 60)}": it relies on ${f.party}'s ${capabilityLabel(f.capability)}, and nobody has checked it exists. A "Verify first" step was added at the top of that card.`
+    );
   }
   const alreadyListed = new Set(checklist.map((c) => c.toLowerCase()));
   for (const item of collectLabeledItems(plan.tasks)) {

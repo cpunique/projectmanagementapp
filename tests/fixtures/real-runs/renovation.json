@@ -1,0 +1,567 @@
+{
+ "case": "renovation",
+ "style": "general",
+ "input": "Renovate my 1960s kitchen: new cabinets, countertops, flooring and lighting. I will hire a contractor for the electrical work and do the painting myself. Budget is not decided yet.",
+ "localDate": "2026-10-24",
+ "response": {
+  "tasks": [
+   {
+    "title": "Read me first: assumptions and gaps",
+    "priority": "high",
+    "description": "This plan is a starting point and may still have gaps. Read the items below before relying on it.\nThe dates are suggestions meant to keep momentum. Moving one is normal, and overdue cards simply show in red.\nPacing assumed: about 10 hours a week, starting Mon 26 Oct (you did not say how much time you have). If you add your hours per week or a start date to the description and generate again, the dates will follow.",
+    "checklist": [
+     "Assumption, verify: Permits are required for electrical work and possibly for other changes in a 1960s home How to check: Contact your local building or planning department and ask which permit types this renovation requires",
+     "Assumption, verify: The existing kitchen structure (walls, subfloor) is sound enough for new finishes without major structural repair How to check: Have a contractor or inspector assess the space before ordering materials",
+     "Assumption, verify: Asbestos or lead paint may be present in a 1960s home and must be tested before disturbing existing surfaces How to check: Hire a certified inspector or buy a test kit; check local regulations for disposal rules",
+     "Assumption, verify: Standard cabinet sizes will fit the existing layout without moving walls or plumbing How to check: Measure carefully and confirm with your cabinet supplier before ordering",
+     "Assumption, verify: The electrical panel has enough capacity for any new lighting circuits the contractor recommends How to check: Ask the electrical contractor to assess the panel during their quote visit",
+     "On \"Assess existing kitchen and check for hazardous materials\": If tests come back positive, check with a professional and your local authority before proceeding.",
+     "On \"Request permits from local building department\": Assumption, verify: permit approval time in your area.",
+     "On \"Get quotes from contractors and suppliers\": Assumption, verify: cabinet lead times in your area, as semi-custom or custom cabinets can take several weeks.",
+     "On \"Order cabinets and await delivery\": Assumption, verify: actual lead time with your chosen supplier.",
+     "For any price, rate or rule above: check the vendor or official source directly, or ask a professional for anything legal or financial."
+    ],
+    "notes": "NOT MENTIONED IN YOUR DESCRIPTION (often matters):\n- Appliance replacement or keeping existing appliances is not mentioned\n- Plumbing changes (sink, faucet, dishwasher) are not addressed\n- Backsplash is not mentioned\n- Disposal or storage of old cabinets and materials is not planned\n- Whether anyone else (partner, landlord, HOA) needs to approve the renovation is not mentioned\n\nTHINGS THIS PLAN CANNOT KNOW:\n- Current cost of cabinets, countertops, and flooring materials in your area\n- Contractor availability and lead times in your area\n- What permits cost locally and how long approval takes\n- Whether hazardous materials (asbestos, lead) are present and what removal costs\n\nPOSSIBLE CONFLICTS TO CHECK:\n- \"Get quotes from contractors and suppliers\" rests on an unchecked assumption but its first step is not a check.",
+    "tags": [
+     "planning"
+    ],
+    "color": "#ffffff",
+    "dueDate": "2026-10-26"
+   },
+   {
+    "title": "Decisions needed: choices only you can make",
+    "priority": "high",
+    "description": "These choices were not in your description, so they are yours to make. Each has a recommended default: accept it and move on, or swap it for your own.",
+    "checklist": [
+     "What is the overall budget for this renovation? Options: Set a firm ceiling before getting quotes / Collect quotes first, then set a budget based on what you learn. Recommended default: Collect quotes first, then set a budget based on what you learn.",
+     "Which cabinet style and material do you want (stock, semi-custom, or custom)? Options: Stock cabinets (fastest, least expensive) / Semi-custom cabinets (more choice, moderate lead time) / Custom cabinets (most flexibility, longest lead time). Recommended default: Semi-custom cabinets (more choice, moderate lead time).",
+     "Which countertop material do you want? Options: Laminate / Quartz / Granite / Butcher block. Recommended default: Quartz.",
+     "Which flooring material do you want? Options: Luxury vinyl plank / Ceramic or porcelain tile / Hardwood. Recommended default: Luxury vinyl plank.",
+     "Will you replace the sink and faucet at the same time? Options: Yes / No. Recommended default: Yes, since cabinets will be removed anyway."
+    ],
+    "notes": "",
+    "tags": [
+     "decisions"
+    ],
+    "color": "#ef4444",
+    "dueDate": "2026-10-26"
+   },
+   {
+    "title": "Assess existing kitchen and check for hazardous materials",
+    "priority": "high",
+    "description": "Inspect the current kitchen thoroughly and test for asbestos or lead paint before disturbing any surfaces, as both were common in 1960s homes.\nWhy this matters: Finding hazards early prevents costly surprises and keeps the project legally and safely on track.",
+    "checklist": [
+     "Photograph and measure the full kitchen, noting all walls, windows, and outlets",
+     "Buy or hire a certified test for asbestos (floor tiles, ceiling) and lead paint",
+     "Note condition of walls and subfloor for the contractor's assessment",
+     "List all items to be removed: cabinets, countertops, flooring, light fixtures"
+    ],
+    "notes": "Asbestos and lead were common in homes built before the 1980s. If tests come back positive, check with a professional and your local authority before proceeding. Do not sand or cut suspect materials until cleared.",
+    "tags": [
+     "planning",
+     "safety"
+    ],
+    "color": "#ef4444",
+    "dueDate": "2026-10-27"
+   },
+   {
+    "title": "Make key material and scope decisions",
+    "priority": "high",
+    "description": "Depends on: Assess existing kitchen and check for hazardous materials\nDecide on cabinet style, countertop, flooring, and whether the sink and faucet will be replaced, so you can get accurate quotes.\nWhy this matters: Contractors and suppliers cannot give firm quotes without knowing what you want.",
+    "checklist": [
+     "Choose cabinet style (stock, semi-custom, or custom) from the decisions list",
+     "Choose countertop material from the decisions list",
+     "Choose flooring material from the decisions list",
+     "Decide whether to replace the sink and faucet",
+     "Note preferred lighting style (under-cabinet, recessed, pendant, etc.)"
+    ],
+    "notes": "These decisions feed directly into quotes. Changing them after ordering can cause delays and restocking fees.",
+    "tags": [
+     "planning",
+     "decisions"
+    ],
+    "color": "#ef4444",
+    "dueDate": "2026-10-29"
+   },
+   {
+    "title": "Get quotes from contractors and suppliers",
+    "priority": "high",
+    "description": "Depends on: Make key material and scope decisions\nCollect at least three quotes for electrical work, cabinet installation, countertop fabrication, and flooring, using the decisions made in the earlier card.\nWhy this matters: Quotes give you real numbers to set a budget and choose reliable tradespeople.",
+    "checklist": [
+     "Contact at least three licensed electricians for a quote on new lighting circuits and fixtures",
+     "Get quotes from at least two cabinet suppliers based on your chosen style",
+     "Get a quote from at least one countertop fabricator (measure twice before ordering)",
+     "Get quotes from at least two flooring suppliers or installers",
+     "Ask each contractor for references and proof of license and insurance",
+     "Ask about lead times for materials, especially cabinets"
+    ],
+    "notes": "Assumption, verify: cabinet lead times in your area, as semi-custom or custom cabinets can take several weeks. Factor this into your schedule.",
+    "tags": [
+     "planning",
+     "budget"
+    ],
+    "color": "#ef4444",
+    "dueDate": "2026-11-04"
+   },
+   {
+    "title": "Decision: Set budget and select contractors",
+    "priority": "high",
+    "description": "Depends on: Get quotes from contractors and suppliers\nReview all quotes, set your renovation budget, and choose which contractors and suppliers to hire.\nWhy this matters: No work should be ordered or started until budget and contractors are confirmed.",
+    "checklist": [
+     "Compare all quotes and confirm you are comfortable with the total cost",
+     "Set your overall budget ceiling",
+     "Select and notify chosen contractors and suppliers",
+     "Confirm start dates and material delivery windows with each party",
+     "Sign contracts and pay any required deposits"
+    ],
+    "notes": "",
+    "tags": [
+     "decision-gate",
+     "decisions",
+     "budget"
+    ],
+    "color": "#ef4444",
+    "dueDate": "2026-11-05"
+   },
+   {
+    "title": "Request permits from local building department",
+    "priority": "high",
+    "description": "Depends on: Make key material and scope decisions\nApply for any permits required for electrical work and other changes, as a 1960s renovation commonly triggers permit requirements.\nWhy this matters: Work done without required permits can result in fines and problems when selling the home.",
+    "checklist": [
+     "Contact local building department to confirm which permits are needed",
+     "Submit permit applications for electrical work (and any others required)",
+     "Pay permit fees and note inspection requirements",
+     "Keep permit documents on site once approved"
+    ],
+    "notes": "Assumption, verify: permit approval time in your area. Timelines vary widely by municipality.",
+    "tags": [
+     "planning",
+     "compliance"
+    ],
+    "color": "#ef4444",
+    "dueDate": "2026-11-13"
+   },
+   {
+    "title": "Demolish existing kitchen surfaces",
+    "priority": "high",
+    "description": "Depends on: Decision: Set budget and select contractors; Request permits from local building department\nRemove old cabinets, countertops, flooring, and light fixtures to prepare the space for new work.\nWhy this matters: Everything else depends on a cleared and prepared kitchen space.",
+    "checklist": [
+     "Confirm hazardous material results are clear before cutting or sanding anything",
+     "Turn off electricity to the kitchen at the breaker before removing fixtures",
+     "Remove light fixtures, then cabinets, then countertops, then flooring",
+     "Inspect subfloor and wall surfaces once stripped; note any damage",
+     "Arrange disposal or donation of removed materials",
+     "Protect adjacent rooms from dust with plastic sheeting"
+    ],
+    "notes": "Check with your local authority or a professional if any hazardous materials were found in \"Assess existing kitchen and check for hazardous materials\" before doing any demolition. Subfloor: the structural layer of floor beneath the finished flooring.",
+    "tags": [
+     "safety"
+    ],
+    "color": "#ef4444",
+    "dueDate": "2026-11-19"
+   },
+   {
+    "title": "Repair walls and subfloor as needed",
+    "priority": "high",
+    "description": "Depends on: Demolish existing kitchen surfaces\nFix any damage to walls or the subfloor uncovered during demolition before installing new materials.\nWhy this matters: New cabinets, flooring, and finishes need a sound, level surface to look good and last.",
+    "checklist": [
+     "Patch holes or damaged drywall and let compound dry fully before painting",
+     "Check subfloor for soft spots, squeaks, or unevenness and repair",
+     "Confirm walls are plumb and floor is level enough for new cabinets and flooring",
+     "Consult a professional if structural damage is found"
+    ],
+    "notes": "Drywall compound (also called joint compound or mud) needs time to dry before sanding or painting. Allow at least 24 hours per coat.",
+    "tags": [
+     "decision-gate"
+    ],
+    "color": "#ef4444",
+    "dueDate": "2026-11-25"
+   },
+   {
+    "title": "Complete electrical rough-in and new circuits",
+    "priority": "high",
+    "description": "Depends on: Repair walls and subfloor as needed; Request permits from local building department\nHave the licensed electrical contractor run any new wiring needed for lighting circuits before walls are closed up or cabinets installed.\nWhy this matters: Wiring must be in place before cabinets go up, and inspected before walls are closed.",
+    "checklist": [
+     "Coordinate contractor start date to follow wall and subfloor repairs",
+     "Contractor runs new wiring for lighting and any additional circuits",
+     "Schedule and pass required rough-in electrical inspection",
+     "Confirm locations of switches and fixtures match the lighting plan"
+    ],
+    "notes": "Rough-in: the stage where wiring is run inside walls before they are closed. Inspections at this stage are often required before you can continue.",
+    "tags": [
+     "electrical",
+     "compliance"
+    ],
+    "color": "#ef4444",
+    "dueDate": "2026-12-01"
+   },
+   {
+    "title": "Order cabinets and await delivery",
+    "priority": "high",
+    "description": "Depends on: Decision: Set budget and select contractors\nPlace the cabinet order as soon as contractors are selected, since cabinets are typically the longest lead-time item.\nWhy this matters: Delays in cabinet delivery will push back the entire installation sequence.",
+    "checklist": [
+     "Confirm final measurements with the supplier before placing the order",
+     "Place the order and get a written delivery date",
+     "Arrange a delivery location that keeps cabinets safe and dry"
+    ],
+    "notes": "Assumption, verify: actual lead time with your chosen supplier. Stock cabinets arrive faster than semi-custom or custom.",
+    "tags": [
+     "materials",
+     "planning"
+    ],
+    "color": "#ef4444",
+    "dueDate": "2026-12-04"
+   },
+   {
+    "title": "Paint walls and ceiling",
+    "priority": "high",
+    "description": "Depends on: Repair walls and subfloor as needed; Complete electrical rough-in and new circuits\nPaint the kitchen walls and ceiling yourself before cabinets and flooring go in, which is much easier than painting around finished work.\nWhy this matters: Painting before installation saves significant time and produces a cleaner result.",
+    "checklist": [
+     "Choose paint color and finish (semi-gloss or satin is typical for kitchens)",
+     "Prime bare or patched drywall before applying finish coats",
+     "Apply at least two finish coats, allowing drying time between coats",
+     "Paint ceiling first, then walls",
+     "Mask off any electrical boxes or surfaces not being painted"
+    ],
+    "notes": "Semi-gloss and satin finishes are easier to clean than flat paint, which matters in a kitchen.",
+    "tags": [
+     "painting",
+     "diy"
+    ],
+    "color": "#ef4444",
+    "dueDate": "2026-12-08"
+   },
+   {
+    "title": "Install new flooring",
+    "priority": "high",
+    "description": "Depends on: Repair walls and subfloor as needed; Order cabinets and await delivery\nLay the new kitchen floor after painting and electrical rough-in are complete but before cabinets go in (or follow your flooring installer's recommendation on sequence).\nWhy this matters: Flooring sequence affects how cabinets sit and how the finished floor looks at the edges.",
+    "checklist": [
+     "Confirm with your flooring supplier whether to install before or after cabinets",
+     "Allow flooring material to acclimate in the room per manufacturer instructions",
+     "Install flooring starting from the most visible area of the room",
+     "Install transition strips at doorways",
+     "Inspect finished floor for gaps or loose areas before proceeding"
+    ],
+    "notes": "Acclimation: letting flooring material sit in the room for a period so it adjusts to the temperature and humidity before installation. This reduces buckling or gapping later.",
+    "tags": [
+     "installation"
+    ],
+    "color": "#ef4444",
+    "dueDate": "2026-12-14"
+   },
+   {
+    "title": "Install new cabinets",
+    "priority": "high",
+    "description": "Depends on: Paint walls and ceiling; Order cabinets and await delivery; Install new flooring\nInstall upper and lower cabinets once painting is done, flooring sequence is confirmed, and cabinets have been delivered.\nWhy this matters: Cabinets are the largest installation step and set the layout for everything that follows.",
+    "checklist": [
+     "Verify all cabinet boxes and doors were delivered undamaged",
+     "Find and mark wall studs for secure mounting",
+     "Install upper cabinets before lower cabinets to avoid working over base units",
+     "Check each cabinet for level and plumb before fastening fully",
+     "Install cabinet doors and hardware after boxes are secured",
+     "Leave space for the countertop template if countertop is fabricated to measure"
+    ],
+    "notes": "Plumb: perfectly vertical. Level: perfectly horizontal. Both matter for doors to hang and close properly.",
+    "tags": [
+     "installation",
+     "cabinets"
+    ],
+    "color": "#ef4444",
+    "dueDate": "2026-12-24"
+   },
+   {
+    "title": "Complete electrical finish work and install light fixtures",
+    "priority": "medium",
+    "description": "Depends on: Install new cabinets; Complete electrical rough-in and new circuits\nHave the electrical contractor return to install light fixtures and connect switches now that cabinets and surfaces are in place.\nWhy this matters: Finish electrical work cannot be done until the surfaces it mounts to are in place.",
+    "checklist": [
+     "Confirm fixture types and locations with the contractor before the visit",
+     "Contractor installs light fixtures and switch plates",
+     "Schedule and pass any required final electrical inspection",
+     "Test all lights and switches before signing off"
+    ],
+    "notes": "",
+    "tags": [
+     "electrical",
+     "compliance"
+    ],
+    "color": "#f59e0b",
+    "dueDate": "2026-12-30"
+   },
+   {
+    "title": "Template and install countertops",
+    "priority": "medium",
+    "description": "Depends on: Install new cabinets\nHave the countertop fabricator measure (template) the installed cabinets, then fabricate and install the countertop.\nWhy this matters: Countertops must be measured after cabinets are in place to fit correctly.",
+    "checklist": [
+     "Schedule the fabricator to come and template the installed cabinets",
+     "Confirm sink cutout location and any special edge profiles during the template visit",
+     "Allow fabrication lead time before installation appointment",
+     "Inspect countertop on delivery for chips, cracks, or wrong dimensions",
+     "Have fabricator install and seal countertop"
+    ],
+    "notes": "Template: a precise pattern made from your cabinets that the fabricator uses to cut the countertop to the exact shape. This step cannot happen until cabinets are in. waitDays covers typical fabrication time; verify with your supplier.",
+    "tags": [
+     "installation",
+     "materials"
+    ],
+    "color": "#f59e0b",
+    "dueDate": "2027-01-04"
+   },
+   {
+    "title": "Paint touch-ups and finishing details",
+    "priority": "low",
+    "description": "Depends on: Template and install countertops; Complete electrical finish work and install light fixtures\nDo a final round of painting touch-ups and install any remaining hardware, trim, or accessories.\nWhy this matters: Small finishing details are what make a renovation look complete and professional.",
+    "checklist": [
+     "Touch up paint anywhere scuffed during installation",
+     "Install cabinet knobs and pulls if not already done",
+     "Install any trim or molding around cabinets or flooring edges",
+     "Caulk gaps between countertop, backsplash area, and wall"
+    ],
+    "notes": "",
+    "tags": [
+     "painting",
+     "diy"
+    ],
+    "color": "#22c55e",
+    "dueDate": "2027-01-05"
+   },
+   {
+    "title": "Final inspection and project close-out",
+    "priority": "low",
+    "description": "Depends on: Paint touch-ups and finishing details\nDo a full walkthrough to confirm everything meets your expectations and that all required inspections have been passed.\nWhy this matters: Closing out properly ensures permits are signed off and problems are caught while contractors are still reachable.",
+    "checklist": [
+     "Confirm all required permit inspections are completed and signed off",
+     "Walk through with each contractor to review their work and raise any deficiencies",
+     "Collect all warranties, manuals, and receipts for materials and appliances",
+     "Photograph the finished kitchen for your records"
+    ],
+    "notes": "",
+    "tags": [
+     "compliance",
+     "planning"
+    ],
+    "color": "#22c55e",
+    "dueDate": "2027-01-06"
+   }
+  ],
+  "structure": [
+   {
+    "key": "T1",
+    "title": "Assess existing kitchen and check for hazardous materials",
+    "kind": "work",
+    "priority": "high",
+    "dependsOn": [],
+    "effortHours": 4,
+    "waitDays": 0,
+    "dueDate": "2026-10-27"
+   },
+   {
+    "key": "T2",
+    "title": "Make key material and scope decisions",
+    "kind": "work",
+    "priority": "high",
+    "dependsOn": [
+     "T1"
+    ],
+    "effortHours": 3,
+    "waitDays": 0,
+    "dueDate": "2026-10-29"
+   },
+   {
+    "key": "T3",
+    "title": "Request permits from local building department",
+    "kind": "external-wait",
+    "priority": "high",
+    "dependsOn": [
+     "T2"
+    ],
+    "effortHours": 2,
+    "waitDays": 14,
+    "dueDate": "2026-11-13"
+   },
+   {
+    "key": "T4",
+    "title": "Get quotes from contractors and suppliers",
+    "kind": "work",
+    "priority": "high",
+    "dependsOn": [
+     "T2"
+    ],
+    "effortHours": 6,
+    "waitDays": 0,
+    "dueDate": "2026-11-04"
+   },
+   {
+    "key": "T5",
+    "title": "Decision: Set budget and select contractors",
+    "kind": "decision-gate",
+    "priority": "high",
+    "dependsOn": [
+     "T4"
+    ],
+    "effortHours": 2,
+    "waitDays": 0,
+    "dueDate": "2026-11-05"
+   },
+   {
+    "key": "T6",
+    "title": "Order cabinets and await delivery",
+    "kind": "external-wait",
+    "priority": "high",
+    "dependsOn": [
+     "T5"
+    ],
+    "effortHours": 1,
+    "waitDays": 28,
+    "dueDate": "2026-12-04"
+   },
+   {
+    "key": "T7",
+    "title": "Demolish existing kitchen surfaces",
+    "kind": "work",
+    "priority": "high",
+    "dependsOn": [
+     "T5",
+     "T3"
+    ],
+    "effortHours": 10,
+    "waitDays": 0,
+    "dueDate": "2026-11-19"
+   },
+   {
+    "key": "T8",
+    "title": "Repair walls and subfloor as needed",
+    "kind": "work",
+    "priority": "high",
+    "dependsOn": [
+     "T7"
+    ],
+    "effortHours": 8,
+    "waitDays": 0,
+    "dueDate": "2026-11-25"
+   },
+   {
+    "key": "T9",
+    "title": "Complete electrical rough-in and new circuits",
+    "kind": "work",
+    "priority": "high",
+    "dependsOn": [
+     "T8",
+     "T3"
+    ],
+    "effortHours": 8,
+    "waitDays": 0,
+    "dueDate": "2026-12-01"
+   },
+   {
+    "key": "T10",
+    "title": "Paint walls and ceiling",
+    "kind": "work",
+    "priority": "high",
+    "dependsOn": [
+     "T8",
+     "T9"
+    ],
+    "effortHours": 10,
+    "waitDays": 0,
+    "dueDate": "2026-12-08"
+   },
+   {
+    "key": "T11",
+    "title": "Install new flooring",
+    "kind": "work",
+    "priority": "high",
+    "dependsOn": [
+     "T8",
+     "T6"
+    ],
+    "effortHours": 8,
+    "waitDays": 0,
+    "dueDate": "2026-12-14"
+   },
+   {
+    "key": "T12",
+    "title": "Install new cabinets",
+    "kind": "work",
+    "priority": "high",
+    "dependsOn": [
+     "T10",
+     "T6",
+     "T11"
+    ],
+    "effortHours": 16,
+    "waitDays": 0,
+    "dueDate": "2026-12-24"
+   },
+   {
+    "key": "T13",
+    "title": "Template and install countertops",
+    "kind": "work",
+    "priority": "medium",
+    "dependsOn": [
+     "T12"
+    ],
+    "effortHours": 4,
+    "waitDays": 7,
+    "dueDate": "2027-01-04"
+   },
+   {
+    "key": "T14",
+    "title": "Complete electrical finish work and install light fixtures",
+    "kind": "work",
+    "priority": "medium",
+    "dependsOn": [
+     "T12",
+     "T9"
+    ],
+    "effortHours": 4,
+    "waitDays": 0,
+    "dueDate": "2026-12-30"
+   },
+   {
+    "key": "T15",
+    "title": "Paint touch-ups and finishing details",
+    "kind": "work",
+    "priority": "low",
+    "dependsOn": [
+     "T13",
+     "T14"
+    ],
+    "effortHours": 4,
+    "waitDays": 0,
+    "dueDate": "2027-01-05"
+   },
+   {
+    "key": "T16",
+    "title": "Final inspection and project close-out",
+    "kind": "work",
+    "priority": "low",
+    "dependsOn": [
+     "T15"
+    ],
+    "effortHours": 2,
+    "waitDays": 0,
+    "dueDate": "2027-01-06"
+   }
+  ],
+  "summary": {
+   "firstWorkingDay": "2026-10-26",
+   "endDate": "2027-01-06",
+   "hoursPerWeek": 10,
+   "hoursPerWeekAssumed": true,
+   "deadline": null,
+   "deadlineMet": null,
+   "overrunBusinessDays": null,
+   "wouldHaveToGive": [],
+   "fitsAfterDeferring": null,
+   "specificsLabeled": 0,
+   "flags": [
+    {
+     "type": "verify-first",
+     "taskKey": "T4",
+     "message": "\"Get quotes from contractors and suppliers\" rests on an unchecked assumption but its first step is not a check."
+    }
+   ],
+   "warnings": []
+  }
+ }
+}

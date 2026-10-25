@@ -1,0 +1,177 @@
+{
+ "case": "trivial",
+ "style": "development",
+ "input": "Add a dark mode toggle to the settings page of my existing React app.",
+ "localDate": "2026-10-25",
+ "response": {
+  "tasks": [
+   {
+    "title": "Read me first: assumptions and gaps",
+    "priority": "high",
+    "description": "This plan is a starting point and may still have gaps. Read the items below before relying on it.\nThe dates are suggestions meant to keep momentum. Moving one is normal, and overdue cards simply show in red.\nPacing assumed: about 10 hours a week, starting Mon 26 Oct (you did not say how much time you have). If you add your hours per week or a start date to the description and generate again, the dates will follow.",
+    "checklist": [
+     "Assumption, verify: The existing app uses standard CSS or CSS modules, so CSS custom properties can be layered on top without conflict How to check: Open the app's existing stylesheet files and check whether they use plain CSS, CSS modules, or a CSS-in-JS library",
+     "Assumption, verify: The settings page already exists as a component and can accept new UI elements How to check: Find the settings page component file in the codebase and confirm it renders normally",
+     "Assumption, verify: localStorage is available in the browsers the app targets How to check: Check the app's browser support requirements; localStorage is unavailable in some private-browsing modes",
+     "For any price, rate or rule above: check the vendor or official source directly, or ask a professional for anything legal or financial."
+    ],
+    "notes": "NOT MENTIONED IN YOUR DESCRIPTION (often matters):\n- No mention of whether the app already has a global state manager (Context, Redux, Zustand) that the theme should plug into\n- No mention of whether the app should also detect and respect the user's OS-level dark mode preference on first visit",
+    "tags": [
+     "planning"
+    ],
+    "color": "#ffffff",
+    "dueDate": "2026-10-26"
+   },
+   {
+    "title": "Decisions needed: choices only you can make",
+    "priority": "high",
+    "description": "These choices were not in your description, so they are yours to make. Each has a recommended default: accept it and move on, or swap it for your own.",
+    "checklist": [
+     "Should the app automatically match the user's OS dark/light preference on their first visit before they set a preference? Options: Yes, use the prefers-color-scheme media query as the default / No, always start in light mode. Recommended default: Yes, use the prefers-color-scheme media query as the default.",
+     "Where should the theme state live? Options: A new React Context so any component can read the current theme / Local state in the settings page component only (simpler, but other components cannot react to it). Recommended default: A new React Context so any component can read the current theme.",
+     "Recommended default for styling: CSS custom properties (variables) for theme switching. Why: Works with any existing CSS setup, no extra library needed",
+     "Recommended default for state persistence: localStorage. Why: Simple, zero-dependency way to remember a UI preference across sessions"
+    ],
+    "notes": "",
+    "tags": [
+     "decisions"
+    ],
+    "color": "#ef4444",
+    "dueDate": "2026-10-26"
+   },
+   {
+    "title": "Define dark and light theme tokens with CSS custom properties",
+    "priority": "high",
+    "description": "Create two sets of CSS colour and style variables, one for light mode and one for dark mode, applied via a data attribute on the root element.\nWhy this matters: All components read from these variables, so the whole app switches theme by changing one attribute.",
+    "checklist": [
+     "Create or update a global CSS file with :root variables for light mode colours (background, text, borders, etc.)",
+     "Add a [data-theme='dark'] block with overriding dark mode values for the same variable names",
+     "Check existing components use colours only from these variables, or update a few key ones as a test"
+    ],
+    "notes": "CSS custom properties: CSS variables written as --name: value that any rule can reference with var(--name). data-theme attribute: a custom HTML attribute set on the <html> or <body> tag to switch the active variable set.",
+    "tags": [
+     "styling",
+     "frontend"
+    ],
+    "color": "#ef4444",
+    "dueDate": "2026-10-26"
+   },
+   {
+    "title": "Build a theme context and hook",
+    "priority": "high",
+    "description": "Depends on: Define dark and light theme tokens with CSS custom properties\nCreate a React Context that holds the current theme value and a function to toggle it, reading from and writing to localStorage for persistence.\nWhy this matters: Any component in the app can read or change the theme without prop-drilling.",
+    "checklist": [
+     "Create a ThemeContext file that initialises theme from localStorage, falling back to the OS preference (or light mode, per your decision)",
+     "Expose a toggleTheme function that flips the value and saves it to localStorage",
+     "Apply data-theme attribute to the <html> element whenever the theme value changes",
+     "Wrap the app's root component with the new ThemeProvider so all pages can access it"
+    ],
+    "notes": "React Context: a built-in React feature that shares a value with any child component without passing it through every level. localStorage: browser storage that survives page refreshes.",
+    "tags": [
+     "frontend",
+     "state"
+    ],
+    "color": "#ef4444",
+    "dueDate": "2026-10-27"
+   },
+   {
+    "title": "Add the dark mode toggle to the settings page",
+    "priority": "high",
+    "description": "Depends on: Build a theme context and hook\nPlace a toggle switch on the existing settings page component that reads the current theme and calls toggleTheme when clicked.\nWhy this matters: This is the visible control the user interacts with.",
+    "checklist": [
+     "Import and use the theme hook inside the settings page component",
+     "Add a labelled toggle or checkbox element bound to the current theme value",
+     "Call toggleTheme on change and confirm the page switches colour immediately",
+     "Ensure the toggle label clearly indicates the current state (e.g. Dark mode: on/off)"
+    ],
+    "notes": "",
+    "tags": [
+     "frontend",
+     "ui"
+    ],
+    "color": "#ef4444",
+    "dueDate": "2026-10-28"
+   },
+   {
+    "title": "Test and polish the dark mode feature",
+    "priority": "medium",
+    "description": "Depends on: Add the dark mode toggle to the settings page\nManually verify the toggle works across the app, the preference persists after a page refresh, and no existing components look broken in dark mode.\nWhy this matters: Catches styling gaps before real users see them.",
+    "checklist": [
+     "Toggle dark mode and visually check every main page or component for unreadable text or clashing colours",
+     "Refresh the page and confirm the chosen theme is restored",
+     "Open the app in a private window and confirm the default theme matches your decision",
+     "Fix any components that still use hard-coded colours instead of CSS variables"
+    ],
+    "notes": "",
+    "tags": [
+     "testing",
+     "frontend"
+    ],
+    "color": "#f59e0b",
+    "dueDate": "2026-10-29"
+   }
+  ],
+  "structure": [
+   {
+    "key": "T1",
+    "title": "Define dark and light theme tokens with CSS custom properties",
+    "kind": "work",
+    "priority": "high",
+    "dependsOn": [],
+    "effortHours": 2,
+    "waitDays": 0,
+    "dueDate": "2026-10-26"
+   },
+   {
+    "key": "T2",
+    "title": "Build a theme context and hook",
+    "kind": "work",
+    "priority": "high",
+    "dependsOn": [
+     "T1"
+    ],
+    "effortHours": 2,
+    "waitDays": 0,
+    "dueDate": "2026-10-27"
+   },
+   {
+    "key": "T3",
+    "title": "Add the dark mode toggle to the settings page",
+    "kind": "work",
+    "priority": "high",
+    "dependsOn": [
+     "T2"
+    ],
+    "effortHours": 1,
+    "waitDays": 0,
+    "dueDate": "2026-10-28"
+   },
+   {
+    "key": "T4",
+    "title": "Test and polish the dark mode feature",
+    "kind": "work",
+    "priority": "medium",
+    "dependsOn": [
+     "T3"
+    ],
+    "effortHours": 2,
+    "waitDays": 0,
+    "dueDate": "2026-10-29"
+   }
+  ],
+  "summary": {
+   "firstWorkingDay": "2026-10-26",
+   "endDate": "2026-10-29",
+   "hoursPerWeek": 10,
+   "hoursPerWeekAssumed": true,
+   "deadline": null,
+   "deadlineMet": null,
+   "overrunBusinessDays": null,
+   "wouldHaveToGive": [],
+   "fitsAfterDeferring": null,
+   "specificsLabeled": 0,
+   "flags": [],
+   "warnings": []
+  }
+ }
+}

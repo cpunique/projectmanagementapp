@@ -1,0 +1,576 @@
+{
+ "case": "novice",
+ "style": "development",
+ "input": "I want an app where my dog-walking customers can book and pay me. I have never built anything.",
+ "localDate": "2026-10-24",
+ "response": {
+  "tasks": [
+   {
+    "title": "Read me first: assumptions and gaps",
+    "priority": "high",
+    "description": "This plan is a starting point and may still have gaps. Read the items below before relying on it.\nThe dates are suggestions meant to keep momentum. Moving one is normal, and overdue cards simply show in red.\nPacing assumed: about 10 hours a week, starting Mon 26 Oct (you did not say how much time you have). If you add your hours per week or a start date to the description and generate again, the dates will follow.",
+    "checklist": [
+     "Assumption, verify: Stripe is available and supports payouts in your country How to check: Go to stripe.com and check the list of supported countries before signing up",
+     "Assumption, verify: Supabase free tier is sufficient to start How to check: Check current free-tier limits at supabase.com/pricing before you rely on them for real customers",
+     "Assumption, verify: Vercel free tier is sufficient to start How to check: Check current free-tier limits at vercel.com/pricing before going live",
+     "Assumption, verify: You will handle scheduling yourself (the app shows slots you define; it does not sync to Google Calendar or similar) How to check: Decide whether manual slot management is enough, or whether calendar sync is needed before building",
+     "Assumption, verify: Customers pay in full at booking; no deposits or subscriptions needed initially How to check: Confirm this matches how you currently charge customers",
+     "On \"Set up accounts and tools\": Assumption, verify: Create a free Supabase account at supabase.com",
+     "On \"Set up accounts and tools\": Assumption, verify: Create a free Vercel account at vercel.com",
+     "On \"Set up accounts and tools\": Assumption, verify: Install Node.js on your computer (nodejs.org; choose the LTS version)",
+     "On \"Set up accounts and tools\": Assumption, verify: Install VS Code (code editor) from code.visualstudio.com",
+     "On \"Add basic privacy policy and terms of service pages\": Check with a professional what your privacy policy must include for your country and your use of Stripe and Supabase",
+     "On \"Set up error monitoring\": Assumption, verify: Create a free Sentry account at sentry.io and verify the free-tier limits",
+     "On \"Complete Stripe identity verification\": Assumption, verify: verification time varies by country; check the Stripe support pages for your country's typical timeline.",
+     "For any price, rate or rule above: check the vendor or official source directly, or ask a professional for anything legal or financial."
+    ],
+    "notes": "NOT MENTIONED IN YOUR DESCRIPTION (often matters):\n- Refund and cancellation policy: the app needs to know what to do when a customer cancels\n- How far in advance slots are available, and how many bookings per slot\n- Whether customers need accounts, or can book as guests\n- Whether you need to send confirmation emails and reminders\n\nTHINGS THIS PLAN CANNOT KNOW:\n- Current Stripe transaction fees in your country\n- Current Supabase and Vercel free-tier limits (these change)\n- Local business registration or tax rules that may apply to taking online payments\n\nPOSSIBLE CONFLICTS TO CHECK:\n- \"Set up accounts and tools\" rests on an unchecked assumption but its first step is not a check.\n- \"Set up error monitoring\" rests on an unchecked assumption but its first step is not a check.",
+    "tags": [
+     "planning"
+    ],
+    "color": "#ffffff",
+    "dueDate": "2026-10-26"
+   },
+   {
+    "title": "Decisions needed: choices only you can make",
+    "priority": "high",
+    "description": "These choices were not in your description, so they are yours to make. Each has a recommended default: accept it and move on, or swap it for your own.",
+    "checklist": [
+     "Do customers need to create an account to book, or can they book as a guest with just an email address? Options: Guest booking with email only / Account required (login/password) / Both options. Recommended default: Guest booking with email only — simplest to build and least friction for customers.",
+     "How do you define available time slots — do you enter them manually, or should the app generate them automatically from a schedule you set? Options: You add slots manually in an admin panel / App auto-generates slots from a weekly schedule you configure. Recommended default: Manual slots to start — simpler to build and gives you full control.",
+     "What is your cancellation and refund policy, and should the app enforce it automatically? Options: No automatic refunds; you handle manually / Automatic refund if cancelled more than X hours before the walk. Recommended default: No automatic refunds to start — simpler, and Stripe lets you issue refunds manually.",
+     "Recommended default for frontend and backend: Next.js (React framework). Why: Handles both the website pages and server logic in one project; well supported by AI coding assistants; large beginner community",
+     "Recommended default for database: Supabase (hosted Postgres). Why: Provides a database and simple user accounts with a free starting tier; no server to manage",
+     "Recommended default for payments: Stripe. Why: Widely used, has a test mode for safe experimentation, and is supported by AI coding assistants with many examples",
+     "Recommended default for hosting: Vercel. Why: Deploys Next.js projects with minimal configuration; has a free starting tier"
+    ],
+    "notes": "",
+    "tags": [
+     "decisions"
+    ],
+    "color": "#ef4444",
+    "dueDate": "2026-10-26"
+   },
+   {
+    "title": "Set up accounts and tools",
+    "priority": "high",
+    "description": "Create the accounts and install the software you need before writing any code.\nWhy this matters: Nothing else can start until these accounts exist.",
+    "checklist": [
+     "Assumption, verify: Create a free Supabase account at supabase.com",
+     "Assumption, verify: Create a free Vercel account at vercel.com",
+     "Create a Stripe account and complete identity verification",
+     "Assumption, verify: Install Node.js on your computer (nodejs.org; choose the LTS version)",
+     "Assumption, verify: Install VS Code (code editor) from code.visualstudio.com",
+     "Install the GitHub Copilot or Cursor extension in VS Code as your AI coding assistant"
+    ],
+    "notes": "Node.js: software that lets you run JavaScript on your computer, needed to build Next.js apps. LTS: Long-Term Support, the most stable version.",
+    "tags": [
+     "setup",
+     "accounts"
+    ],
+    "color": "#ef4444",
+    "dueDate": "2026-10-26"
+   },
+   {
+    "title": "Create and deploy a blank Next.js project",
+    "priority": "high",
+    "description": "Depends on: Set up accounts and tools\nUse a terminal command to create an empty Next.js project, push it to GitHub, and connect it to Vercel so it deploys automatically.\nWhy this matters: Establishes the foundation every other feature is built on.",
+    "checklist": [
+     "Open a terminal and run the Next.js project creation command (ask your AI assistant for the exact command)",
+     "Create a free GitHub account and a new repository for this project",
+     "Push the blank project to GitHub (your AI assistant can show you each git command)",
+     "Connect the GitHub repository to Vercel; trigger a first deployment",
+     "Confirm the blank site loads at the Vercel-provided URL"
+    ],
+    "notes": "Terminal: a text-based window for running commands on your computer. GitHub: a website that stores your code and lets Vercel redeploy automatically when you save changes.",
+    "tags": [
+     "setup",
+     "infrastructure"
+    ],
+    "color": "#ef4444",
+    "dueDate": "2026-10-28"
+   },
+   {
+    "title": "Set up the database schema",
+    "priority": "high",
+    "description": "Depends on: Set up accounts and tools\nCreate the tables in Supabase that store bookings and available slots.\nWhy this matters: The booking and payment features cannot work without somewhere to store data.",
+    "checklist": [
+     "Create a new Supabase project in your Supabase dashboard",
+     "Create a 'slots' table with columns: id, date, time, max_bookings, is_available",
+     "Create a 'bookings' table with columns: id, slot_id, customer_name, customer_email, payment_status, created_at",
+     "Copy the Supabase connection keys into a local environment variables file (ask your AI assistant what that means)",
+     "Add the same keys to Vercel's environment variables settings so the deployed app can connect"
+    ],
+    "notes": "Schema: the structure that defines what tables exist and what columns each table has. Environment variables: secret values your app reads at runtime so you do not put passwords directly in code.",
+    "tags": [
+     "setup"
+    ],
+    "color": "#ef4444",
+    "dueDate": "2026-10-29"
+   },
+   {
+    "title": "Decision: confirm booking flow before building",
+    "priority": "high",
+    "description": "Depends on: Create and deploy a blank Next.js project; Set up the database schema\nReview the open decisions about guest vs account booking and slot management before writing any feature code.\nWhy this matters: Building before deciding wastes time if you change direction.",
+    "checklist": [
+     "Answer: guest booking or accounts required? (see Decisions Needed)",
+     "Answer: manual slots or auto-generated slots? (see Decisions Needed)",
+     "Answer: what is your cancellation policy? (see Decisions Needed)",
+     "Write your answers somewhere so you can share them with your AI coding assistant"
+    ],
+    "notes": "",
+    "tags": [
+     "decision-gate",
+     "planning"
+    ],
+    "color": "#ef4444",
+    "dueDate": "2026-10-30"
+   },
+   {
+    "title": "Add basic privacy policy and terms of service pages",
+    "priority": "high",
+    "description": "Depends on: Create and deploy a blank Next.js project\nCreate simple static pages covering how you handle customer data and booking terms.\nWhy this matters: Taking payments online typically requires these; check with a professional for your situation.",
+    "checklist": [
+     "Check with a professional what your privacy policy must include for your country and your use of Stripe and Supabase",
+     "Write a privacy policy page explaining what customer data you collect and how long you keep it",
+     "Write a terms of service page that includes your cancellation policy",
+     "Link both pages in the footer of the booking page"
+    ],
+    "notes": "Do not rely on a template without checking it applies to your situation.",
+    "tags": [
+     "frontend"
+    ],
+    "color": "#ef4444",
+    "dueDate": "2026-10-30"
+   },
+   {
+    "title": "Complete Stripe identity verification",
+    "priority": "high",
+    "description": "Depends on: Set up accounts and tools\nStripe requires identity and business verification before you can receive real payouts; start this early as it can take several days.\nWhy this matters: You cannot accept real payments until Stripe approves your account.",
+    "checklist": [
+     "Log in to your Stripe dashboard and go to the account verification section",
+     "Submit all required identity and banking documents",
+     "Check your email daily for any follow-up requests from Stripe"
+    ],
+    "notes": "Assumption, verify: verification time varies by country; check the Stripe support pages for your country's typical timeline.",
+    "tags": [
+     "accounts",
+     "payments"
+    ],
+    "color": "#ef4444",
+    "dueDate": "2026-11-02"
+   },
+   {
+    "title": "Build the customer booking page",
+    "priority": "high",
+    "description": "Depends on: Decision: confirm booking flow before building\nCreate a page where customers can see available time slots and choose one to book.\nWhy this matters: This is the main thing customers interact with.",
+    "checklist": [
+     "Build a page that fetches available slots from Supabase and displays them",
+     "Add a simple form for the customer to enter their name and email",
+     "Validate that the form fields are filled before allowing the customer to continue",
+     "Show a clear error message if a slot is no longer available",
+     "Test the page in your browser with sample slot data entered directly in Supabase"
+    ],
+    "notes": "",
+    "tags": [
+     "frontend",
+     "booking"
+    ],
+    "color": "#ef4444",
+    "dueDate": "2026-11-04"
+   },
+   {
+    "title": "Integrate Stripe checkout for payments",
+    "priority": "high",
+    "description": "Depends on: Build the customer booking page\nWhen a customer confirms a slot, send them to a Stripe-hosted checkout page to pay, then record the booking.\nWhy this matters: Payment is required to confirm a booking.",
+    "checklist": [
+     "Verify Stripe Checkout (hosted payment page) works in your country by reviewing Stripe's documentation",
+     "Add your Stripe secret key and public key to environment variables",
+     "Write a server function that creates a Stripe Checkout session with the booking price",
+     "Redirect the customer to Stripe Checkout after they choose a slot",
+     "Create a success page that marks the booking as paid in Supabase when Stripe redirects back",
+     "Test the full flow in Stripe test mode using Stripe's test card numbers"
+    ],
+    "notes": "Stripe Checkout: a payment page hosted by Stripe; you do not handle card details yourself, which is simpler and safer. Test mode: Stripe provides fake card numbers so you can test payments without real money.",
+    "tags": [
+     "payments",
+     "backend"
+    ],
+    "color": "#ef4444",
+    "dueDate": "2026-11-09"
+   },
+   {
+    "title": "Set up Stripe webhook to handle payment confirmation",
+    "priority": "high",
+    "description": "Depends on: Integrate Stripe checkout for payments\nListen for Stripe's payment-confirmed event so bookings are marked paid even if the customer closes the browser early.\nWhy this matters: Relying only on the redirect back from Stripe is unreliable; webhooks are the safe method.",
+    "checklist": [
+     "Create a webhook endpoint in your Next.js project (ask your AI assistant to scaffold this)",
+     "Register the endpoint URL in your Stripe dashboard under Webhooks",
+     "Handle the 'checkout.session.completed' event by updating booking payment_status in Supabase",
+     "Verify the webhook signature so only real Stripe events are processed (your AI assistant can add this check)",
+     "Test by completing a test payment and confirming the database updates correctly"
+    ],
+    "notes": "Webhook: Stripe calls a URL on your server when a payment succeeds, independently of what the customer's browser does.",
+    "tags": [
+     "payments",
+     "backend"
+    ],
+    "color": "#ef4444",
+    "dueDate": "2026-11-11"
+   },
+   {
+    "title": "Send booking confirmation emails",
+    "priority": "high",
+    "description": "Depends on: Set up Stripe webhook to handle payment confirmation\nEmail the customer a confirmation with their booking details after payment succeeds.\nWhy this matters: Customers expect a confirmation and you need a record in case of disputes.",
+    "checklist": [
+     "Choose a transactional email service (Resend or SendGrid both have free starting tiers; verify current limits before choosing)",
+     "Create an account and get an API key from the chosen service",
+     "Add the API key to environment variables",
+     "Trigger an email from the webhook handler when a payment is confirmed",
+     "Include the customer name, date, time, and your contact details in the email",
+     "Test by completing a test payment and checking the email arrives"
+    ],
+    "notes": "Transactional email service: a tool for sending automated emails reliably; regular email accounts are not suitable for this.",
+    "tags": [
+     "backend"
+    ],
+    "color": "#ef4444",
+    "dueDate": "2026-11-13"
+   },
+   {
+    "title": "Set up error monitoring",
+    "priority": "high",
+    "description": "Depends on: Create and deploy a blank Next.js project\nConnect a free error-monitoring tool so you are alerted if something breaks in the live app.\nWhy this matters: Without monitoring you may not know a booking or payment failed until a customer complains.",
+    "checklist": [
+     "Assumption, verify: Create a free Sentry account at sentry.io and verify the free-tier limits",
+     "Follow Sentry's Next.js setup guide to add it to the project (your AI assistant can help)",
+     "Confirm a test error appears in the Sentry dashboard",
+     "Set up email alerts in Sentry for new errors"
+    ],
+    "notes": "Sentry: a tool that records errors in your running app and notifies you.",
+    "tags": [
+     "infrastructure"
+    ],
+    "color": "#ef4444",
+    "dueDate": "2026-11-16"
+   },
+   {
+    "title": "Test the full booking flow end to end",
+    "priority": "high",
+    "description": "Depends on: Set up Stripe webhook to handle payment confirmation; Send booking confirmation emails\nWalk through the entire process as a customer would, from choosing a slot to receiving a confirmation email.\nWhy this matters: Catches problems before real customers encounter them.",
+    "checklist": [
+     "Complete a full test booking using Stripe test card numbers",
+     "Confirm the booking appears in Supabase with payment_status set to paid",
+     "Confirm the confirmation email arrives with correct details",
+     "Confirm the slot shows as unavailable on the booking page after being booked",
+     "Check that the booking appears in the admin bookings list"
+    ],
+    "notes": "",
+    "tags": [
+     "validation",
+     "booking",
+     "payments"
+    ],
+    "color": "#ef4444",
+    "dueDate": "2026-11-17"
+   },
+   {
+    "title": "Build a simple admin page to manage slots",
+    "priority": "medium",
+    "description": "Depends on: Decision: confirm booking flow before building\nCreate a private page where you can add, edit, and hide available time slots.\nWhy this matters: You need to control when customers can book without touching the database directly.",
+    "checklist": [
+     "Create an admin page that is password-protected (a simple hardcoded password is fine to start)",
+     "List existing slots with their date, time, and availability status",
+     "Add a form to create a new slot",
+     "Add a button to mark a slot as unavailable (to block it off)",
+     "Test adding and hiding slots, then confirm the customer booking page reflects the changes"
+    ],
+    "notes": "You can make the admin page more secure later; a simple password is enough while only you use it.",
+    "tags": [
+     "admin",
+     "frontend"
+    ],
+    "color": "#f59e0b",
+    "dueDate": "2026-11-19"
+   },
+   {
+    "title": "Decision: ready to go live with real customers",
+    "priority": "high",
+    "description": "Depends on: Test the full booking flow end to end; Add basic privacy policy and terms of service pages; Set up error monitoring\nReview whether the app is ready to accept real bookings and real payments.\nWhy this matters: Switching to live payments before the app is solid risks real money problems.",
+    "checklist": [
+     "All steps in the end-to-end test passed with no errors",
+     "Privacy policy and terms pages are live and reviewed",
+     "Error monitoring is active and sending alerts",
+     "Stripe account is fully verified and live mode is enabled",
+     "You have a custom domain set up (or are happy with the Vercel URL for now)",
+     "You have tested the admin page and can manage slots confidently"
+    ],
+    "notes": "",
+    "tags": [
+     "decision-gate",
+     "launch",
+     "planning"
+    ],
+    "color": "#ef4444",
+    "dueDate": "2026-11-20"
+   },
+   {
+    "title": "Switch to Stripe live mode and share with customers",
+    "priority": "high",
+    "description": "Depends on: Decision: ready to go live with real customers; Complete Stripe identity verification\nReplace test Stripe keys with live keys, deploy, and share the booking URL with your customers.\nWhy this matters: This is the launch: real bookings and real payments are now possible.",
+    "checklist": [
+     "Replace Stripe test keys with live keys in Vercel environment variables",
+     "Re-register the webhook endpoint in Stripe live mode",
+     "Deploy and complete one real low-value test booking to confirm end to end",
+     "Share the booking page URL with your first customers"
+    ],
+    "notes": "",
+    "tags": [
+     "launch",
+     "payments"
+    ],
+    "color": "#ef4444",
+    "dueDate": "2026-11-23"
+   },
+   {
+    "title": "View bookings in the admin page",
+    "priority": "medium",
+    "description": "Depends on: Build a simple admin page to manage slots\nAdd a list of confirmed bookings to the admin page so you can see who is booked for which walk.\nWhy this matters: You need to see your schedule without opening the database.",
+    "checklist": [
+     "Fetch all bookings from Supabase on the admin page, ordered by date and time",
+     "Display customer name, email, slot date and time, and payment status",
+     "Add a simple filter to show only upcoming bookings"
+    ],
+    "notes": "",
+    "tags": [
+     "admin",
+     "frontend"
+    ],
+    "color": "#f59e0b",
+    "dueDate": "2026-11-24"
+   }
+  ],
+  "structure": [
+   {
+    "key": "T1",
+    "title": "Set up accounts and tools",
+    "kind": "work",
+    "priority": "high",
+    "dependsOn": [],
+    "effortHours": 2,
+    "waitDays": 0,
+    "dueDate": "2026-10-26"
+   },
+   {
+    "key": "T2",
+    "title": "Create and deploy a blank Next.js project",
+    "kind": "work",
+    "priority": "high",
+    "dependsOn": [
+     "T1"
+    ],
+    "effortHours": 2,
+    "waitDays": 0,
+    "dueDate": "2026-10-28"
+   },
+   {
+    "key": "T3",
+    "title": "Set up the database schema",
+    "kind": "work",
+    "priority": "high",
+    "dependsOn": [
+     "T1"
+    ],
+    "effortHours": 2,
+    "waitDays": 0,
+    "dueDate": "2026-10-29"
+   },
+   {
+    "key": "T4",
+    "title": "Decision: confirm booking flow before building",
+    "kind": "decision-gate",
+    "priority": "high",
+    "dependsOn": [
+     "T2",
+     "T3"
+    ],
+    "effortHours": 1,
+    "waitDays": 0,
+    "dueDate": "2026-10-30"
+   },
+   {
+    "key": "T5",
+    "title": "Build the customer booking page",
+    "kind": "work",
+    "priority": "high",
+    "dependsOn": [
+     "T4"
+    ],
+    "effortHours": 6,
+    "waitDays": 0,
+    "dueDate": "2026-11-04"
+   },
+   {
+    "key": "T6",
+    "title": "Integrate Stripe checkout for payments",
+    "kind": "work",
+    "priority": "high",
+    "dependsOn": [
+     "T5"
+    ],
+    "effortHours": 6,
+    "waitDays": 0,
+    "dueDate": "2026-11-09"
+   },
+   {
+    "key": "T7",
+    "title": "Set up Stripe webhook to handle payment confirmation",
+    "kind": "work",
+    "priority": "high",
+    "dependsOn": [
+     "T6"
+    ],
+    "effortHours": 4,
+    "waitDays": 0,
+    "dueDate": "2026-11-11"
+   },
+   {
+    "key": "T8",
+    "title": "Build a simple admin page to manage slots",
+    "kind": "work",
+    "priority": "medium",
+    "dependsOn": [
+     "T4"
+    ],
+    "effortHours": 5,
+    "waitDays": 0,
+    "dueDate": "2026-11-19"
+   },
+   {
+    "key": "T9",
+    "title": "Send booking confirmation emails",
+    "kind": "work",
+    "priority": "high",
+    "dependsOn": [
+     "T7"
+    ],
+    "effortHours": 3,
+    "waitDays": 0,
+    "dueDate": "2026-11-13"
+   },
+   {
+    "key": "T10",
+    "title": "View bookings in the admin page",
+    "kind": "work",
+    "priority": "medium",
+    "dependsOn": [
+     "T8"
+    ],
+    "effortHours": 2,
+    "waitDays": 0,
+    "dueDate": "2026-11-24"
+   },
+   {
+    "key": "T11",
+    "title": "Add basic privacy policy and terms of service pages",
+    "kind": "work",
+    "priority": "high",
+    "dependsOn": [
+     "T2"
+    ],
+    "effortHours": 2,
+    "waitDays": 0,
+    "dueDate": "2026-10-30"
+   },
+   {
+    "key": "T12",
+    "title": "Set up error monitoring",
+    "kind": "work",
+    "priority": "high",
+    "dependsOn": [
+     "T2"
+    ],
+    "effortHours": 2,
+    "waitDays": 0,
+    "dueDate": "2026-11-16"
+   },
+   {
+    "key": "T13",
+    "title": "Test the full booking flow end to end",
+    "kind": "validation",
+    "priority": "high",
+    "dependsOn": [
+     "T7",
+     "T9"
+    ],
+    "effortHours": 2,
+    "waitDays": 0,
+    "dueDate": "2026-11-17"
+   },
+   {
+    "key": "T14",
+    "title": "Decision: ready to go live with real customers",
+    "kind": "decision-gate",
+    "priority": "high",
+    "dependsOn": [
+     "T13",
+     "T11",
+     "T12"
+    ],
+    "effortHours": 1,
+    "waitDays": 0,
+    "dueDate": "2026-11-20"
+   },
+   {
+    "key": "T15",
+    "title": "Complete Stripe identity verification",
+    "kind": "external-wait",
+    "priority": "high",
+    "dependsOn": [
+     "T1"
+    ],
+    "effortHours": 1,
+    "waitDays": 5,
+    "dueDate": "2026-11-02"
+   },
+   {
+    "key": "T16",
+    "title": "Switch to Stripe live mode and share with customers",
+    "kind": "work",
+    "priority": "high",
+    "dependsOn": [
+     "T14",
+     "T15"
+    ],
+    "effortHours": 2,
+    "waitDays": 0,
+    "dueDate": "2026-11-23"
+   }
+  ],
+  "summary": {
+   "firstWorkingDay": "2026-10-26",
+   "endDate": "2026-11-24",
+   "hoursPerWeek": 10,
+   "hoursPerWeekAssumed": true,
+   "deadline": null,
+   "deadlineMet": null,
+   "overrunBusinessDays": null,
+   "wouldHaveToGive": [],
+   "fitsAfterDeferring": null,
+   "specificsLabeled": 5,
+   "flags": [
+    {
+     "type": "verify-first",
+     "taskKey": "T1",
+     "message": "\"Set up accounts and tools\" rests on an unchecked assumption but its first step is not a check."
+    },
+    {
+     "type": "verify-first",
+     "taskKey": "T12",
+     "message": "\"Set up error monitoring\" rests on an unchecked assumption but its first step is not a check."
+    }
+   ],
+   "warnings": []
+  }
+ }
+}

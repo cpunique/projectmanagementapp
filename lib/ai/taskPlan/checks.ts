@@ -128,6 +128,7 @@ export function labelUnverifiedSpecifics(
 
 export interface PlanFlag {
   type:
+    | 'unverified-capability'
     | 'verify-first'
     | 'conflict-with-constraint'
     | 'target-redefined'
