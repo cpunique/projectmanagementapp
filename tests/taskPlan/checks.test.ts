@@ -16,7 +16,7 @@ describe('findSpecifics: recognizes the kinds of specific claims', () => {
     ['free-tier quota', 'Mailgun inbound parse is free up to 100 messages/day for testing', '100 messages/day'],
     ['named subreddit', 'Recruit from Reddit (r/njteachers)', 'r/njteachers'],
     ['monthly price range', 'Pricing suggestion: $7-9/month', '$7-9'],
-    ['URL', 'See https://example.com/pricing for details', 'https://example.com/pricing'],
+    ['URL', 'See https://vendor.io/pricing for details', 'https://vendor.io/pricing'],
     ['percentage', 'Aim for 99.9% uptime', '99.9%'],
     ['currency in words', 'It costs 20 USD per seat', '20 USD'],
     ['bare domain with path', 'Open firebase.google.com/docs/messaging', 'firebase.google.com/docs/messaging'],

@@ -163,12 +163,46 @@ export function composeDecisionsCard(plan: Plan, firstWorkingDay: string): Gener
   };
 }
 
+// Cards are listed in the order they are due, so the Backlog reads as a timeline.
+// A prerequisite is always due on or before what depends on it, and ties keep the
+// plan's dependency order, so this never puts a card ahead of its prerequisite.
+export function dueOrder(tasks: PlanTask[], dueDates: Record<string, string>): PlanTask[] {
+  return tasks
+    .map((t, i) => ({ t, i }))
+    .sort((a, b) => {
+      const da = dueDates[a.t.key] ?? '';
+      const db = dueDates[b.t.key] ?? '';
+      return da < db ? -1 : da > db ? 1 : a.i - b.i;
+    })
+    .map(({ t }) => t);
+}
+
+const KEY_LIKE = /^[A-Za-z]{1,3}_?\d{1,3}$/;
+
+// The model sometimes writes "see T3" inside card text. The reader never sees the
+// keys, so swap each one for the title of the card it points to.
+export function replaceKeyReferences(text: string, plan: Plan): string {
+  if (!text) return text;
+  const keys = plan.tasks.map((t) => t.key).filter((k) => KEY_LIKE.test(k));
+  if (keys.length === 0) return text;
+  const titleOf = new Map(plan.tasks.map((t) => [t.key, t.title]));
+  const pattern = new RegExp(`\\b(?:${keys.sort((a, b) => b.length - a.length).join('|')})\\b`, 'g');
+  return text.replace(pattern, (k) => `"${titleOf.get(k)}"`);
+}
+
 export function composeCards(input: ComposeInput): GeneratedCard[] {
   const { plan, schedule } = input;
   const byKey = new Map(plan.tasks.map((t) => [t.key, t]));
   const cards: GeneratedCard[] = [composeReadMeCard(input)];
   const decisions = composeDecisionsCard(plan, schedule.firstWorkingDay);
   if (decisions) cards.push(decisions);
-  for (const t of plan.tasks) cards.push(planCard(t, byKey, schedule.dueDates[t.key] ?? schedule.firstWorkingDay));
-  return cards;
+  for (const t of dueOrder(plan.tasks, schedule.dueDates)) {
+    cards.push(planCard(t, byKey, schedule.dueDates[t.key] ?? schedule.firstWorkingDay));
+  }
+  return cards.map((c) => ({
+    ...c,
+    description: replaceKeyReferences(c.description, plan),
+    checklist: c.checklist.map((item) => replaceKeyReferences(item, plan)),
+    notes: replaceKeyReferences(c.notes, plan),
+  }));
 }

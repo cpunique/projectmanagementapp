@@ -13,7 +13,12 @@ const CURRENCY =
   /(?:US?\$|\$|€|£)\s?\d[\d,]*(?:\.\d+)?(?:\s?[-–]\s?(?:US?\$|\$|€|£)?\s?\d[\d,]*(?:\.\d+)?)?(?:\s?[kKM]\b)?|\b\d[\d,]*(?:\.\d+)?\s?(?:USD|EUR|GBP|dollars|cents)\b/g;
 const PERCENT = /\b\d+(?:\.\d+)?\s?%/g;
 const URL_LIKE =
-  /\bhttps?:\/\/[^\s)"']+|\bwww\.[^\s)"']+|\b[a-z0-9][a-z0-9-]*(?:\.[a-z0-9-]+)*\.(?:com|org|net|io|gov|edu|app|dev|co|ai)\b(?:\/[^\s)"']*)?/gi;
+  /\bhttps?:\/\/[^\s)"']+|\bwww\.[^\s)"']+|(?<![@\w.-])[a-z0-9][a-z0-9-]*(?:\.[a-z0-9-]+)*\.(?:com|org|net|io|gov|edu|app|dev|co|ai)\b(?:\/[^\s)"']*)?/gi;
+// Obvious stand-ins in examples ("in.yourapp.com") are not claims about the real world.
+const PLACEHOLDER_URL = /yourapp|yourdomain|yoursite|yourcompany|example\.|\.example\b/i;
+// A sentence that tells the reader to go and check something names a source; it is not itself a claim.
+const VERIFY_INSTRUCTION = /^\s*(?:assumption, verify:\s*)?(?:check|verify|confirm|look up|read|ask|see|visit|review|consult|contact|open)\b/i;
+const whole = (re: RegExp) => new RegExp(`^(?:${re.source})$`, 'i');
 const COMMUNITY =
   /\br\/[A-Za-z0-9_]+|\bsubreddit\b|\b(?:Facebook group|Slack workspace|Discord server|Slack community)\s+(?:called|named)\s+["“']?[A-Z][\w&' ]{2,40}/g;
 const QUOTA =
@@ -32,14 +37,24 @@ export function hasLabel(text: string): boolean {
 export function findSpecifics(text: string): string[] {
   const out: string[] = [];
   for (const re of [CURRENCY, PERCENT, URL_LIKE, COMMUNITY, QUOTA, FREE_ALLOWANCE]) {
-    for (const m of text.matchAll(re)) out.push(m[0].trim());
+    for (const m of text.matchAll(re)) {
+      if (re === URL_LIKE && PLACEHOLDER_URL.test(m[0])) continue;
+      out.push(m[0].trim());
+    }
   }
   return Array.from(new Set(out)).filter((s) => !BENIGN.has(s));
 }
 
 // Specifics that did not come from the user's own words.
 function ungroundedSpecifics(text: string, inputNorm: string): string[] {
-  return findSpecifics(text).filter((s) => !inputNorm.includes(norm(s)));
+  const isInstruction = VERIFY_INSTRUCTION.test(text);
+  const urlOnly = whole(URL_LIKE);
+  return findSpecifics(text).filter((s) => {
+    if (inputNorm.includes(norm(s))) return false;
+    // "Check example.org or contact support" points at a source to verify against.
+    if (isInstruction && urlOnly.test(s)) return false;
+    return true;
+  });
 }
 
 export interface SpecificFinding {

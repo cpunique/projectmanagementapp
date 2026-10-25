@@ -137,6 +137,10 @@ function runSchedule(
       const wa = a.kind === 'external-wait' ? 1 : 0;
       const wb = b.kind === 'external-wait' ? 1 : 0;
       if (wa !== wb) return wb - wa;
+      // A decision gate is a short review that blocks everything after it: do it as soon as it is ready.
+      const ga = a.kind === 'decision-gate' ? 1 : 0;
+      const gb = b.kind === 'decision-gate' ? 1 : 0;
+      if (ga !== gb) return gb - ga;
       const pa = PRIORITY_RANK[a.priority];
       const pb = PRIORITY_RANK[b.priority];
       if (pa !== pb) return pb - pa;
