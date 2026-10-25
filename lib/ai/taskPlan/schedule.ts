@@ -37,6 +37,10 @@ export interface ScheduleResult {
   deadlineMet: boolean | null;
   // Present only when the deadline cannot be met at this capacity.
   overrunBusinessDays?: number;
+  // Hours of work that fit between the first working day and the deadline at this pace,
+  // and the weekly hours that would be needed to meet it. Present when a deadline was given.
+  hoursAvailableByDeadline?: number;
+  hoursPerWeekNeeded?: number | null;
   // Lowest-priority, nothing-depends-on-it cards that would have to be deferred to
   // fit; `fitsAfterDeferring` is false if even that is not enough.
   wouldHaveToGive?: Deferral[];
@@ -182,12 +186,14 @@ function runSchedule(
   return { dueDates, endDate: cal.dateOf(maxDay), firstWorkingDay: cal.firstWorkingDay };
 }
 
-// Cards nothing else depends on, cheapest to defer first: lowest priority, then latest in the plan.
+// Optional cards nothing else depends on, cheapest to defer first: lowest priority, then
+// latest in the plan. High-priority cards and decision gates are never offered: they are
+// the goal itself or the checkpoints that protect it, so dropping them is not a trade-off.
 function deferralOrder(tasks: PlanTask[]): PlanTask[] {
   const needed = new Set(tasks.flatMap((t) => t.dependsOn));
   return tasks
     .map((t, i) => ({ t, i }))
-    .filter(({ t }) => !needed.has(t.key))
+    .filter(({ t }) => !needed.has(t.key) && t.priority !== 'high' && t.kind !== 'decision-gate')
     .sort((a, b) => PRIORITY_RANK[a.t.priority] - PRIORITY_RANK[b.t.priority] || b.i - a.i)
     .map(({ t }) => t);
 }
@@ -212,6 +218,14 @@ export function scheduleTasks(tasks: PlanTask[], opts: ScheduleOptions): Schedul
 
   const cal = new BusinessCalendar(opts.startDate);
   result.overrunBusinessDays = Math.max(1, cal.indexOnOrAfter(full.endDate) - cal.indexOnOrAfter(deadline));
+
+  // Business days from the first working day through the deadline, inclusive.
+  let daysAvailable = 0;
+  for (let t = parseYmd(full.firstWorkingDay); t <= parseYmd(deadline); t += DAY_MS) {
+    if (isBusinessDay(t)) daysAvailable++;
+  }
+  result.hoursAvailableByDeadline = Math.round(daysAvailable * (hoursPerWeek / 5) * 10) / 10;
+  result.hoursPerWeekNeeded = daysAvailable > 0 ? Math.ceil((result.totalHours / daysAvailable) * 5) : null;
 
   // What would have to give? Defer lowest-priority leaf cards one at a time until it fits.
   const gone: PlanTask[] = [];

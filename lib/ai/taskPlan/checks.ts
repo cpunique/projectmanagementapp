@@ -175,8 +175,9 @@ function mentions(text: string, phrase: string): boolean {
   return new RegExp(`(?<![\\w])${escaped}(?![\\w])`, 'i').test(text);
 }
 
-export function checkPlan(plan: Plan): PlanFlag[] {
+export function checkPlan(plan: Plan, inputText = ''): PlanFlag[] {
   const flags: PlanFlag[] = [];
+  const inputNorm = norm(inputText);
   const { tasks, facts } = plan;
 
   // Contradictions with the declared stack / constraints. Only as good as what the
@@ -197,6 +198,8 @@ export function checkPlan(plan: Plan): PlanFlag[] {
 
   // Each target is defined in exactly one card.
   for (const target of facts.targets) {
+    // A figure the person gave (e.g. "60 people") may be repeated wherever it applies.
+    if (norm(target.value) && inputNorm.includes(norm(target.value))) continue;
     for (const t of tasks) {
       if (t.key === target.definedIn) continue;
       // A decision gate exists to judge the target, so it has to say what the target is.

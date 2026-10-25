@@ -21,7 +21,7 @@ export function interpretPlanReply(rawText: string, ctx: PipelineContext): Inter
   if (!parsed.ok) return parsed;
 
   const { plan, findings } = labelUnverifiedSpecifics(parsed.plan, ctx.inputText);
-  const flags = checkPlan(plan);
+  const flags = checkPlan(plan, ctx.inputText);
 
   const localDate = YMD.test(ctx.localDate) ? ctx.localDate : new Date().toISOString().slice(0, 10);
   const stated = plan.facts.schedule.startDate;

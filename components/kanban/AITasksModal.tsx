@@ -367,7 +367,7 @@ const AITasksModal = ({ isOpen, onClose, boardId }: AITasksModalProps) => {
                     <div className="w-10 h-10 rounded-full animate-spin" style={{ border: '4px solid var(--surface-3)', borderTopColor: 'var(--purple)' }} />
                     <p className="text-sm" style={{ color: 'var(--body)' }}>Generating task cards...</p>
                     <p className="text-xs text-center max-w-xs" style={{ color: 'var(--muted)' }}>
-                      A careful plan can take 2 to 3 minutes. Please keep this window open.
+                      A careful plan usually takes 1 to 3 minutes. Please keep this window open.
                     </p>
                   </motion.div>
                 )}

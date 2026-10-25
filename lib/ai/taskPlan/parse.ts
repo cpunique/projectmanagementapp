@@ -198,6 +198,10 @@ export function normalizeTags(tasks: PlanTask[], max = MAX_TAGS_PER_PLAN): void 
   const counts = new Map<string, number>();
   for (const t of tasks) {
     t.tags = Array.from(new Set(t.tags.map(clean).filter(Boolean)));
+    // The two reserved tags mean something: only a card of that kind may carry them.
+    t.tags = t.tags.filter(
+      (tag) => !(tag === 'decision-gate' && t.kind !== 'decision-gate') && !(tag === 'validation' && t.kind !== 'validation')
+    );
     if (t.kind === 'decision-gate' && !t.tags.includes('decision-gate')) t.tags.unshift('decision-gate');
     if (t.kind === 'validation' && !t.tags.includes('validation')) t.tags.unshift('validation');
     for (const tag of t.tags) counts.set(tag, (counts.get(tag) ?? 0) + 1);

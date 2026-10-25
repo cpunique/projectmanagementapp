@@ -63,12 +63,23 @@ function deadlineLine(schedule: ScheduleResult): string | null {
   if (schedule.deadlineMet) {
     return `Deadline ${friendlyDate(schedule.deadline)}: this plan fits at that pace (last card due ${friendlyDate(schedule.endDate)}).`;
   }
-  const late = `Deadline ${friendlyDate(schedule.deadline)}: NOT met at ${schedule.hoursPerWeek} hours a week. The last card is due ${friendlyDate(schedule.endDate)}, about ${schedule.overrunBusinessDays} working day${schedule.overrunBusinessDays === 1 ? '' : 's'} late. The dates below are honest, not squeezed.`;
-  if (!schedule.wouldHaveToGive?.length) return late;
-  const names = schedule.wouldHaveToGive.map((d) => `"${d.title}"`).join(', ');
-  return schedule.fitsAfterDeferring
-    ? `${late} To hit it, these would have to be deferred or dropped: ${names}. Or add more hours a week.`
-    : `${late} Even deferring every optional card (${names}) would not fit; the deadline needs more hours a week or a later date.`;
+  const days = schedule.overrunBusinessDays ?? 1;
+  const parts = [
+    `Deadline ${friendlyDate(schedule.deadline)}: NOT met at ${schedule.hoursPerWeek} hours a week.`,
+    schedule.hoursAvailableByDeadline !== undefined
+      ? `About ${schedule.hoursAvailableByDeadline} hours of work fit before then; the plan needs about ${Math.round(schedule.totalHours)}.`
+      : '',
+    `The last card is due ${friendlyDate(schedule.endDate)}, about ${days} working day${days === 1 ? '' : 's'} late. The dates below are honest, not squeezed.`,
+  ];
+  if (schedule.hoursPerWeekNeeded) parts.push(`Meeting it would take about ${schedule.hoursPerWeekNeeded} hours a week.`);
+  const cardCount = Object.keys(schedule.dueDates).length;
+  const give = schedule.wouldHaveToGive ?? [];
+  if (schedule.fitsAfterDeferring && give.length > 0 && give.length <= cardCount / 2) {
+    parts.push(`Or defer these optional cards: ${give.map((d) => `"${d.title}"`).join(', ')}.`);
+  } else if (schedule.fitsAfterDeferring === false) {
+    parts.push('Deferring optional cards alone would not be enough, so this deadline needs more hours a week or a later date.');
+  }
+  return parts.filter(Boolean).join(' ');
 }
 
 export interface ComposeInput {

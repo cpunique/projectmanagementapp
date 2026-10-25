@@ -144,7 +144,7 @@ describe('interpretPlanReply: full pipeline on a canned reply', () => {
     const b = body(tight);
     expect(b.summary.deadlineMet).toBe(false);
     expect(b.tasks[0].description).toContain('NOT met');
-    expect(b.tasks[0].description).toContain('would have to be deferred');
+    expect(b.tasks[0].description).toMatch(/hours of work fit before then/);
     for (const c of b.tasks) expect(c.dueDate).toMatch(/^\d{4}-\d{2}-\d{2}$/); // still dated, not crammed or dropped
   });
 
