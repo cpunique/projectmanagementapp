@@ -27,6 +27,7 @@ const QUOTA =
 const FREE_ALLOWANCE = /\bfree (?:up to|until|for the first) \d[\d,.]*/gi;
 
 const LABEL = /\b(assumption|unverified|verify with the official source|check with a professional|question:)/i;
+const ASSUMPTION_TEXT = /\b(assumption|unverified|verify with the official source)/i;
 const BENIGN = new Set(['100%']);
 
 const norm = (s: string) => s.toLowerCase().replace(/[\s,]+/g, '');
@@ -198,6 +199,8 @@ export function checkPlan(plan: Plan): PlanFlag[] {
   for (const target of facts.targets) {
     for (const t of tasks) {
       if (t.key === target.definedIn) continue;
+      // A decision gate exists to judge the target, so it has to say what the target is.
+      if (t.kind === 'decision-gate') continue;
       if (allText(t).some((line) => mentions(line, target.value))) {
         flags.push({
           type: 'target-redefined',
@@ -210,7 +213,8 @@ export function checkPlan(plan: Plan): PlanFlag[] {
 
   // A card carrying an assumption label should start with a step that checks it.
   for (const t of tasks) {
-    const labeled = [t.description, t.whyItMatters, t.notes, ...t.checklist].some(hasLabel);
+    // Only an unchecked assumption needs a check first; "check with a professional" is advice, not an assumption.
+    const labeled = [t.description, t.whyItMatters, t.notes, ...t.checklist].some((s) => ASSUMPTION_TEXT.test(s));
     const first = t.checklist[0] ?? '';
     if (labeled && t.kind === 'work' && !/^(?:assumption, verify:\s*)?(verify|confirm|check|ask|test|look up)\b/i.test(first)) {
       flags.push({

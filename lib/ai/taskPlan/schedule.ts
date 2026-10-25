@@ -118,6 +118,9 @@ function runSchedule(
       // Review the day after the work it judges is due, never the same day.
       const lastDep = Math.max(-1, ...t.dependsOn.filter((d) => dueDay.has(d)).map((d) => dueDay.get(d)!));
       ready = Math.max(ready, lastDep + 1);
+      // A review is short and blocks everything after it, so it interrupts other work
+      // instead of queueing behind it.
+      return ready;
     }
     return Math.max(cursor, ready);
   };
@@ -152,7 +155,8 @@ function runSchedule(
     const finish = start + task.effort.hours / perDay;
     const lastDay = Math.max(Math.floor(start), Math.ceil(finish - 1e-9) - 1);
 
-    cursor = finish;
+    // A gate that interrupts busy work still costs its hours, which push later work back.
+    cursor = task.kind === 'decision-gate' && start < cursor ? cursor + task.effort.hours / perDay : finish;
     scheduled.add(task.key);
     remaining.delete(task.key);
 
