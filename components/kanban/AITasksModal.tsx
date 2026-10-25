@@ -12,6 +12,7 @@ import Modal from '@/components/ui/Modal';
 import Button from '@/components/ui/Button';
 import { useToast } from '@/components/ui/Toast';
 import { friendlyDate } from '@/lib/ai/taskPlan/compose';
+import { taskToCardData } from '@/lib/ai/taskPlan/toCardData';
 
 const INSTRUCTION_OPTIONS: { value: InstructionType; label: string; icon: string; description: string }[] = [
   { value: 'development', label: 'Development', icon: '💻', description: 'Technical implementation instructions for developers' },
@@ -239,18 +240,7 @@ const AITasksModal = ({ isOpen, onClose, boardId }: AITasksModalProps) => {
           ? new Date(today.getTime() + task.suggestedDayOffset * 86400000).toISOString().split('T')[0]
           : undefined);
 
-      addCard(boardId, firstColumn.id, {
-        title: task.title,
-        priority: task.priority,
-        description: task.description,
-        ...(task.checklist && task.checklist.length > 0 && {
-          checklist: task.checklist.map((text, i) => ({ id: `cl-${Date.now()}-${i}`, text, completed: false, order: i })),
-        }),
-        ...(task.notes && { notes: task.notes }),
-        ...(task.tags && task.tags.length > 0 && { tags: task.tags }),
-        ...(task.color && { color: task.color }),
-        ...(dueDate && { dueDate }),
-      });
+      addCard(boardId, firstColumn.id, taskToCardData(task, dueDate, `cl-${Date.now()}`));
     }
 
     showToast(`${selected.length} task card${selected.length !== 1 ? 's' : ''} created in "${firstColumn.title}"`, 'success');
