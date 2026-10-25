@@ -96,6 +96,19 @@ Server-enforced "one free AI generation (lifetime)" for non-Pro users — Firest
 - One-time backfill: `scripts/backfill-free-generation.js` (dry-run by default, `--commit` to write) — already run with `--commit` on 2026-06-21.
 - Legal copy (`app/legal/ai-usage/page.tsx`, `app/legal/ai-usage/AI_USAGE_POLICY_OUTLINE.md`) states the model as "Claude Sonnet 4.6 (claude-sonnet-4-6)" — keep this in sync with `DEFAULT_CLAUDE_MODEL` if it changes again.
 
+## Generate Tasks pipeline (rebuilt 2026-10-25)
+
+Board-level "Generate Tasks" (structured mode of `app/api/generate-prompt/route.ts`, UI in `components/kanban/AITasksModal.tsx`) now runs through pure, unit-tested modules in `lib/ai/taskPlan/`: `prompt.ts` (server-only prompt: shared rules + a per-style add-on), `orchestrate.ts` (free-generation claim/finalize/release with injected deps), `parse.ts` (strict reply parsing, dependency order, priority propagation, tag vocabulary), `checks.ts` (labels unverified specifics with "Assumption, verify:", consistency checks), `schedule.ts` (deterministic due dates), `compose.ts` (cards incl. "Read me first" and "Decisions needed"), `pipeline.ts` (glue), `toCardData.ts`. No card-schema, Firestore-rule or export change: dependencies/gates live in the description's `Depends on:` line and the `decision-gate` tag.
+
+- **Planning style now matters** here (it was sent but ignored before). Development gets the software coverage pass; other styles get lighter add-ons.
+- **Free-generation rule:** a free user's lifetime generation is spent only on usable cards; truncation (`stop_reason: max_tokens`), malformed/empty replies and any exception release the claim. The "in progress" claim goes stale after **330s** (was 90s, shorter than a generation). `max_tokens` is 16000.
+- **Dates** come from `schedule.ts`, using the **user's local date** sent by the browser (not UTC), 10 h/week by default (flagged as an assumption), waiting steps run in parallel, gates reviewed the next business day. A missed deadline reports hours available vs needed and never offers to drop high-priority cards or gates.
+- **Checks are heuristics**, not fact-checking: the scanner only recognizes prices, percentages, URLs/domains, quotas and named communities; the contradiction check only catches what the plan itself declared in `planFacts`.
+- **Timing:** real generations took 36-198s (expert-size input about 2.5 min); the modal says "usually 1 to 3 minutes". No client or platform timeout is configured on this path (Vercel shows a 5-minute maximum).
+- **Tests:** `npm test` (vitest, dev-only). Fixtures in `tests/fixtures/` (the old generator's export, `ownerId`/`ownerEmail` redacted). Lint has ~370 pre-existing problems repo-wide; the rule for this area is "no new problems in touched files".
+- **Open:** whether a card verifies a third party's behavior the description merely assumes (e.g. that Frontline emails contain a job link) varied between runs (present in 2 of 3 expert runs). A one-line prompt rule is proposed but was not run (model-run cap reached). Phase 2 proposal: `docs/GENERATOR_PHASE2_PROPOSAL.md`.
+- **Lesson:** when a generator "looks right" on one input, run it on several kinds of input before tuning; the first real run found seven problems unit tests could not (card keys leaking into text, a gate scheduled a week late, scanner false positives, a rule defined by the model from memory).
+
 ## MCP ENFORCEMENT LIVES IN TWO SEPARATE CODEBASES (critical — enforce security in BOTH)
 
 Kan-do's MCP integration spans two independent, separately-deployed codebases that
