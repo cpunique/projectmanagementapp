@@ -30,6 +30,7 @@ export function makePlan(tasks: PlanTask[], overrides: Partial<Plan> = {}): Plan
     },
     assumptions: [],
     gaps: [],
+    unknowns: [],
     decisionsNeeded: [],
     tasks,
     ...overrides,

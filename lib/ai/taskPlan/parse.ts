@@ -250,6 +250,7 @@ export function parsePlanReply(rawText: string): ParseResult {
     facts: parseFacts(json.planFacts),
     assumptions,
     gaps: strList(json.gaps),
+    unknowns: strList(json.unknowns),
     decisionsNeeded,
     tasks,
   };

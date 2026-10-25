@@ -70,7 +70,8 @@ export interface Plan {
   overview: string;
   facts: PlanFacts;
   assumptions: Assumption[];
-  gaps: string[];
+  gaps: string[]; // topics the user's description did not mention that usually matter
+  unknowns: string[]; // things the model cannot know (current prices, platform rules, local regulations)
   decisionsNeeded: DecisionNeeded[];
   tasks: PlanTask[];
 }
