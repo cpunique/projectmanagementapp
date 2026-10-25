@@ -51,8 +51,13 @@ function ungroundedSpecifics(text: string, inputNorm: string): string[] {
   const urlOnly = whole(URL_LIKE);
   return findSpecifics(text).filter((s) => {
     if (inputNorm.includes(norm(s))) return false;
-    // "Check example.org or contact support" points at a source to verify against.
-    if (isInstruction && urlOnly.test(s)) return false;
+    if (urlOnly.test(s)) {
+      // "Check example.org or contact support" points at a source to verify against.
+      if (isInstruction) return false;
+      // "(e.g. dnschecker.org)" names an example tool, it does not assert a fact.
+      const escaped = s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      if (new RegExp(`(?:e\\.g\\.,?|for example,?|such as|like)\\s[^.]{0,60}${escaped}`, 'i').test(text)) return false;
+    }
     return true;
   });
 }
