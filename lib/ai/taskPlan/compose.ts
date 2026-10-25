@@ -43,7 +43,9 @@ export function collectLabeledItems(tasks: PlanTask[]): { cardTitle: string; tex
   const out: { cardTitle: string; text: string }[] = [];
   const split = (s: string) => s.split(/(?<=[.!?])\s+(?=[A-Z0-9"'(])/);
   for (const t of tasks) {
-    for (const s of [...split(t.description), ...split(t.notes)]) if (s && hasLabel(s)) out.push({ cardTitle: t.title, text: s });
+    for (const s of [...split(t.description), ...split(t.whyItMatters), ...split(t.notes)]) {
+      if (s && hasLabel(s)) out.push({ cardTitle: t.title, text: s });
+    }
     for (const item of t.checklist) if (hasLabel(item)) out.push({ cardTitle: t.title, text: item });
   }
   return out;

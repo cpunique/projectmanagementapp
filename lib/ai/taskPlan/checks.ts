@@ -17,7 +17,8 @@ const URL_LIKE =
 // Obvious stand-ins in examples ("in.yourapp.com") are not claims about the real world.
 const PLACEHOLDER_URL = /yourapp|yourdomain|yoursite|yourcompany|example\.|\.example\b/i;
 // A sentence that tells the reader to go and check something names a source; it is not itself a claim.
-const VERIFY_INSTRUCTION = /^\s*(?:assumption, verify:\s*)?(?:check|verify|confirm|look up|read|ask|see|visit|review|consult|contact|open)\b/i;
+const VERIFY_INSTRUCTION =
+  /^\s*(?:assumption, verify:\s*)?(?:check|verify|confirm|look up|read|ask|see|visit|review|consult|contact|open|create|install|download|sign up|sign in|log in|register|go to|use|add|connect|enable|copy|paste|run|try|set up|get)\b/i;
 const whole = (re: RegExp) => new RegExp(`^(?:${re.source})$`, 'i');
 const COMMUNITY =
   /\br\/[A-Za-z0-9_]+|\bsubreddit\b|\b(?:Facebook group|Slack workspace|Discord server|Slack community)\s+(?:called|named)\s+["“']?[A-Z][\w&' ]{2,40}/g;
@@ -64,7 +65,7 @@ function ungroundedSpecifics(text: string, inputNorm: string): string[] {
 
 export interface SpecificFinding {
   taskKey: string;
-  field: 'title' | 'description' | 'notes' | 'checklist';
+  field: 'title' | 'description' | 'whyItMatters' | 'notes' | 'checklist';
   excerpt: string;
   specifics: string[];
   autoLabeled: boolean;
@@ -106,6 +107,7 @@ export function labelUnverifiedSpecifics(
     return {
       ...t,
       description: labelSentences(t.description, inputNorm, record('description', true)),
+      whyItMatters: labelSentences(t.whyItMatters, inputNorm, record('whyItMatters', true)),
       notes: labelSentences(t.notes, inputNorm, record('notes', true)),
       checklist: t.checklist.map((item) => {
         if (hasLabel(item)) return item;
@@ -208,7 +210,7 @@ export function checkPlan(plan: Plan): PlanFlag[] {
 
   // A card carrying an assumption label should start with a step that checks it.
   for (const t of tasks) {
-    const labeled = [t.description, t.notes, ...t.checklist].some(hasLabel);
+    const labeled = [t.description, t.whyItMatters, t.notes, ...t.checklist].some(hasLabel);
     const first = t.checklist[0] ?? '';
     if (labeled && t.kind === 'work' && !/^(?:assumption, verify:\s*)?(verify|confirm|check|ask|test|look up)\b/i.test(first)) {
       flags.push({
