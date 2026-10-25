@@ -3,11 +3,9 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { Timestamp, FieldValue } from 'firebase-admin/firestore';
-import {
-  runStructuredGeneration,
-  type Interpretation,
-  type ModelReply,
-} from '@/lib/ai/taskPlan/orchestrate';
+import { runStructuredGeneration, type ModelReply } from '@/lib/ai/taskPlan/orchestrate';
+import { interpretPlanReply } from '@/lib/ai/taskPlan/pipeline';
+import { buildSystemPrompt, buildUserMessage } from '@/lib/ai/taskPlan/prompt';
 
 // How long a claimed-but-not-finalized free generation blocks a second concurrent
 // request before it's treated as abandoned (e.g. server crashed mid-request) and
@@ -85,39 +83,6 @@ async function releaseFreeGenerationClaim(userId: string): Promise<void> {
 // Instruction type definitions
 type InstructionType = 'development' | 'general' | 'event-planning' | 'documentation' | 'research';
 
-// System prompt for structured JSON task output (board-level AI task generation)
-const STRUCTURED_SYSTEM_PROMPT = `You are a task planning assistant. Break down the given goal into fully populated, actionable kanban cards.
-
-Respond ONLY with valid JSON — no markdown, no code fences, no text outside the JSON object.
-
-Return exactly this shape:
-{
-  "overview": "2-3 sentence plain-text summary of the plan",
-  "tasks": [
-    {
-      "title": "Action-oriented task title",
-      "priority": "high",
-      "description": "1-2 sentence plain-text description of what this task involves",
-      "checklist": ["Subtask one", "Subtask two", "Subtask three"],
-      "notes": "Relevant context, gotchas, or implementation considerations for this specific task. Plain text only.",
-      "tags": ["tag1", "tag2"],
-      "color": "#ef4444",
-      "suggestedDayOffset": 3
-    }
-  ]
-}
-
-Guidelines:
-- Generate 4-10 tasks (scale with complexity of the goal)
-- Titles must be imperative: "Set up Firebase Auth" not "Firebase Auth Setup"
-- priority values: "high" = blocking or must-do-first, "medium" = important, "low" = nice-to-have
-- description is plain text only, no markdown formatting
-- checklist: 2-5 concrete subtasks for this card. Each is a short action phrase.
-- notes: 1-3 sentences of context, gotchas, or considerations specific to this task. Omit if nothing meaningful to add (use empty string "").
-- tags: 1-3 short lowercase tags relevant to this task (e.g. "auth", "backend", "ui", "security")
-- color: choose based on priority — high="#ef4444", medium="#f59e0b", low="#22c55e", none="#ffffff"
-- suggestedDayOffset: integer number of days from today this task should ideally be completed by, based on its complexity and dependencies relative to other tasks. First tasks should be low (1-3), later/dependent tasks higher.`;
-
 // Grounding constraint: output must be traceable to provided card fields only
 const GROUNDING_INSTRUCTION = `
 
@@ -188,33 +153,13 @@ const GeneratePromptSchema = z.object({
   priority: z.enum(['low', 'medium', 'high']).optional(),
   structured: z.boolean().optional().default(false),
   boardName: z.string().max(200, 'Board name too long').optional(),
+  localDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
 });
 
 // Reply cap for the structured plan. 4096 was enough for ten short cards but not for
 // the richer plan (plan facts, dependencies, assumptions); a cut-off reply is
 // treated as a failure and releases a free user's generation.
 const STRUCTURED_MAX_TOKENS = 16000;
-
-// Reply interpreter for the current (legacy) card shape.
-function interpretLegacyReply(rawText: string): Interpretation {
-  // Strip potential markdown code fences Claude may wrap around JSON
-  const cleaned = rawText.replace(/^```json\s*/i, '').replace(/```\s*$/, '').trim();
-
-  let parsed: { overview: string; tasks: { title: string }[] };
-  try {
-    parsed = JSON.parse(cleaned);
-  } catch {
-    console.error('[AI Prompt] Failed to parse structured JSON:', cleaned.slice(0, 200));
-    return { ok: false, reason: 'malformed' };
-  }
-
-  const usableTasks = Array.isArray(parsed.tasks)
-    ? parsed.tasks.filter((t) => typeof t?.title === 'string' && t.title.trim().length > 0)
-    : [];
-  if (usableTasks.length === 0) return { ok: false, reason: 'empty' };
-
-  return { ok: true, body: { overview: parsed.overview, tasks: parsed.tasks } };
-}
 
 async function callAnthropic(
   apiKey: string,
@@ -262,15 +207,21 @@ async function callAnthropic(
 // lib/ai/taskPlan/orchestrate.ts so they can be unit-tested.
 async function handleStructuredGeneration(
   userId: string,
-  data: { cardTitle: string; boardName?: string; description?: string },
+  data: {
+    cardTitle: string;
+    instructionType: InstructionType;
+    boardName?: string;
+    description?: string;
+    localDate?: string;
+  },
   apiKey: string
 ) {
   const { adminDb } = await import('@/lib/firebase/admin');
   const model = process.env.NEXT_PUBLIC_CLAUDE_MODEL || DEFAULT_CLAUDE_MODEL;
 
-  let structuredUserMsg = `Goal: ${data.cardTitle}\n`;
-  if (data.boardName) structuredUserMsg += `Board: ${data.boardName}\n`;
-  if (data.description) structuredUserMsg += `Context: ${data.description}\n`;
+  // The user's own calendar date (sent by the browser) so dates don't start "tomorrow"
+  // for evening users; falls back to the server's UTC date for older clients.
+  const localDate = data.localDate ?? new Date().toISOString().slice(0, 10);
 
   try {
     const outcome = await runStructuredGeneration(
@@ -283,9 +234,20 @@ async function handleStructuredGeneration(
       },
       {
         userId,
-        user: `${STRUCTURED_SYSTEM_PROMPT}\n\n${structuredUserMsg}`,
+        system: buildSystemPrompt(data.instructionType),
+        user: buildUserMessage({
+          goal: data.cardTitle,
+          boardName: data.boardName,
+          projectContext: data.description,
+          today: localDate,
+        }),
         maxTokens: STRUCTURED_MAX_TOKENS,
-        interpret: interpretLegacyReply,
+        interpret: (text) =>
+          interpretPlanReply(text, {
+            // Everything the person wrote counts as "from the input" when checking for unverified claims.
+            inputText: [data.cardTitle, data.description].filter(Boolean).join('\n'),
+            localDate,
+          }),
       }
     );
     return NextResponse.json(outcome.body, outcome.ok ? undefined : { status: outcome.status });

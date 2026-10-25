@@ -11,6 +11,7 @@ import { type InstructionType } from '@/types';
 import Modal from '@/components/ui/Modal';
 import Button from '@/components/ui/Button';
 import { useToast } from '@/components/ui/Toast';
+import { friendlyDate } from '@/lib/ai/taskPlan/compose';
 
 const INSTRUCTION_OPTIONS: { value: InstructionType; label: string; icon: string; description: string }[] = [
   { value: 'development', label: 'Development', icon: '💻', description: 'Technical implementation instructions for developers' },
@@ -29,7 +30,16 @@ interface GeneratedTask {
   tags?: string[];
   color?: string;
   suggestedDayOffset?: number;
+  // Computed by the server's scheduler from the user's local date (YYYY-MM-DD).
+  dueDate?: string;
   included: boolean;
+}
+
+// The browser's own calendar date, not the UTC day (which is already "tomorrow" in a US evening).
+function localDateString(): string {
+  const d = new Date();
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
 
 interface AITasksModalProps {
@@ -179,6 +189,7 @@ const AITasksModal = ({ isOpen, onClose, boardId }: AITasksModalProps) => {
           boardName: board?.name,
           ...(board?.description && { description: board.description }),
           structured: true,
+          localDate: localDateString(),
         }),
       });
 
@@ -220,9 +231,13 @@ const AITasksModal = ({ isOpen, onClose, boardId }: AITasksModalProps) => {
 
     const today = new Date();
     for (const task of selected) {
-      const dueDate = task.suggestedDayOffset
-        ? new Date(today.getTime() + task.suggestedDayOffset * 86400000).toISOString().split('T')[0]
-        : undefined;
+      // Dates normally arrive already scheduled by the server; the offset path only
+      // covers a response from an older server.
+      const dueDate =
+        task.dueDate ??
+        (typeof task.suggestedDayOffset === 'number'
+          ? new Date(today.getTime() + task.suggestedDayOffset * 86400000).toISOString().split('T')[0]
+          : undefined);
 
       addCard(boardId, firstColumn.id, {
         title: task.title,
@@ -338,6 +353,7 @@ const AITasksModal = ({ isOpen, onClose, boardId }: AITasksModalProps) => {
                     {firstColumn && (
                       <p className="text-xs" style={{ color: 'var(--muted)' }}>
                         Cards will be added to your <span className="font-medium" style={{ color: 'var(--body)' }}>"{firstColumn.title}"</span> column.
+                        {' '}Mention your start date, deadline, or hours per week and the due dates will follow them.
                       </p>
                     )}
 
@@ -360,6 +376,9 @@ const AITasksModal = ({ isOpen, onClose, boardId }: AITasksModalProps) => {
                   >
                     <div className="w-10 h-10 rounded-full animate-spin" style={{ border: '4px solid var(--surface-3)', borderTopColor: 'var(--purple)' }} />
                     <p className="text-sm" style={{ color: 'var(--body)' }}>Generating task cards...</p>
+                    <p className="text-xs text-center max-w-xs" style={{ color: 'var(--muted)' }}>
+                      A careful plan can take up to 2 minutes. Please keep this window open.
+                    </p>
                   </motion.div>
                 )}
 
@@ -460,7 +479,7 @@ const AITasksModal = ({ isOpen, onClose, boardId }: AITasksModalProps) => {
 
                               {/* Description */}
                               {task.description && (
-                                <p className="text-xs leading-relaxed" style={{ color: 'var(--muted)' }}>{task.description}</p>
+                                <p className="text-xs leading-relaxed whitespace-pre-line" style={{ color: 'var(--muted)' }}>{task.description}</p>
                               )}
 
                               {/* Checklist preview */}
@@ -478,9 +497,9 @@ const AITasksModal = ({ isOpen, onClose, boardId }: AITasksModalProps) => {
                                     {tag}
                                   </span>
                                 ))}
-                                {task.suggestedDayOffset && (
+                                {(task.dueDate || task.suggestedDayOffset) && (
                                   <span className="text-xs" style={{ color: 'var(--muted)' }}>
-                                    📅 ~{task.suggestedDayOffset}d
+                                    📅 {task.dueDate ? friendlyDate(task.dueDate) : `~${task.suggestedDayOffset}d`}
                                   </span>
                                 )}
                                 {task.notes && (
